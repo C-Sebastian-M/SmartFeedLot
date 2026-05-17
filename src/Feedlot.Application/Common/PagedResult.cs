@@ -1,0 +1,29 @@
+namespace Feedlot.Application.Common;
+
+/// <summary>
+/// DTO genérico para respuestas paginadas.
+/// Usado en todas las Queries que retornan listas con paginación.
+/// </summary>
+public sealed class PagedResult<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = [];
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
+
+    public static PagedResult<T> Create(
+        IReadOnlyList<T> items,
+        int totalCount,
+        int page,
+        int pageSize)
+        => new()
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+}
