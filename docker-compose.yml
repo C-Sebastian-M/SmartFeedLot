@@ -1,0 +1,46 @@
+services:
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: feedlot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartfeedlot
+      POSTGRES_USER: feedlot_user
+      POSTGRES_PASSWORD: feedlot_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feedlot_user -d smartfeedlot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── API .NET 8 ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: src/Feedlot.API/Dockerfile
+    container_name: feedlot_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=smartfeedlot;Username=feedlot_user;Password=feedlot_pass
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-dev-secret-key-min-32-chars-feedlot-2024}
+      - JwtSettings__Issuer=SmartFeedLot
+      - JwtSettings__Audience=SmartFeedLot-Frontend
+    ports:
+      - "5000:5000"
+    volumes:
+      - api_logs:/app/logs
+
+volumes:
+  postgres_data:
+  api_logs:
