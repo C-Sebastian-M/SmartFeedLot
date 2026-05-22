@@ -10,11 +10,13 @@ public sealed class LoteMappingProfile : Profile
     {
         CreateMap<Lote, LoteDto>()
             .ForMember(d => d.CapacidadMaxima,
-                o => o.MapFrom(s => s.Capacidad.Maxima))
+                o => o.MapFrom(s => s.CapacidadMaxima))
             .ForMember(d => d.AnimalesActuales,
-                o => o.MapFrom(s => s.Capacidad.Actual))
+                o => o.MapFrom(s => s.CantidadAnimalesActivos))
             .ForMember(d => d.PorcentajeOcupacion,
-                o => o.MapFrom(s => s.Capacidad.PorcentajeOcupacion))
+                o => o.MapFrom(s => s.CapacidadMaxima == 0
+                    ? 0m
+                    : (decimal)s.CantidadAnimalesActivos / s.CapacidadMaxima * 100))
             .ForMember(d => d.Estado,
                 o => o.MapFrom(s => s.Estado.ToString()))
             .ForMember(d => d.Animales,
@@ -22,17 +24,19 @@ public sealed class LoteMappingProfile : Profile
 
         CreateMap<Lote, LoteResumenDto>()
             .ForMember(d => d.CapacidadMaxima,
-                o => o.MapFrom(s => s.Capacidad.Maxima))
+                o => o.MapFrom(s => s.CapacidadMaxima))
             .ForMember(d => d.AnimalesActuales,
-                o => o.MapFrom(s => s.Capacidad.Actual))
+                o => o.MapFrom(s => s.CantidadAnimalesActivos))
             .ForMember(d => d.PorcentajeOcupacion,
-                o => o.MapFrom(s => s.Capacidad.PorcentajeOcupacion))
+                o => o.MapFrom(s => s.CapacidadMaxima == 0
+                    ? 0m
+                    : (decimal)s.CantidadAnimalesActivos / s.CapacidadMaxima * 100))
             .ForMember(d => d.Estado,
                 o => o.MapFrom(s => s.Estado.ToString()));
 
         CreateMap<AnimalLote, AnimalLoteDto>()
             .ForMember(d => d.CodigoAnimal,
-                o => o.Ignore()) // Se hidrata en el Handler con datos del repositorio
+                o => o.Ignore())
             .ForMember(d => d.MotivoIngreso,
                 o => o.MapFrom(s => s.MotivoIngreso.ToString()))
             .ForMember(d => d.DiasEnLote,
@@ -50,6 +54,6 @@ public sealed class LoteMappingProfile : Profile
             .ForMember(d => d.Moneda,
                 o => o.MapFrom(s => s.CostoTotal.Moneda))
             .ForMember(d => d.NombreRacion,
-                o => o.Ignore()); // Se hidrata en el Handler
+                o => o.Ignore());
     }
 }

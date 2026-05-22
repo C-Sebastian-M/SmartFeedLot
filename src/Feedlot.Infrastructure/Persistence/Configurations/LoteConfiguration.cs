@@ -1,19 +1,10 @@
 using Feedlot.Domain.Entities;
 using Feedlot.Domain.Enums;
-using Feedlot.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Feedlot.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Configuración del Aggregate Lote.
-/// 
-/// CORRECCIÓN: Capacidad es un Value Object con dos campos (Maxima, Actual).
-/// EF Core no puede mapear un VO con múltiples campos a una sola propiedad
-/// con HasConversion. Se mapean como dos shadow properties independientes
-/// y el repositorio hidrata el VO al cargar desde BD.
-/// </summary>
 public sealed class LoteConfiguration : IEntityTypeConfiguration<Lote>
 {
     public void Configure(EntityTypeBuilder<Lote> builder)
@@ -50,20 +41,14 @@ public sealed class LoteConfiguration : IEntityTypeConfiguration<Lote>
         builder.HasIndex(l => l.Estado)
             .HasDatabaseName("ix_lotes_estado");
 
-        // Capacidad Value Object → dos shadow properties independientes.
-        // El repositorio usa estas columnas para reconstruir el VO al cargar.
-        builder.Property(l => l.Capacidad)
+        // CapacidadMaxima es ahora una propiedad pública con setter privado.
+        // EF Core la mapea directamente sin necesidad de backing fields ni reflexión.
+        builder.Property(l => l.CapacidadMaxima)
             .HasColumnName("capacidad_maxima")
-            .IsRequired()
-            .HasConversion(
-                c => c.Maxima,
-                maxima => Capacidad.Crear(maxima, 0));
-
-        // Shadow property para la cantidad actual de animales.
-        builder.Property<int>("animales_actuales")
-            .HasColumnName("animales_actuales")
-            .HasDefaultValue(0)
             .IsRequired();
+
+        // Capacidad es una propiedad calculada — no tiene columna propia.
+        builder.Ignore(l => l.Capacidad);
 
         builder.HasMany(l => l.AnimalesLote)
             .WithOne()

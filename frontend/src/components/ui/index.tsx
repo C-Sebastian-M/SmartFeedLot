@@ -88,7 +88,7 @@ export function Button({
   )
 }
 
-// ─── Input — usa forwardRef para compatibilidad con react-hook-form ───────────
+// ─── Input ────────────────────────────────────────────────────────────────────
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
@@ -106,6 +106,24 @@ export const Input = React.forwardRef<
 ))
 Input.displayName = 'Input'
 
+// ─── Textarea ─────────────────────────────────────────────────────────────────
+export const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, ...props }, ref) => (
+  <textarea
+    ref={ref}
+    className={cn(
+      'flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors',
+      'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+      'disabled:cursor-not-allowed disabled:opacity-50 resize-none',
+      className
+    )}
+    {...props}
+  />
+))
+Textarea.displayName = 'Textarea'
+
 // ─── Label ────────────────────────────────────────────────────────────────────
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
@@ -116,11 +134,105 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
   )
 }
 
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
+    <div className={cn('animate-pulse rounded-md bg-muted', className)} {...props} />
+  )
+}
+
+// ─── Dialog ───────────────────────────────────────────────────────────────────
+// Dialog propio sin dependencias externas — portal sobre un backdrop.
+interface DialogProps {
+  open: boolean
+  onClose: () => void
+  children: React.ReactNode
+}
+
+export function Dialog({ open, onClose, children }: DialogProps) {
+  // Cerrar con Escape
+  React.useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      {/* Panel */}
+      <div className="relative z-10 w-full max-w-md mx-4 animate-slide-up">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('flex flex-col space-y-1 mb-5', className)} {...props} />
+}
+
+export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return <h2 className={cn('text-sm font-semibold', className)} {...props} />
+}
+
+export function DialogDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cn('text-xs text-muted-foreground', className)} {...props} />
+}
+
+// ─── Form field wrapper ───────────────────────────────────────────────────────
+interface FormFieldProps {
+  label: string
+  error?: string
+  required?: boolean
+  children: React.ReactNode
+  hint?: string
+}
+
+export function FormField({ label, error, required, children, hint }: FormFieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <Label>
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
+      {children}
+      {hint && !error && (
+        <p className="text-[10px] text-muted-foreground">{hint}</p>
+      )}
+      {error && (
+        <p className="text-[10px] text-destructive">{error}</p>
+      )}
+    </div>
+  )
+}
+
+// ─── Alert ────────────────────────────────────────────────────────────────────
+interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'destructive' | 'success'
+}
+
+export function Alert({ className, variant = 'default', ...props }: AlertProps) {
+  return (
     <div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      className={cn(
+        'rounded-lg border px-4 py-3 text-xs',
+        {
+          'border-border bg-muted/50 text-foreground': variant === 'default',
+          'border-destructive/30 bg-destructive/10 text-destructive': variant === 'destructive',
+          'border-emerald-500/30 bg-emerald-500/10 text-emerald-400': variant === 'success',
+        },
+        className
+      )}
       {...props}
     />
   )

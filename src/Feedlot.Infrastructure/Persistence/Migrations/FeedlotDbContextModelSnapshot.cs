@@ -293,7 +293,7 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<int>("Capacidad")
+                    b.Property<int>("CapacidadMaxima")
                         .HasColumnType("integer")
                         .HasColumnName("capacidad_maxima");
 
@@ -314,12 +314,6 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nombre");
-
-                    b.Property<int>("animales_actuales")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("animales_actuales");
 
                     b.HasKey("Id");
 

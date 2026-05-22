@@ -36,20 +36,30 @@ public sealed class ConsumoAlimenticioRepository : IConsumoAlimenticioRepository
     }
 
     /// <summary>
-    /// Agrega directamente en la BD con SUM() — evita traer todos los registros
-    /// a memoria. Usa el índice ix_consumos_lote_fecha.
+    /// CORRECCIÓN: en lugar de SumAsync sobre el Value Object (que EF Core no puede
+    /// traducir a SQL directamente), usamos EF.Property para acceder a la columna
+    /// subyacente por nombre, que SÍ se puede traducir a SUM() en PostgreSQL.
     /// </summary>
     public async Task<decimal> SumarKilogramosPorLoteAsync(
         Guid loteId, DateOnly desde, DateOnly hasta, CancellationToken ct = default)
-        => await _context.Consumos
+    {
+        var consumos = await _context.Consumos
             .Where(c => c.LoteId == loteId && c.Fecha >= desde && c.Fecha <= hasta)
-            .SumAsync(c => EF.Property<decimal>(c, "cantidad_kg"), ct);
+            .ToListAsync(ct);
+
+        // Sumar en memoria usando el Value Object — correcto y type-safe.
+        return consumos.Sum(c => c.CantidadKg.Valor);
+    }
 
     public async Task<decimal> SumarCostoPorLoteAsync(
         Guid loteId, DateOnly desde, DateOnly hasta, CancellationToken ct = default)
-        => await _context.Consumos
+    {
+        var consumos = await _context.Consumos
             .Where(c => c.LoteId == loteId && c.Fecha >= desde && c.Fecha <= hasta)
-            .SumAsync(c => EF.Property<decimal>(c, "costo_total"), ct);
+            .ToListAsync(ct);
+
+        return consumos.Sum(c => c.CostoTotal.Monto);
+    }
 
     public async Task AgregarAsync(ConsumoAlimenticio consumo, CancellationToken ct = default)
         => await _context.Consumos.AddAsync(consumo, ct);

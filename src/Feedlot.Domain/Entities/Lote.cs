@@ -8,14 +8,9 @@ namespace Feedlot.Domain.Entities;
 
 /// <summary>
 /// Aggregate Root: Lote.
-/// Representa un grupo de animales en proceso de engorde colectivo.
-/// 
-/// Invariantes que protege:
-/// - No puede exceder su capacidad máxima.
-/// - Un animal no puede estar en dos lotes activos simultáneamente
-///   (esta regla se verifica en el Domain Service LoteService, que coordina
-///   ambos aggregates a través de sus repositorios).
-/// - Solo lotes activos aceptan nuevos animales.
+/// Capacidad se computa en tiempo real desde AnimalesLote.
+/// CapacidadMaxima se expone como propiedad con setter privado
+/// para que EF Core pueda leerla y escribirla sin reflexión.
 /// </summary>
 public sealed class Lote : AggregateRoot<Guid>
 {
@@ -27,23 +22,40 @@ public sealed class Lote : AggregateRoot<Guid>
         Guid id,
         string codigo,
         string nombre,
-        Capacidad capacidad) : base(id)
+        int capacidadMaxima) : base(id)
     {
         Codigo = codigo;
         Nombre = nombre;
-        Capacidad = capacidad;
+        CapacidadMaxima = capacidadMaxima;
         Estado = EstadoLote.EnPreparacion;
     }
 
     public string Codigo { get; private set; } = null!;
     public string Nombre { get; private set; } = null!;
-    public Capacidad Capacidad { get; private set; } = null!;
     public EstadoLote Estado { get; private set; }
+
+    /// <summary>
+    /// Capacidad máxima persistida. EF Core mapea esta propiedad directamente.
+    /// </summary>
+    public int CapacidadMaxima { get; private set; }
+
+    /// <summary>
+    /// Capacidad calculada en tiempo real desde AnimalesLote.
+    /// Actual = count de animales activos. Nunca desincronizada con BD.
+    /// No se persiste — se ignora en la configuración EF Core.
+    /// </summary>
+    public Capacidad Capacidad
+    {
+        get
+        {
+            var actual = _animalesLote.Count(al => al.EsActivo);
+            return Capacidad.Crear(CapacidadMaxima, actual);
+        }
+    }
 
     public IReadOnlyCollection<AnimalLote> AnimalesLote => _animalesLote.AsReadOnly();
 
     // --- Factory ---
-
     public static Lote Crear(string codigo, string nombre, int capacidadMaxima)
     {
         if (string.IsNullOrWhiteSpace(codigo))
@@ -52,39 +64,33 @@ public sealed class Lote : AggregateRoot<Guid>
         if (string.IsNullOrWhiteSpace(nombre))
             throw new DomainException("El nombre del lote no puede estar vacío.");
 
-        var capacidad = Capacidad.Crear(capacidadMaxima);
+        if (capacidadMaxima <= 0)
+            throw new DomainException("La capacidad máxima debe ser mayor a cero.");
 
-        return new Lote(Guid.NewGuid(), codigo.Trim().ToUpperInvariant(), nombre.Trim(), capacidad);
+        return new Lote(
+            Guid.NewGuid(),
+            codigo.Trim().ToUpperInvariant(),
+            nombre.Trim(),
+            capacidadMaxima);
     }
 
     // --- Comportamiento ---
-
-    /// <summary>
-    /// Activa el lote para que pueda recibir animales.
-    /// Solo puede activarse desde EnPreparacion.
-    /// </summary>
     public void Activar()
     {
         if (Estado != EstadoLote.EnPreparacion)
             throw new DomainException(
-                $"Solo se puede activar un lote que esté en preparación. Estado actual: {Estado}.");
-
+                $"Solo se puede activar un lote en preparación. Estado actual: {Estado}.");
         Estado = EstadoLote.Activo;
     }
 
-    /// <summary>
-    /// Agrega un animal al lote. Verifica capacidad y estado del lote.
-    /// La invariante de "animal en un solo lote activo" es responsabilidad
-    /// del Domain Service, que tiene acceso a ambos repositorios.
-    /// </summary>
     public AnimalLote AgregarAnimal(Guid animalId, DateOnly fechaIngreso, MotivoMovimiento motivo)
     {
         if (Estado != EstadoLote.Activo)
             throw new DomainException(
-                $"Solo se pueden agregar animales a lotes activos. Estado actual: {Estado}.");
+                $"Solo lotes activos aceptan animales. Estado actual: {Estado}.");
 
         if (!Capacidad.TieneEspacio)
-            throw new LoteCapacidadExcedidaException(Id, Capacidad.Maxima);
+            throw new LoteCapacidadExcedidaException(Id, CapacidadMaxima);
 
         var yaEstaEnEsteLote = _animalesLote
             .Any(al => al.AnimalId == animalId && al.EsActivo);
@@ -95,16 +101,12 @@ public sealed class Lote : AggregateRoot<Guid>
 
         var animalLote = AnimalLote.Crear(Id, animalId, fechaIngreso, motivo);
         _animalesLote.Add(animalLote);
-        Capacidad = Capacidad.ConAnimalAgregado();
 
         RaiseDomainEvent(new AnimalMovidoALoteEvent(animalId, null, Id, fechaIngreso, motivo));
 
         return animalLote;
     }
 
-    /// <summary>
-    /// Retira un animal del lote registrando la fecha de egreso.
-    /// </summary>
     public void RetirarAnimal(Guid animalId, DateOnly fechaEgreso, MotivoMovimiento motivo)
     {
         var animalLote = _animalesLote
@@ -113,18 +115,15 @@ public sealed class Lote : AggregateRoot<Guid>
                 $"El animal '{animalId}' no se encuentra activo en el lote '{Id}'.");
 
         animalLote.Cerrar(fechaEgreso, motivo);
-        Capacidad = Capacidad.ConAnimalRetirado();
 
         RaiseDomainEvent(new AnimalMovidoALoteEvent(animalId, Id, null, fechaEgreso, motivo));
     }
 
-    /// <summary>Cierra el lote. Solo si no tiene animales activos.</summary>
     public void Cerrar()
     {
-        var tieneAnimalesActivos = _animalesLote.Any(al => al.EsActivo);
-        if (tieneAnimalesActivos)
+        if (_animalesLote.Any(al => al.EsActivo))
             throw new DomainException(
-                "No se puede cerrar un lote con animales activos. Retire todos los animales primero.");
+                "No se puede cerrar un lote con animales activos.");
 
         if (Estado == EstadoLote.Cerrado)
             throw new DomainException("El lote ya está cerrado.");

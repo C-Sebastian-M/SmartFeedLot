@@ -81,9 +81,8 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     codigo = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    capacidad_maxima = table.Column<int>(type: "integer", nullable: false),
                     estado = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    animales_actuales = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                    capacidad_maxima = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {

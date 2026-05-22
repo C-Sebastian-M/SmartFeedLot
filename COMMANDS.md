@@ -1,44 +1,40 @@
 # SmartFeedLot — Comandos de base de datos
 
-## Crear la migración inicial (solo se hace una vez)
+## IMPORTANTE: Si ya tienes una migración anterior, hay que regenerarla
 
-```bash
-cd C:\Users\sebas\Downloads\SmartFeedLot
-
-dotnet ef migrations add InitialCreate \
-  --project src/Feedlot.Infrastructure \
-  --startup-project src/Feedlot.API \
-  --output-dir Persistence/Migrations
-```
-
-En Windows PowerShell usar ` (backtick) en lugar de \ para continuar línea:
 ```powershell
-dotnet ef migrations add InitialCreate `
-  --project src/Feedlot.Infrastructure `
-  --startup-project src/Feedlot.API `
-  --output-dir Persistence/Migrations
-```
+# 1. Borrar la migración anterior (si existe)
+dotnet ef migrations remove --project src/Feedlot.Infrastructure --startup-project src/Feedlot.API
 
-O en una sola línea:
-```bash
+# 2. Borrar la base de datos para empezar limpio
+dotnet ef database drop --project src/Feedlot.Infrastructure --startup-project src/Feedlot.API --force
+
+# 3. Crear la migración nueva
 dotnet ef migrations add InitialCreate --project src/Feedlot.Infrastructure --startup-project src/Feedlot.API --output-dir Persistence/Migrations
-```
 
-## Aplicar la migración manualmente (opcional — el app lo hace al arrancar)
-
-```bash
-dotnet ef database update --project src/Feedlot.Infrastructure --startup-project src/Feedlot.API
-```
-
-## Arrancar la API
-
-```bash
+# 4. Arrancar la API (aplica la migración y siembra admin automáticamente)
 dotnet run --project src/Feedlot.API
 ```
 
-## Arrancar el frontend
+## Si es la primera vez (sin migraciones previas)
 
-```bash
+```powershell
+dotnet ef migrations add InitialCreate --project src/Feedlot.Infrastructure --startup-project src/Feedlot.API --output-dir Persistence/Migrations
+
+dotnet run --project src/Feedlot.API
+```
+
+## Arrancar el frontend (en otra terminal)
+
+```powershell
 cd frontend
 npm run dev
 ```
+
+## Verificar que la BD está bien
+
+```
+GET http://localhost:5000/api/auth/diagnostico
+```
+
+Debe responder: { "conexion": "OK", "totalUsuarios": 1, "totalRoles": 3 }

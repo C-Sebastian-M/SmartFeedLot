@@ -42,23 +42,18 @@ public sealed class LoteRepository : ILoteRepository
         => await _context.Lotes
             .AnyAsync(l => l.Codigo == codigo.ToUpperInvariant(), ct);
 
-    /// <summary>
-    /// Consulta optimizada para la invariante de pertenencia única.
-    /// Busca directamente en la tabla animal_lotes por AnimalId y EsActivo = true,
-    /// luego carga el lote completo. Usa el índice ix_animal_lotes_animal_activo.
-    /// </summary>
     public async Task<Lote?> ObtenerLoteActivoDelAnimalAsync(
         Guid animalId, CancellationToken ct = default)
     {
         var loteId = await _context.AnimalesLote
             .Where(al => al.AnimalId == animalId && al.EsActivo)
-            .Select(al => al.LoteId)
+            .Select(al => (Guid?)al.LoteId)
             .FirstOrDefaultAsync(ct);
 
-        if (loteId == Guid.Empty)
+        if (loteId is null)
             return null;
 
-        return await ObtenerPorIdAsync(loteId, ct);
+        return await ObtenerPorIdAsync(loteId.Value, ct);
     }
 
     public async Task AgregarAsync(Lote lote, CancellationToken ct = default)

@@ -18,6 +18,8 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .ValueGeneratedNever();
 
         // Value Object: CodigoIdentificacion → columna simple con conversión.
+        // El índice se define DESPUÉS de la propiedad usando el nombre de la
+        // propiedad C# (nameof), no el nombre de columna.
         builder.Property(a => a.CodigoIdentificacion)
             .HasColumnName("codigo_identificacion")
             .HasMaxLength(20)
@@ -26,10 +28,9 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 co => co.Valor,
                 valor => CodigoIdentificacion.Crear(valor));
 
-        // CORRECCIÓN: el índice se define por nombre de columna, no por propiedad,
-        // cuando la propiedad tiene HasConversion. Así EF Core puede construirlo
-        // correctamente en la migración.
-        builder.HasIndex("codigo_identificacion")
+        // CORRECCIÓN: índice usando nameof (nombre de propiedad C#), no nombre de columna.
+        // EF Core puede crear el índice sobre propiedades con HasConversion.
+        builder.HasIndex(nameof(Animal.CodigoIdentificacion))
             .IsUnique()
             .HasDatabaseName("ix_animals_codigo_identificacion");
 
@@ -38,7 +39,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .HasMaxLength(50)
             .IsRequired();
 
-        // Value Object: Peso de ingreso
         builder.Property(a => a.PesoIngreso)
             .HasColumnName("peso_ingreso_kg")
             .HasPrecision(10, 3)
@@ -47,8 +47,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 p => p.Kilogramos,
                 kg => Peso.Crear(kg));
 
-        // Value Object: Dinero (PrecioCompra) → monto en columna principal.
-        // La moneda se guarda como shadow property separada.
         builder.Property(a => a.PrecioCompra)
             .HasColumnName("precio_compra")
             .HasPrecision(18, 2)
@@ -57,6 +55,7 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 d => d.Monto,
                 monto => Dinero.Crear(monto, "COP"));
 
+        // Shadow property para la moneda del precio de compra.
         builder.Property<string>("precio_compra_moneda")
             .HasColumnName("precio_compra_moneda")
             .HasMaxLength(3)
