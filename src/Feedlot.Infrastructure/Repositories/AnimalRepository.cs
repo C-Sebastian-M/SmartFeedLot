@@ -5,16 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Feedlot.Infrastructure.Repositories;
 
-/// <summary>
-/// Implementación concreta de IAnimalRepository con EF Core.
-/// Usa eager loading con Include() para cargar las colecciones internas
-/// del aggregate (Pesajes, EventosSanitarios) en una sola query.
-///
-/// Decisión: siempre cargar el aggregate completo — el dominio necesita
-/// todos sus datos para aplicar invariantes. En feedlots típicos los animales
-/// no tienen miles de pesajes, así que el overhead es aceptable.
-/// Para casos extremos, se puede proyectar con Select() en queries de solo lectura.
-/// </summary>
 public sealed class AnimalRepository : IAnimalRepository
 {
     private readonly FeedlotDbContext _context;
@@ -38,10 +28,20 @@ public sealed class AnimalRepository : IAnimalRepository
                 EF.Property<string>(a, "codigo_identificacion") == codigo.ToUpperInvariant(), ct);
 
     public async Task<IReadOnlyList<Animal>> ObtenerTodosAsync(CancellationToken ct = default)
-        => await _context.Animals
+    {
+        // CORRECCIÓN: no usar EF.Property en OrderBy con Value Objects convertidos.
+        // Traer sin orden desde BD y ordenar en memoria — la lista de animales
+        // en un feedlot típico es manejable (<5000). Para escala mayor se usaría
+        // una query de proyección directa con Select().
+        var animales = await _context.Animals
             .Include(a => a.Pesajes)
-            .OrderBy(a => EF.Property<string>(a, "codigo_identificacion"))
+            .Include(a => a.EventosSanitarios)
             .ToListAsync(ct);
+
+        return animales
+            .OrderBy(a => a.CodigoIdentificacion.Valor)
+            .ToList();
+    }
 
     public async Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default)
         => await _context.Animals

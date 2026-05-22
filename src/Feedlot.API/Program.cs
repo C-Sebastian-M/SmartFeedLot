@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Feedlot.API.Extensions;
 using Feedlot.API.Middlewares;
 using Feedlot.Application.Extensions;
@@ -5,9 +6,6 @@ using Feedlot.Infrastructure.Extensions;
 using Feedlot.Infrastructure.Persistence;
 using Serilog;
 
-// ─── Serilog bootstrap logger ────────────────────────────────────────────────
-// Logger temporal para capturar errores DURANTE la inicialización,
-// antes de que el host esté disponible.
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
@@ -18,7 +16,6 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // ─── Serilog definitivo ───────────────────────────────────────────────────
     builder.Host.UseSerilog((ctx, services, config) =>
     {
         config
@@ -33,66 +30,62 @@ try
             .WriteTo.File(
                 path: "logs/feedlot-.log",
                 rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30,
-                outputTemplate:
-                "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} — {Message:lj}{NewLine}{Exception}");
+                retainedFileCountLimit: 30);
     });
 
-    // ─── Servicios de Application y Infrastructure ────────────────────────────
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
 
-    // ─── Servicios de la API ──────────────────────────────────────────────────
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
-            // Serializar enums como strings en la API.
-            options.JsonSerializerOptions.Converters.Add(
-                new System.Text.Json.Serialization.JsonStringEnumConverter());
-            // Serializar DateOnly correctamente.
+            // CORRECCIÓN 1: enums como strings para que el frontend reciba
+            // "EnEngorde" en lugar de 0, alineado con los tipos TypeScript.
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+            // CORRECCIÓN 2: camelCase en todas las propiedades JSON para que
+            // el frontend reciba "codigoIdentificacion" no "CodigoIdentificacion".
             options.JsonSerializerOptions.PropertyNamingPolicy =
                 System.Text.Json.JsonNamingPolicy.CamelCase;
+
+            // CORRECCIÓN 3: DateOnly se serializa como "2024-01-15" (ISO 8601).
+            // ASP.NET Core 8 ya lo soporta de forma nativa, sin converter extra.
         });
 
     builder.Services.AddJwtAuthentication(builder.Configuration);
     builder.Services.AddFeedlotCors();
     builder.Services.AddSwaggerWithJwt();
-
-    // Health checks básicos.
     builder.Services.AddHealthChecks();
 
-    // ─── Build ────────────────────────────────────────────────────────────────
     var app = builder.Build();
 
-    // ─── Inicializar base de datos ────────────────────────────────────────────
     await DatabaseInitializer.InitializeAsync(app.Services);
 
-    // ─── Middleware pipeline ──────────────────────────────────────────────────
-    // El orden importa en ASP.NET Core.
-
-    // 1. Manejo global de excepciones — debe ser el primero.
+    // CORRECCIÓN 4: ExceptionHandlingMiddleware antes que todo, incluido HTTPS redirect.
     app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-    // 2. Swagger solo en desarrollo.
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartFeedLot API v1");
-            options.RoutePrefix = string.Empty; // Swagger en la raíz: http://localhost:5000/
+            options.RoutePrefix = string.Empty;
             options.DocumentTitle = "SmartFeedLot API";
         });
     }
 
-    // 3. Serilog request logging estructurado.
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate =
             "HTTP {RequestMethod} {RequestPath} → {StatusCode} en {Elapsed:0.0000}ms";
     });
 
-    app.UseHttpsRedirection();
+    // CORRECCIÓN 5: en desarrollo no redirigir a HTTPS porque el frontend
+    // Vite corre en HTTP. Solo redirigir en producción.
+    if (!app.Environment.IsDevelopment())
+        app.UseHttpsRedirection();
+
     app.UseCors("FeedlotFrontend");
     app.UseAuthentication();
     app.UseAuthorization();
@@ -100,7 +93,7 @@ try
     app.MapControllers();
     app.MapHealthChecks("/health");
 
-    Log.Information("Feedlot — Aplicación iniciada. Swagger disponible en /");
+    Log.Information("Feedlot — Aplicación iniciada. Swagger en http://localhost:5000");
     await app.RunAsync();
 }
 catch (Exception ex)
@@ -113,5 +106,4 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
-// Necesario para que xUnit pueda acceder al Program en tests de integración.
 public partial class Program { }

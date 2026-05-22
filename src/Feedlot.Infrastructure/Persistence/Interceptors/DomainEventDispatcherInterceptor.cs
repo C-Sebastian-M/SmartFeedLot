@@ -6,21 +6,30 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace Feedlot.Infrastructure.Persistence.Interceptors;
 
 /// <summary>
-/// Interceptor de EF Core que despacha automáticamente los Domain Events
-/// acumulados en los Aggregates ANTES de hacer commit a la base de datos.
-///
-/// Flujo:
-/// 1. Handler modifica el Aggregate → el Aggregate llama RaiseDomainEvent().
-/// 2. UnitOfWorkBehavior llama SaveChangesAsync().
-/// 3. Este interceptor intercepta SavingChanges.
-/// 4. Encuentra todos los Aggregates con events pendientes.
-/// 5. Los despacha vía MediatR IPublisher (INotification handlers).
-/// 6. Limpia los events del Aggregate.
-/// 7. EF Core persiste los cambios.
-///
-/// Decisión de diseño: despachar ANTES del commit garantiza que los handlers
-/// de eventos sean parte de la misma transacción. Si un handler falla,
-/// todo hace rollback. Si se necesita eventual consistency, se despacharía DESPUÉS.
+/// Wrapper que convierte un IDomainEvent del dominio en un INotification de MediatR.
+/// 
+/// Decisión de diseño: el Domain no referencia MediatR directamente (dependency rule).
+/// Infrastructure actúa como adaptador: envuelve el IDomainEvent en este wrapper
+/// para que MediatR pueda despacharlo sin que el dominio conozca MediatR.
+/// </summary>
+internal sealed class DomainEventNotification<TEvent> : INotification
+    where TEvent : IDomainEvent
+{
+    public TEvent DomainEvent { get; }
+
+    public DomainEventNotification(TEvent domainEvent)
+    {
+        DomainEvent = domainEvent;
+    }
+}
+
+/// <summary>
+/// Interceptor de EF Core que despacha Domain Events acumulados en los Aggregates
+/// ANTES de hacer commit. 
+/// 
+/// Solo procesa entidades que heredan de Entity&lt;Guid&gt; (aggregates del dominio).
+/// Las entidades de Identity (ApplicationUser, ApplicationRole, etc.) no heredan
+/// de Entity&lt;Guid&gt; y son ignoradas correctamente.
 /// </summary>
 public sealed class DomainEventDispatcherInterceptor : SaveChangesInterceptor
 {
@@ -44,27 +53,38 @@ public sealed class DomainEventDispatcherInterceptor : SaveChangesInterceptor
 
     private async Task DispatchDomainEventsAsync(DbContext context, CancellationToken ct)
     {
-        // Recolectar todos los aggregates raíz con domain events pendientes.
+        // Filtrar SOLO entidades de dominio que heredan de Entity<Guid>.
+        // OfType<Entity<Guid>>() excluye ApplicationUser y demás entidades de Identity.
         var aggregatesConEventos = context.ChangeTracker
-            .Entries<AggregateRoot<Guid>>()
-            .Where(e => e.Entity.DomainEvents.Any())
+            .Entries<object>()
             .Select(e => e.Entity)
+            .OfType<Entity<Guid>>()
+            .Where(e => e.DomainEvents.Any())
             .ToList();
 
-        // Extraer todos los events antes de despacharlos (evita colecciones modificadas).
+        if (!aggregatesConEventos.Any())
+            return;
+
         var domainEvents = aggregatesConEventos
             .SelectMany(a => a.DomainEvents)
             .ToList();
 
-        // Limpiar events de los aggregates ANTES de despachar
-        // para evitar re-despacho si un handler causa otro SaveChanges.
+        // Limpiar antes de despachar para evitar re-despacho si un handler
+        // provoca otro SaveChanges dentro de la misma transacción.
         aggregatesConEventos.ForEach(a => a.ClearDomainEvents());
 
-        // Despachar cada event — MediatR enruta a los INotificationHandler<T> registrados.
-        // En esta fase, los handlers de events se implementarán en fases posteriores.
+        // Publicar cada event envolviéndolo en DomainEventNotification<T>
+        // para que MediatR pueda resolverlo correctamente.
+        // El dominio no referencia MediatR — Infrastructure actúa como adaptador.
         foreach (var domainEvent in domainEvents)
         {
-            await _publisher.Publish(domainEvent, ct);
+            var notificationType = typeof(DomainEventNotification<>)
+                .MakeGenericType(domainEvent.GetType());
+
+            var notification = (INotification)Activator.CreateInstance(
+                notificationType, domainEvent)!;
+
+            await _publisher.Publish(notification, ct);
         }
     }
 }

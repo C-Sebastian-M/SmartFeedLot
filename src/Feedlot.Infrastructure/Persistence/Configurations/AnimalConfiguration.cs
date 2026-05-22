@@ -6,18 +6,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Feedlot.Infrastructure.Persistence.Configurations;
 
-/// <summary>
-/// Configuración Fluent API del Aggregate Animal.
-///
-/// Decisiones clave:
-/// - Los Value Objects (Peso, CodigoIdentificacion, Dinero) se mapean como
-///   "owned types" o columnas individuales — nunca como tablas separadas,
-///   ya que son partes del aggregate, no entidades independientes.
-/// - Los enums se guardan como strings para legibilidad en la BD y
-///   resistencia a reordenamiento de valores.
-/// - Las entidades internas (Pesaje, EventoSanitario) se configuran aquí
-///   como owned collections o navigations del aggregate.
-/// </summary>
 public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
 {
     public void Configure(EntityTypeBuilder<Animal> builder)
@@ -27,9 +15,9 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id)
             .HasColumnName("id")
-            .ValueGeneratedNever(); // El dominio genera el ID, no la BD.
+            .ValueGeneratedNever();
 
-        // Value Object: CodigoIdentificacion → columna simple.
+        // Value Object: CodigoIdentificacion → columna simple con conversión.
         builder.Property(a => a.CodigoIdentificacion)
             .HasColumnName("codigo_identificacion")
             .HasMaxLength(20)
@@ -38,7 +26,10 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 co => co.Valor,
                 valor => CodigoIdentificacion.Crear(valor));
 
-        builder.HasIndex(a => a.CodigoIdentificacion)
+        // CORRECCIÓN: el índice se define por nombre de columna, no por propiedad,
+        // cuando la propiedad tiene HasConversion. Así EF Core puede construirlo
+        // correctamente en la migración.
+        builder.HasIndex("codigo_identificacion")
             .IsUnique()
             .HasDatabaseName("ix_animals_codigo_identificacion");
 
@@ -47,7 +38,7 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .HasMaxLength(50)
             .IsRequired();
 
-        // Value Object: Peso de ingreso → columna decimal.
+        // Value Object: Peso de ingreso
         builder.Property(a => a.PesoIngreso)
             .HasColumnName("peso_ingreso_kg")
             .HasPrecision(10, 3)
@@ -56,14 +47,15 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 p => p.Kilogramos,
                 kg => Peso.Crear(kg));
 
-        // Value Object: Dinero (PrecioCompra) → dos columnas.
+        // Value Object: Dinero (PrecioCompra) → monto en columna principal.
+        // La moneda se guarda como shadow property separada.
         builder.Property(a => a.PrecioCompra)
             .HasColumnName("precio_compra")
             .HasPrecision(18, 2)
             .IsRequired()
             .HasConversion(
                 d => d.Monto,
-                monto => Dinero.Crear(monto, "COP")); // Moneda se guarda en columna separada.
+                monto => Dinero.Crear(monto, "COP"));
 
         builder.Property<string>("precio_compra_moneda")
             .HasColumnName("precio_compra_moneda")
@@ -108,7 +100,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 e => e.ToString(),
                 e => Enum.Parse<EstadoSanitario>(e));
 
-        // Navigations internas del aggregate — EF Core las rastrea como owned collections.
         builder.HasMany(a => a.Pesajes)
             .WithOne()
             .HasForeignKey(p => p.AnimalId)
@@ -119,7 +110,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .HasForeignKey(e => e.AnimalId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Campo de solo lectura — acceso por nombre de campo privado para la lista interna.
         builder.Navigation(a => a.Pesajes)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 

@@ -8,9 +8,11 @@ namespace Feedlot.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// Configuración del Aggregate Lote.
-/// El Value Object Capacidad se desnormaliza en dos columnas:
-/// capacidad_maxima y animales_actuales — optimiza las consultas de ocupación
-/// sin necesidad de COUNT() en tiempo real.
+/// 
+/// CORRECCIÓN: Capacidad es un Value Object con dos campos (Maxima, Actual).
+/// EF Core no puede mapear un VO con múltiples campos a una sola propiedad
+/// con HasConversion. Se mapean como dos shadow properties independientes
+/// y el repositorio hidrata el VO al cargar desde BD.
 /// </summary>
 public sealed class LoteConfiguration : IEntityTypeConfiguration<Lote>
 {
@@ -48,25 +50,21 @@ public sealed class LoteConfiguration : IEntityTypeConfiguration<Lote>
         builder.HasIndex(l => l.Estado)
             .HasDatabaseName("ix_lotes_estado");
 
-        // Value Object Capacidad → dos columnas separadas.
-        // EF Core no puede mapear un VO con constructor privado directamente
-        // a columnas múltiples sin conversión manual, así que usamos
-        // HasConversion + shadow properties para las dos columnas.
+        // Capacidad Value Object → dos shadow properties independientes.
+        // El repositorio usa estas columnas para reconstruir el VO al cargar.
         builder.Property(l => l.Capacidad)
             .HasColumnName("capacidad_maxima")
             .IsRequired()
             .HasConversion(
                 c => c.Maxima,
-                maxima => Capacidad.Crear(maxima, 0)); // El Actual se hidrata en el repositorio.
+                maxima => Capacidad.Crear(maxima, 0));
 
-        // Columna shadow para animales_actuales — EF Core la gestiona
-        // pero no está en la entidad directamente (está dentro del VO Capacidad).
+        // Shadow property para la cantidad actual de animales.
         builder.Property<int>("animales_actuales")
             .HasColumnName("animales_actuales")
             .HasDefaultValue(0)
             .IsRequired();
 
-        // Navigation a AnimalLote — colección interna del aggregate.
         builder.HasMany(l => l.AnimalesLote)
             .WithOne()
             .HasForeignKey(al => al.LoteId)
