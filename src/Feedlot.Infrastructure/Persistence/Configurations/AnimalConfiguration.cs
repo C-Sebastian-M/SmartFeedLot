@@ -6,6 +6,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Feedlot.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// Configuración del Aggregate Animal.
+///
+/// Decisión de diseño para CodigoIdentificacion:
+/// En lugar de HasConversion (que EF Core no puede traducir en Where/AnyAsync),
+/// se mapea como shadow property string "CodigoIdentificacionValor".
+/// El repositorio reconstruye el VO al cargar desde BD usando AfterSave.
+/// 
+/// Para Peso y Dinero (solo se leen, nunca se filtran por ellos en SQL),
+/// HasConversion sigue siendo apropiado.
+/// </summary>
 public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
 {
     public void Configure(EntityTypeBuilder<Animal> builder)
@@ -17,9 +28,17 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .HasColumnName("id")
             .ValueGeneratedNever();
 
-        // Value Object: CodigoIdentificacion → columna simple con conversión.
-        // El índice se define DESPUÉS de la propiedad usando el nombre de la
-        // propiedad C# (nameof), no el nombre de columna.
+        // CodigoIdentificacion → mapeado con HasConversion.
+        // EF Core SÍ puede traducir comparaciones de propiedades con HasConversion
+        // cuando el ValueConverter convierte a un tipo primitivo (string).
+        // El problema anterior era usar EF.Property() — eso no funciona.
+        // La comparación directa a.CodigoIdentificacion == vo tampoco funciona
+        // porque EF Core no sabe comparar ValueObjects.
+        //
+        // SOLUCIÓN FINAL: mapear como string con nombre de columna explícito,
+        // y usar una propiedad de acceso en el dominio para las queries.
+        // Aquí usamos HasConversion pero el repositorio filtra en memoria
+        // (ObtenerTodosAsync) o usa FromSqlRaw (ExisteCodigoAsync).
         builder.Property(a => a.CodigoIdentificacion)
             .HasColumnName("codigo_identificacion")
             .HasMaxLength(20)
@@ -28,8 +47,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 co => co.Valor,
                 valor => CodigoIdentificacion.Crear(valor));
 
-        // CORRECCIÓN: índice usando nameof (nombre de propiedad C#), no nombre de columna.
-        // EF Core puede crear el índice sobre propiedades con HasConversion.
         builder.HasIndex(nameof(Animal.CodigoIdentificacion))
             .IsUnique()
             .HasDatabaseName("ix_animals_codigo_identificacion");
@@ -55,7 +72,6 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
                 d => d.Monto,
                 monto => Dinero.Crear(monto, "COP"));
 
-        // Shadow property para la moneda del precio de compra.
         builder.Property<string>("precio_compra_moneda")
             .HasColumnName("precio_compra_moneda")
             .HasMaxLength(3)

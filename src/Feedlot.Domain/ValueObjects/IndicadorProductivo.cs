@@ -4,9 +4,13 @@ using Feedlot.Domain.Exceptions;
 namespace Feedlot.Domain.ValueObjects;
 
 /// <summary>
-/// Value Object que encapsula los indicadores productivos calculados.
-/// GMD, ICA, costo por kg ganado y rentabilidad proyectada.
-/// Los cálculos son las fórmulas reales del feedlot — inmutables y auditables.
+/// Value Object que encapsula el costeo completo y los indicadores productivos.
+/// Refleja exactamente la estructura del Excel:
+///   TOTAL COSTO UNITARIO = Precio Animal + Alimento + Mano de Obra + CIF
+///   GMD = (PesoFinal - PesoInicial) / Días
+///   ICA = AlimentoConsumido / PesoGanado
+///   CostoKg = CostoAlimento / PesoGanado
+///   Rentabilidad = PrecioVenta - CostoTotalUnitario
 /// </summary>
 public sealed class IndicadorProductivo : ValueObject
 {
@@ -16,79 +20,90 @@ public sealed class IndicadorProductivo : ValueObject
     /// <summary>Índice de Conversión Alimenticia: kg alimento / kg ganado.</summary>
     public decimal IndiceConversionAlimenticia { get; }
 
-    /// <summary>Costo por kilogramo de peso ganado.</summary>
+    /// <summary>Costo por kilogramo ganado (solo alimento).</summary>
     public decimal CostoPorKgGanado { get; }
 
-    /// <summary>Rentabilidad proyectada = precio venta estimado - costos totales.</summary>
+    /// <summary>
+    /// Rentabilidad = PrecioVentaEstimado - CostoTotalUnitario (incluye MO y CIF).
+    /// </summary>
     public decimal RentabilidadProyectada { get; }
 
     /// <summary>Días transcurridos en el período de cálculo.</summary>
     public int DiasEnEngorde { get; }
 
+    // ── Desglose del costo unitario (columnas del Excel) ─────────────────────
+
+    /// <summary>Costo de alimento prorrateado al animal.</summary>
+    public decimal CostoAlimentoIndividual { get; }
+
+    /// <summary>Mano de obra prorrateada al animal.</summary>
+    public decimal CostoManoDeObraIndividual { get; }
+
+    /// <summary>CIF prorrateado al animal.</summary>
+    public decimal CostoCifIndividual { get; }
+
+    /// <summary>
+    /// Costo total unitario = PrecioCompraAnimal + Alimento + MO + CIF.
+    /// Equivale a "TOTAL COSTO UNITARIO" del Excel.
+    /// </summary>
+    public decimal CostoTotalUnitario { get; }
+
     private IndicadorProductivo(
         decimal gmd,
         decimal ica,
         decimal costoPorKgGanado,
-        decimal rentabilidadProyectada,
-        int diasEnEngorde)
+        decimal rentabilidad,
+        int diasEnEngorde,
+        decimal costoAlimento,
+        decimal costoMo,
+        decimal costoCif,
+        decimal costoTotal)
     {
         GananciaMediaDiaria = gmd;
         IndiceConversionAlimenticia = ica;
         CostoPorKgGanado = costoPorKgGanado;
-        RentabilidadProyectada = rentabilidadProyectada;
+        RentabilidadProyectada = rentabilidad;
         DiasEnEngorde = diasEnEngorde;
+        CostoAlimentoIndividual = costoAlimento;
+        CostoManoDeObraIndividual = costoMo;
+        CostoCifIndividual = costoCif;
+        CostoTotalUnitario = costoTotal;
     }
 
-    /// <summary>
-    /// Calcula los indicadores productivos aplicando las fórmulas del feedlot.
-    /// GMD = (PesoFinal - PesoInicial) / Días
-    /// ICA = AlimentoConsumido / PesoGanado
-    /// CostoKg = CostoTotalAlimento / PesoGanado
-    /// Rentabilidad = PrecioVentaEstimado - CostosTotales
-    /// </summary>
     public static IndicadorProductivo Calcular(
         decimal pesoInicialKg,
         decimal pesoFinalKg,
         int diasEnEngorde,
         decimal alimentoConsumidoKg,
-        decimal costoTotalAlimento,
+        decimal costoAlimento,
         decimal precioVentaEstimado,
-        decimal costosTotales)
+        decimal costoTotalUnitario,
+        decimal costoMo = 0,
+        decimal costoCif = 0)
     {
         if (diasEnEngorde <= 0)
             throw new DomainException(
-                $"Los días en engorde deben ser mayores a cero para calcular indicadores. " +
-                $"Recibido: {diasEnEngorde}.");
-
-        if (pesoFinalKg <= 0 || pesoInicialKg <= 0)
-            throw new DomainException("Los pesos inicial y final deben ser mayores a cero.");
+                $"Los días en engorde deben ser mayores a cero. Recibido: {diasEnEngorde}.");
 
         decimal pesoGanado = pesoFinalKg - pesoInicialKg;
-
-        // Si el animal perdió peso, GMD será negativa — dato productivo válido (alerta).
         decimal gmd = pesoGanado / diasEnEngorde;
 
-        // ICA y costo por kg solo son significativos si hubo ganancia de peso.
         decimal ica = pesoGanado > 0 && alimentoConsumidoKg > 0
-            ? alimentoConsumidoKg / pesoGanado
-            : 0;
+            ? alimentoConsumidoKg / pesoGanado : 0;
 
-        decimal costoPorKgGanado = pesoGanado > 0 && costoTotalAlimento > 0
-            ? costoTotalAlimento / pesoGanado
-            : 0;
+        decimal costoPorKgGanado = pesoGanado > 0 && costoAlimento > 0
+            ? costoAlimento / pesoGanado : 0;
 
-        decimal rentabilidad = precioVentaEstimado - costosTotales;
+        decimal rentabilidad = precioVentaEstimado - costoTotalUnitario;
 
-        return new IndicadorProductivo(gmd, ica, costoPorKgGanado, rentabilidad, diasEnEngorde);
+        return new IndicadorProductivo(
+            gmd, ica, costoPorKgGanado, rentabilidad, diasEnEngorde,
+            costoAlimento, costoMo, costoCif, costoTotalUnitario);
     }
 
-    /// <summary>
-    /// Determina si el animal es ineficiente según los umbrales del negocio.
-    /// Un animal con GMD menor al umbral mínimo o ICA mayor al umbral máximo
-    /// se considera ineficiente y debe generar una alerta.
-    /// </summary>
     public bool EsIneficiente(decimal gmdMinimaKgDia, decimal icaMaxima)
-        => GananciaMediaDiaria < gmdMinimaKgDia || (IndiceConversionAlimenticia > icaMaxima && IndiceConversionAlimenticia > 0);
+        => GananciaMediaDiaria < gmdMinimaKgDia
+           || (IndiceConversionAlimenticia > icaMaxima && IndiceConversionAlimenticia > 0);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {
@@ -97,5 +112,6 @@ public sealed class IndicadorProductivo : ValueObject
         yield return CostoPorKgGanado;
         yield return RentabilidadProyectada;
         yield return DiasEnEngorde;
+        yield return CostoTotalUnitario;
     }
 }

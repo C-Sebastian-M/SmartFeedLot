@@ -2,7 +2,7 @@ import api from './api'
 import type {
   Animal, AnimalResumen, PagedResult,
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
-  LoginResponse, Racion
+  LoginResponse, Racion, Lote, LoteResumen,
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -65,12 +65,12 @@ export const animalsService = {
 
 // ─── Lotes ────────────────────────────────────────────────────────────────────
 export const lotesService = {
-  getAll: async (soloActivos = false) => {
+  getAll: async (soloActivos = false): Promise<LoteResumen[]> => {
     const { data } = await api.get('/lotes', { params: { soloActivos } })
     return data
   },
 
-  getById: async (id: string) => {
+  getById: async (id: string): Promise<Lote> => {
     const { data } = await api.get(`/lotes/${id}`)
     return data
   },
@@ -79,15 +79,23 @@ export const lotesService = {
     codigo: string
     nombre: string
     capacidadMaxima: number
-  }) => {
+  }): Promise<string> => {
     const { data } = await api.post('/lotes', payload)
     return data
+  },
+
+  activar: async (loteId: string): Promise<void> => {
+    await api.put(`/lotes/${loteId}/activar`)
+  },
+
+  cerrar: async (loteId: string): Promise<void> => {
+    await api.put(`/lotes/${loteId}/cerrar`)
   },
 
   moverAnimal: async (
     loteId: string,
     payload: { animalId: string; fechaMovimiento: string; motivo: string }
-  ) => {
+  ): Promise<void> => {
     await api.post(`/lotes/${loteId}/mover-animal`, payload)
   },
 }
@@ -102,10 +110,7 @@ export const analiticaService = {
     precioVentaEstimadoPorKg?: number
   }): Promise<IndicadorProductivo> => {
     const { animalId, ...rest } = params
-    const { data } = await api.get(
-      `/analitica/animales/${animalId}/indicadores`,
-      { params: rest }
-    )
+    const { data } = await api.get(`/analitica/animales/${animalId}/indicadores`, { params: rest })
     return data
   },
 
@@ -116,10 +121,7 @@ export const analiticaService = {
     precioVentaEstimadoPorKg?: number
   }): Promise<ResumenLote> => {
     const { loteId, ...rest } = params
-    const { data } = await api.get(
-      `/analitica/lotes/${loteId}/resumen`,
-      { params: rest }
-    )
+    const { data } = await api.get(`/analitica/lotes/${loteId}/resumen`, { params: rest })
     return data
   },
 

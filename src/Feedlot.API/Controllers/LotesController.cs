@@ -1,3 +1,5 @@
+using Feedlot.Application.Features.Lotes.Commands.ActivarLote;
+using Feedlot.Application.Features.Lotes.Commands.CerrarLote;
 using Feedlot.Application.Features.Lotes.Commands.CrearLote;
 using Feedlot.Application.Features.Lotes.Commands.MoverAnimalALote;
 using Feedlot.Application.Features.Lotes.Queries.ObtenerLotePorId;
@@ -39,7 +41,7 @@ public sealed class LotesController : ApiControllerBase
         return FromResult(result);
     }
 
-    /// <summary>Crea un nuevo lote de engorde.</summary>
+    /// <summary>Crea un nuevo lote de engorde en estado EnPreparacion.</summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -52,7 +54,34 @@ public sealed class LotesController : ApiControllerBase
         return CreatedFromResult(result, "ObtenerLotePorId", new { id = result.Value });
     }
 
-    /// <summary>Mueve un animal de su lote actual a otro lote destino.</summary>
+    /// <summary>
+    /// Activa un lote que está en estado EnPreparacion.
+    /// Una vez activo puede recibir animales.
+    /// </summary>
+    [HttpPut("{id:guid}/activar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Activar(Guid id, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new ActivarLoteCommand(id), ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Cierra un lote activo. Solo es posible si no tiene animales activos.
+    /// </summary>
+    [HttpPut("{id:guid}/cerrar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Cerrar(Guid id, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new CerrarLoteCommand(id), ct);
+        return FromResult(result);
+    }
+
+    /// <summary>Mueve un animal de su lote actual a este lote destino.</summary>
     [HttpPost("{id:guid}/mover-animal")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

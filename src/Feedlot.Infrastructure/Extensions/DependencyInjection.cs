@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Feedlot.Infrastructure.Extensions;
 
 /// <summary>
@@ -61,10 +62,13 @@ public static class DependencyInjection
         services.AddScoped<IConsumoAlimenticioRepository, ConsumoAlimenticioRepository>();
         services.AddScoped<IRacionRepository, RacionRepository>();
         services.AddScoped<IIngredienteRepository, IngredienteRepository>();
+        services.AddScoped<ICostoOperativoRepository, CostoOperativoRepository>();
+
 
         // Identity.
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthService>();
+
 
         return services;
     }

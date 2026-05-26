@@ -46,6 +46,8 @@ export function useCreateAnimal() {
     mutationFn: animalsService.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+      // También invalidar lotes porque un animal puede haberse asignado a uno.
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
     },
   })
 }
@@ -53,10 +55,14 @@ export function useCreateAnimal() {
 export function useRegistrarPesaje() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ animalId, ...payload }: { animalId: string } & Parameters<typeof animalsService.registrarPesaje>[1]) =>
+    mutationFn: ({
+      animalId,
+      ...payload
+    }: { animalId: string } & Parameters<typeof animalsService.registrarPesaje>[1]) =>
       animalsService.registrarPesaje(animalId, payload),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
     },
   })
 }
@@ -64,7 +70,10 @@ export function useRegistrarPesaje() {
 export function useRegistrarEventoSanitario() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ animalId, ...payload }: { animalId: string } & Parameters<typeof animalsService.registrarEventoSanitario>[1]) =>
+    mutationFn: ({
+      animalId,
+      ...payload
+    }: { animalId: string } & Parameters<typeof animalsService.registrarEventoSanitario>[1]) =>
       animalsService.registrarEventoSanitario(animalId, payload),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
@@ -86,6 +95,7 @@ export function useLote(id: string) {
     queryKey: queryKeys.lotes.detail(id),
     queryFn: () => lotesService.getById(id),
     enabled: Boolean(id),
+    staleTime: 30_000,
   })
 }
 
@@ -99,8 +109,48 @@ export function useCreateLote() {
   })
 }
 
+export function useActivarLote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (loteId: string) => lotesService.activar(loteId),
+    onSuccess: (_data, loteId) => {
+      // Invalidar lista y detalle del lote específico.
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.detail(loteId) })
+    },
+  })
+}
+
+export function useCerrarLote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (loteId: string) => lotesService.cerrar(loteId),
+    onSuccess: (_data, loteId) => {
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.detail(loteId) })
+    },
+  })
+}
+
+export function useMoverAnimal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      loteId,
+      ...payload
+    }: { loteId: string } & Parameters<typeof lotesService.moverAnimal>[1]) =>
+      lotesService.moverAnimal(loteId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+    },
+  })
+}
+
 // ─── Analítica ────────────────────────────────────────────────────────────────
-export function useResumenLote(params: Parameters<typeof analiticaService.getResumenLote>[0]) {
+export function useResumenLote(
+  params: Parameters<typeof analiticaService.getResumenLote>[0]
+) {
   return useQuery({
     queryKey: queryKeys.analitica.resumenLote(params.loteId, params),
     queryFn: () => analiticaService.getResumenLote(params),
@@ -109,7 +159,20 @@ export function useResumenLote(params: Parameters<typeof analiticaService.getRes
   })
 }
 
-export function useAnimalesIneficientes(params: Parameters<typeof analiticaService.getAnimalesIneficientes>[0]) {
+export function useIndicadoresAnimal(
+  params: Parameters<typeof analiticaService.getIndicadoresAnimal>[0]
+) {
+  return useQuery({
+    queryKey: queryKeys.analitica.indicadores(params.animalId, params),
+    queryFn: () => analiticaService.getIndicadoresAnimal(params),
+    enabled: Boolean(params.animalId && params.loteId && params.desde && params.hasta),
+    staleTime: 60_000,
+  })
+}
+
+export function useAnimalesIneficientes(
+  params: Parameters<typeof analiticaService.getAnimalesIneficientes>[0]
+) {
   return useQuery({
     queryKey: queryKeys.analitica.ineficientes(params),
     queryFn: () => analiticaService.getAnimalesIneficientes(params),

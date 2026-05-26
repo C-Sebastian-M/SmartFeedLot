@@ -20,19 +20,26 @@ public sealed class AnimalRepository : IAnimalRepository
             .Include(a => a.EventosSanitarios)
             .FirstOrDefaultAsync(a => a.Id == id, ct);
 
-    public async Task<Animal?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default)
-        => await _context.Animals
-            .Include(a => a.Pesajes)
-            .Include(a => a.EventosSanitarios)
-            .FirstOrDefaultAsync(a =>
-                EF.Property<string>(a, "codigo_identificacion") == codigo.ToUpperInvariant(), ct);
+    public async Task<Animal?> ObtenerPorCodigoAsync(
+        string codigo, CancellationToken ct = default)
+    {
+        var normalizado = codigo.Trim().ToUpperInvariant();
+
+        // FromSqlRaw para filtrar por columna con HasConversion.
+        // EF Core hidrata el aggregate completo correctamente.
+        var id = await _context.Animals
+            .FromSqlRaw(
+                "SELECT * FROM feedlot.animals WHERE codigo_identificacion = {0}",
+                normalizado)
+            .Select(a => (Guid?)a.Id)
+            .FirstOrDefaultAsync(ct);
+
+        return id is null ? null : await ObtenerPorIdAsync(id.Value, ct);
+    }
 
     public async Task<IReadOnlyList<Animal>> ObtenerTodosAsync(CancellationToken ct = default)
     {
-        // CORRECCIÓN: no usar EF.Property en OrderBy con Value Objects convertidos.
-        // Traer sin orden desde BD y ordenar en memoria — la lista de animales
-        // en un feedlot típico es manejable (<5000). Para escala mayor se usaría
-        // una query de proyección directa con Select().
+        // Sin filtro SQL — se ordena en memoria por el VO.
         var animales = await _context.Animals
             .Include(a => a.Pesajes)
             .Include(a => a.EventosSanitarios)
@@ -44,9 +51,16 @@ public sealed class AnimalRepository : IAnimalRepository
     }
 
     public async Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default)
-        => await _context.Animals
-            .AnyAsync(a =>
-                EF.Property<string>(a, "codigo_identificacion") == codigo.ToUpperInvariant(), ct);
+    {
+        var normalizado = codigo.Trim().ToUpperInvariant();
+
+        // FromSqlRaw: consulta SQL directa, sin pasar por el ValueConverter.
+        return await _context.Animals
+            .FromSqlRaw(
+                "SELECT * FROM feedlot.animals WHERE codigo_identificacion = {0}",
+                normalizado)
+            .AnyAsync(ct);
+    }
 
     public async Task AgregarAsync(Animal animal, CancellationToken ct = default)
         => await _context.Animals.AddAsync(animal, ct);
