@@ -3,6 +3,7 @@ import type {
   Animal, AnimalResumen, PagedResult,
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
   LoginResponse, Racion, Lote, LoteResumen,
+  CosteoLote,
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -174,6 +175,33 @@ export const nutricionService = {
     registradoPorId: string
   }): Promise<string> => {
     const { data } = await api.post('/nutricion/consumos', payload)
+    return data
+  },
+}
+
+// ─── Costos Operativos ─────────────────────────────────────────────────────────
+export const costosService = {
+  getCostosTotalesLote: async (params: {
+    loteId: string
+    desde: string
+    hasta: string
+  }): Promise<CosteoLote> => {
+    const { loteId, ...rest } = params
+    const { data } = await api.get(`/costos/lotes/${loteId}/costos-totales`, { params: rest })
+    return data
+  },
+
+  registrarCostoOperativo: async (payload: {
+    loteId: string
+    categoria: string
+    concepto: string
+    fecha: string
+    monto: number
+    moneda: string
+    observaciones?: string
+    registradoPorId: string
+  }): Promise<string> => {
+    const { data } = await api.post('/costos/costo-operativo', payload)
     return data
   },
 }

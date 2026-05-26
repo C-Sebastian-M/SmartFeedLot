@@ -242,6 +242,7 @@ export function Alert({ className, variant = 'default', ...props }: AlertProps) 
 interface StatCardProps {
   label: string
   value: string | number
+  sub?: string
   delta?: string
   deltaPositive?: boolean
   icon?: React.ReactNode
@@ -249,7 +250,7 @@ interface StatCardProps {
   loading?: boolean
 }
 
-export function StatCard({ label, value, delta, deltaPositive, icon, className, loading }: StatCardProps) {
+export function StatCard({ label, value, sub, delta, deltaPositive, icon, className, loading }: StatCardProps) {
   if (loading) {
     return (
       <Card className={cn('p-5', className)}>
@@ -266,6 +267,9 @@ export function StatCard({ label, value, delta, deltaPositive, icon, className, 
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
           <p className="text-2xl font-bold tabular-nums">{value}</p>
+          {sub && (
+            <p className="text-[11px] text-muted-foreground">{sub}</p>
+          )}
           {delta && (
             <p className={cn('text-xs font-medium', deltaPositive ? 'text-emerald-400' : 'text-rose-400')}>
               {delta}

@@ -179,6 +179,50 @@ export interface PagedResult<T> {
   hasNextPage: boolean
 }
 
+// ─── Costos ────────────────────────────────────────────────────────────────────
+export type CategoriaCosto = 'ManoDeObra' | 'CIF'
+
+export interface CostoOperativo {
+  id: string
+  loteId: string
+  categoria: CategoriaCosto
+  concepto: string
+  fecha: string
+  monto: number
+  moneda: string
+  observaciones?: string
+  registradoPorId: string
+}
+
+export interface CosteoLote {
+  loteId: string
+  codigoLote: string
+  totalAnimales: number
+  desde: string
+  hasta: string
+  costoTotalAlimento: number
+  costoAlimentoPorAnimal: number
+  consumoTotalKg: number
+  costoTotalManoDeObra: number
+  costoManoDeObraPorAnimal: number
+  detallesManoDeObra: CostoDetalle[]
+  costoTotalCif: number
+  costoCifPorAnimal: number
+  detallesCif: CostoDetalle[]
+  costoOperativoTotal: number
+  costoOperativoPorAnimal: number
+}
+
+export interface CostoDetalle {
+  id: string
+  categoria: CategoriaCosto
+  concepto: string
+  fecha: string
+  monto: number
+  moneda: string
+  observaciones?: string
+}
+
 // ─── API Error ────────────────────────────────────────────────────────────────
 export interface ApiError {
   status: number

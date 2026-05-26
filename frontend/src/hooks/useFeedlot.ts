@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { animalsService, lotesService, analiticaService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService } from '@/services/feedlot.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const queryKeys = {
@@ -19,6 +19,10 @@ export const queryKeys = {
     resumenLote: (loteId: string, params: object) =>
       ['analitica', 'resumen', loteId, params] as const,
     ineficientes: (params: object) => ['analitica', 'ineficientes', params] as const,
+  },
+  costos: {
+    costosTotales: (loteId: string, params: object) =>
+      ['costos', 'costos-totales', loteId, params] as const,
   },
 }
 
@@ -178,5 +182,27 @@ export function useAnimalesIneficientes(
     queryFn: () => analiticaService.getAnimalesIneficientes(params),
     enabled: Boolean(params.desde && params.hasta),
     staleTime: 60_000,
+  })
+}
+
+// ─── Costos ────────────────────────────────────────────────────────────────────
+export function useCostosTotalesLote(
+  params: Parameters<typeof costosService.getCostosTotalesLote>[0]
+) {
+  return useQuery({
+    queryKey: queryKeys.costos.costosTotales(params.loteId, params),
+    queryFn: () => costosService.getCostosTotalesLote(params),
+    enabled: Boolean(params.loteId && params.desde && params.hasta),
+    staleTime: 60_000,
+  })
+}
+
+export function useRegistrarCostoOperativo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: costosService.registrarCostoOperativo,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['costos'] })
+    },
   })
 }

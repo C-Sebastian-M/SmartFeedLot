@@ -26,6 +26,7 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     public DbSet<ConsumoAlimenticio> Consumos => Set<ConsumoAlimenticio>();
     public DbSet<Racion> Raciones => Set<Racion>();
     public DbSet<Ingrediente> Ingredientes => Set<Ingrediente>();
+    public DbSet<CostoOperativo> CostosOperativos => Set<CostoOperativo>();
 
     // Entidades internas accesibles para queries directas
     public DbSet<Pesaje> Pesajes => Set<Pesaje>();

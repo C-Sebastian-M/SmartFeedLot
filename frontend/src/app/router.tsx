@@ -5,6 +5,7 @@ import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import AnimalesPage from '@/pages/AnimalesPage'
 import LotesPage from '@/pages/LotesPage'
+import CostosPage from '@/pages/CostosPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -37,6 +38,7 @@ const router = createBrowserRouter(
             </div>
           ),
         },
+        { path: 'costos', element: <CostosPage /> },
         {
           path: 'alertas',
           element: (

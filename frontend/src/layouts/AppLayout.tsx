@@ -3,13 +3,14 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
-  LogOut, User, ChevronRight, Activity
+  LogOut, User, Activity, DollarSign
 } from 'lucide-react'
 
 const navItems = [
   { to: '/', icon: Home, label: 'Dashboard', end: true },
   { to: '/animales', icon: Beef, label: 'Animales' },
   { to: '/lotes', icon: Package, label: 'Lotes' },
+  { to: '/costos', icon: DollarSign, label: 'Costos' },
   { to: '/analitica', icon: BarChart3, label: 'Analítica' },
   { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
 ]
