@@ -104,7 +104,7 @@ export default function AlertasPage() {
         ) : (
           <div className="space-y-6">
             {/* Resumen de conteos */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Card className="p-4 border-rose-500/30">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Crítico (GMD &lt; 0.5)</p>
                 <p className="text-2xl font-bold text-rose-400 tabular-nums">{porSeveridad.critico.length}</p>
@@ -121,7 +121,7 @@ export default function AlertasPage() {
 
             {/* Tabla de alertas */}
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">

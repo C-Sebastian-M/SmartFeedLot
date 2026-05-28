@@ -154,34 +154,36 @@ export default function LoteDetallePage() {
           {animalesActivos.length === 0 ? (
             <p className="text-xs text-muted-foreground py-4 text-center">No hay animales activos en este lote.</p>
           ) : (
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Código</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Nombre</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Ingreso</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Días</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Motivo</th>
-                  <th className="text-right pb-2 text-muted-foreground font-medium">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {animalesActivos.map(al => (
-                  <tr key={al.animalId}
-                    className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/animales/${al.animalId}`)}>
-                    <td className="py-2.5 font-mono font-semibold">{al.codigoAnimal}</td>
-                    <td className="py-2.5 text-muted-foreground">{al.nombreAnimal || '-'}</td>
-                    <td className="py-2.5 text-muted-foreground">{fmt.fecha(al.fechaIngreso as string)}</td>
-                    <td className="py-2.5 tabular-nums">{al.diasEnLote}d</td>
-                    <td className="py-2.5 text-muted-foreground capitalize">{al.motivoIngreso}</td>
-                    <td className="py-2.5 text-right">
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Activo</Badge>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Código</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Nombre</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Ingreso</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Días</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Motivo</th>
+                    <th className="text-right pb-2 text-muted-foreground font-medium whitespace-nowrap">Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {animalesActivos.map(al => (
+                    <tr key={al.animalId}
+                      className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/animales/${al.animalId}`)}>
+                      <td className="py-2.5 font-mono font-semibold whitespace-nowrap">{al.codigoAnimal}</td>
+                      <td className="py-2.5 text-muted-foreground whitespace-nowrap">{al.nombreAnimal || '-'}</td>
+                      <td className="py-2.5 text-muted-foreground whitespace-nowrap">{fmt.fecha(al.fechaIngreso as string)}</td>
+                      <td className="py-2.5 tabular-nums whitespace-nowrap">{al.diasEnLote}d</td>
+                      <td className="py-2.5 text-muted-foreground capitalize whitespace-nowrap">{al.motivoIngreso}</td>
+                      <td className="py-2.5 text-right whitespace-nowrap">
+                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Activo</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
 
@@ -193,34 +195,36 @@ export default function LoteDetallePage() {
                 Historial ({animalesInactivos.length})
               </CardTitle>
             </CardHeader>
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Código</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Nombre</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Ingreso</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Egreso</th>
-                  <th className="text-left pb-2 text-muted-foreground font-medium">Días</th>
-                  <th className="text-right pb-2 text-muted-foreground font-medium">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {animalesInactivos.map(al => (
-                  <tr key={al.animalId}
-                    className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/animales/${al.animalId}`)}>
-                    <td className="py-2.5 font-mono font-semibold">{al.codigoAnimal}</td>
-                    <td className="py-2.5 text-muted-foreground">{al.nombreAnimal || '-'}</td>
-                    <td className="py-2.5 text-muted-foreground">{fmt.fecha(al.fechaIngreso as string)}</td>
-                    <td className="py-2.5 text-muted-foreground">{al.fechaEgreso ? fmt.fecha(al.fechaEgreso) : '-'}</td>
-                    <td className="py-2.5 tabular-nums">{al.diasEnLote}d</td>
-                    <td className="py-2.5 text-right">
-                      <Badge className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20">Inactivo</Badge>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Código</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Nombre</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Ingreso</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Egreso</th>
+                    <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Días</th>
+                    <th className="text-right pb-2 text-muted-foreground font-medium whitespace-nowrap">Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {animalesInactivos.map(al => (
+                    <tr key={al.animalId}
+                      className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/animales/${al.animalId}`)}>
+                      <td className="py-2.5 font-mono font-semibold whitespace-nowrap">{al.codigoAnimal}</td>
+                      <td className="py-2.5 text-muted-foreground whitespace-nowrap">{al.nombreAnimal || '-'}</td>
+                      <td className="py-2.5 text-muted-foreground whitespace-nowrap">{fmt.fecha(al.fechaIngreso as string)}</td>
+                      <td className="py-2.5 text-muted-foreground whitespace-nowrap">{al.fechaEgreso ? fmt.fecha(al.fechaEgreso) : '-'}</td>
+                      <td className="py-2.5 tabular-nums whitespace-nowrap">{al.diasEnLote}d</td>
+                      <td className="py-2.5 text-right whitespace-nowrap">
+                        <Badge className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20">Inactivo</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
         )}
       </div>

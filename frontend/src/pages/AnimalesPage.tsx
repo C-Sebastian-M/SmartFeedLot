@@ -221,7 +221,7 @@ export default function AnimalesPage() {
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border flex-wrap">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Buscar código o arete..." className="pl-8 h-8 text-xs w-56"
+          <Input placeholder="Buscar código o arete..." className="pl-8 h-8 text-xs w-full sm:w-56"
             value={busqueda} onChange={e => setBusqueda(e.target.value)} />
           {busqueda && (
             <button onClick={() => setBusqueda('')}
@@ -264,7 +264,7 @@ export default function AnimalesPage() {
             ) : undefined} />
         ) : (
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border">

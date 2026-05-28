@@ -476,7 +476,7 @@ export default function AnimalDetallePage() {
     return (
       <div className="p-6 space-y-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
         </div>
         <Skeleton className="h-64 rounded-lg" />
@@ -545,7 +545,7 @@ export default function AnimalDetallePage() {
               </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => {
             if (window.confirm(`¿Eliminar ${animal.codigoIdentificacion}? Esta acción no se puede deshacer.`))
               eliminarAnimal.mutate(id!)

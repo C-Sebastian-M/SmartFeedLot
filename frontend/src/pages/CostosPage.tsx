@@ -106,7 +106,7 @@ function RegistrarCostoModal({
 
   return (
     <Dialog open={open} onClose={handleClose}>
-      <div className="rounded-xl border border-border bg-card shadow-xl w-[480px]">
+      <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[480px] mx-4">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <DialogHeader className="mb-0">
             <DialogTitle>Registrar costo operativo</DialogTitle>
