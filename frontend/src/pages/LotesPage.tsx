@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,9 +15,6 @@ import type { LoteResumen } from '@/types'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const crearLoteSchema = z.object({
-  codigo: z
-    .string().min(2, 'Mínimo 2 caracteres').max(20, 'Máximo 20 caracteres')
-    .regex(/^[A-Za-z0-9-]+$/, 'Solo letras, números y guiones'),
   nombre: z.string().min(3, 'Mínimo 3 caracteres').max(100, 'Máximo 100 caracteres'),
   capacidadMaxima: z
     .number({ invalid_type_error: 'Ingresa un número' })
@@ -39,7 +37,6 @@ function CrearLoteModal({ open, onClose }: { open: boolean; onClose: () => void 
     setErrorApi(undefined)
     try {
       await createLote.mutateAsync({
-        codigo: data.codigo.toUpperCase(),
         nombre: data.nombre,
         capacidadMaxima: data.capacidadMaxima,
       })
@@ -76,11 +73,6 @@ function CrearLoteModal({ open, onClose }: { open: boolean; onClose: () => void 
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <FormField label="Código" error={errors.codigo?.message} required hint="Ej: LOT-001 — único, mayúsculas">
-                <Input {...register('codigo')} placeholder="LOT-001" autoFocus
-                  className={errors.codigo ? 'border-destructive' : ''}
-                  style={{ textTransform: 'uppercase' }} />
-              </FormField>
               <FormField label="Nombre" error={errors.nombre?.message} required>
                 <Input {...register('nombre')} placeholder="Novillos Brahman 2024"
                   className={errors.nombre ? 'border-destructive' : ''} />
@@ -141,7 +133,7 @@ function ConfirmarAccionModal({
 }
 
 // ─── Card de lote ─────────────────────────────────────────────────────────────
-function LoteCard({ lote }: { lote: LoteResumen }) {
+function LoteCard({ lote, onVerDetalle }: { lote: LoteResumen; onVerDetalle: (id: string) => void }) {
   const [confirmActivar, setConfirmActivar] = useState(false)
   const [confirmCerrar, setConfirmCerrar] = useState(false)
   const [errorAccion, setErrorAccion] = useState<string>()
@@ -252,7 +244,7 @@ function LoteCard({ lote }: { lote: LoteResumen }) {
                 <XCircle className="w-3.5 h-3.5" />
                 Cerrar
               </Button>
-              <Button size="sm" variant="secondary" className="flex-1">
+              <Button size="sm" variant="secondary" className="flex-1" onClick={() => onVerDetalle(lote.id)}>
                 <ChevronRight className="w-3.5 h-3.5" />
                 Ver detalle
               </Button>
@@ -294,6 +286,7 @@ function LoteCard({ lote }: { lote: LoteResumen }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function LotesPage() {
+  const navigate = useNavigate()
   const [modalAbierto, setModalAbierto] = useState(false)
   const [filtro, setFiltro] = useState<'todos' | 'Activo' | 'EnPreparacion' | 'Cerrado'>('todos')
 
@@ -363,7 +356,7 @@ export default function LotesPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lotesFiltrados.map(lote => <LoteCard key={lote.id} lote={lote} />)}
+            {lotesFiltrados.map(lote => <LoteCard key={lote.id} lote={lote} onVerDetalle={id => navigate(`/lotes/${id}`)} />)}
           </div>
         )}
       </div>

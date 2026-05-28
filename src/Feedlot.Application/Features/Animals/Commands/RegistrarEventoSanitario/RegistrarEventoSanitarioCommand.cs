@@ -1,5 +1,4 @@
 using Feedlot.Application.Common;
-using MediatR;
 
 namespace Feedlot.Application.Features.Animals.Commands.RegistrarEventoSanitario;
 
@@ -10,4 +9,4 @@ public sealed record RegistrarEventoSanitarioCommand(
     string Descripcion,
     string Severidad,
     string? Tratamiento
-) : IRequest<Result<Guid>>;
+) : ICommand<Guid>;

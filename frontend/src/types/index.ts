@@ -13,10 +13,11 @@ export type ClasificacionGmd = 'Excelente' | 'Bueno' | 'Regular' | 'Deficiente'
 export interface Animal {
   id: string
   codigoIdentificacion: string
+  nombre?: string
   numeroArete: string
   sexo: Sexo
-  raza: string
-  fechaNacimiento: string
+  raza?: string
+  fechaNacimiento?: string
   pesoIngresoKg: number
   precioCompra: number
   moneda: string
@@ -26,13 +27,16 @@ export interface Animal {
   pesoActualKg: number
   diasEnEngorde: number
   totalPesajes: number
+  pesajes: Pesaje[]
+  eventosSanitarios: EventoSanitario[]
 }
 
 export interface AnimalResumen {
   id: string
   codigoIdentificacion: string
+  nombre?: string
   numeroArete: string
-  raza: string
+  raza?: string
   sexo: Sexo
   pesoActualKg: number
   diasEnEngorde: number

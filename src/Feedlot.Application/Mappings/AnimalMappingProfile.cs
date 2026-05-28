@@ -16,6 +16,8 @@ public sealed class AnimalMappingProfile : Profile
         CreateMap<Animal, AnimalDto>()
             .ForMember(d => d.CodigoIdentificacion,
                 o => o.MapFrom(s => s.CodigoIdentificacion.Valor))
+            .ForMember(d => d.Nombre,
+                o => o.MapFrom(s => s.Nombre))
             .ForMember(d => d.PesoIngresoKg,
                 o => o.MapFrom(s => s.PesoIngreso.Kilogramos))
             .ForMember(d => d.PrecioCompra,
@@ -31,11 +33,17 @@ public sealed class AnimalMappingProfile : Profile
             .ForMember(d => d.DiasEnEngorde,
                 o => o.MapFrom(s => s.DiasEnEngorde))
             .ForMember(d => d.TotalPesajes,
-                o => o.MapFrom(s => s.Pesajes.Count));
+                o => o.MapFrom(s => s.Pesajes.Count))
+            .ForMember(d => d.Pesajes,
+                o => o.MapFrom(s => s.Pesajes))
+            .ForMember(d => d.EventosSanitarios,
+                o => o.MapFrom(s => s.EventosSanitarios));
 
         CreateMap<Animal, AnimalResumenDto>()
             .ForMember(d => d.CodigoIdentificacion,
                 o => o.MapFrom(s => s.CodigoIdentificacion.Valor))
+            .ForMember(d => d.Nombre,
+                o => o.MapFrom(s => s.Nombre))
             .ForMember(d => d.PesoActualKg,
                 o => o.MapFrom(s => s.PesoActual.Kilogramos))
             .ForMember(d => d.DiasEnEngorde,

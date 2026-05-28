@@ -1,0 +1,15 @@
+using Feedlot.Application.Common;
+
+namespace Feedlot.Application.Features.Animals.Commands.ModificarAnimal;
+
+public sealed record ModificarAnimalCommand(
+    Guid AnimalId,
+    string? Nombre,
+    string NumeroArete,
+    string Sexo,
+    string? Raza,
+    DateOnly? FechaNacimiento,
+    decimal PesoIngresoKg,
+    decimal PrecioCompra,
+    string Moneda
+) : ICommand;

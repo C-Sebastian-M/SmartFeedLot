@@ -1,17 +1,25 @@
 using Feedlot.Domain.Entities;
+using Feedlot.Domain.Enums;
 
 namespace Feedlot.Domain.Interfaces;
 
-/// <summary>
-/// Contrato del repositorio de Animal. Definido en Domain, implementado en Infrastructure.
-/// Principio de Inversión de Dependencias: Domain no depende de Infrastructure.
-/// </summary>
 public interface IAnimalRepository
 {
     Task<Animal?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
     Task<Animal?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default);
     Task<IReadOnlyList<Animal>> ObtenerTodosAsync(CancellationToken ct = default);
     Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default);
+    Task<(IReadOnlyList<Animal> Items, int TotalCount)> ObtenerPaginadosAsync(
+        int page,
+        int pageSize,
+        EstadoProductivo? estadoProductivo,
+        EstadoSanitario? estadoSanitario,
+        string? raza,
+        string? busqueda,
+        CancellationToken ct = default);
+    Task<string> ObtenerSiguienteCodigoAsync(CancellationToken ct = default);
+    Task<string> ObtenerSiguienteAreteAsync(CancellationToken ct = default);
+    Task<Dictionary<Guid, string>> ObtenerCodigosPorIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default);
     Task AgregarAsync(Animal animal, CancellationToken ct = default);
     void Actualizar(Animal animal);
 }

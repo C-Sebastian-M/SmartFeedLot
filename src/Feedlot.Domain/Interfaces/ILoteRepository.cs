@@ -14,6 +14,7 @@ public interface ILoteRepository
     Task<IReadOnlyList<Lote>> ObtenerTodosAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Lote>> ObtenerActivosAsync(CancellationToken ct = default);
     Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default);
+    Task<string> ObtenerSiguienteCodigoAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Retorna el lote activo al que pertenece el animal, o null si no está en ninguno.

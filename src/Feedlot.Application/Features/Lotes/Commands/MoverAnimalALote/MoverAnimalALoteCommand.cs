@@ -1,5 +1,4 @@
 using Feedlot.Application.Common;
-using MediatR;
 
 namespace Feedlot.Application.Features.Lotes.Commands.MoverAnimalALote;
 
@@ -8,4 +7,4 @@ public sealed record MoverAnimalALoteCommand(
     Guid LoteDestinoId,
     DateOnly FechaMovimiento,
     string Motivo
-) : IRequest<Result>;
+) : ICommand;

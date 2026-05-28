@@ -8,6 +8,7 @@ import {
   Wrench, FileText, CalendarDays, Users
 } from 'lucide-react'
 import { useLotes, useCostosTotalesLote, useRegistrarCostoOperativo } from '@/hooks/useFeedlot'
+import { useAuthStore } from '@/stores/auth.store'
 import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
   Skeleton, EmptyState, StatCard, Button,
@@ -69,6 +70,7 @@ function RegistrarCostoModal({
   const [exito, setExito] = useState(false)
   const [errorApi, setErrorApi] = useState<string>()
   const registrarCosto = useRegistrarCostoOperativo()
+  const currentUser = useAuthStore(s => s.user)
   const lote = lotes.find(l => l.id === loteId)
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
@@ -84,6 +86,7 @@ function RegistrarCostoModal({
   const onSubmit = async (data: RegistrarCostoForm) => {
     setErrorApi(undefined)
     try {
+      if (!currentUser?.id) throw new Error('Usuario no autenticado')
       await registrarCosto.mutateAsync({
         loteId,
         categoria: data.categoria,
@@ -92,7 +95,7 @@ function RegistrarCostoModal({
         monto: data.monto,
         moneda: data.moneda,
         observaciones: data.observaciones || undefined,
-        registradoPorId: '00000000-0000-0000-0000-000000000000',
+        registradoPorId: currentUser.id,
       })
       setExito(true)
       setTimeout(() => handleClose(), 1500)

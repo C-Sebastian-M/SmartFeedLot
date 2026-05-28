@@ -10,11 +10,16 @@ public sealed class ObtenerLotePorIdQueryHandler
     : IRequestHandler<ObtenerLotePorIdQuery, Result<LoteDto>>
 {
     private readonly ILoteRepository _loteRepository;
+    private readonly IAnimalRepository _animalRepository;
     private readonly IMapper _mapper;
 
-    public ObtenerLotePorIdQueryHandler(ILoteRepository loteRepository, IMapper mapper)
+    public ObtenerLotePorIdQueryHandler(
+        ILoteRepository loteRepository,
+        IAnimalRepository animalRepository,
+        IMapper mapper)
     {
         _loteRepository = loteRepository;
+        _animalRepository = animalRepository;
         _mapper = mapper;
     }
 
@@ -29,6 +34,22 @@ public sealed class ObtenerLotePorIdQueryHandler
                 $"No se encontró el lote con ID '{request.LoteId}'.");
 
         var dto = _mapper.Map<LoteDto>(lote);
+
+        var animalIds = lote.AnimalesLote
+            .Select(al => al.AnimalId)
+            .Distinct()
+            .ToList();
+
+        if (animalIds.Count > 0)
+        {
+            var codigos = await _animalRepository.ObtenerCodigosPorIdsAsync(animalIds, ct);
+            foreach (var animalLote in dto.Animales)
+            {
+                if (codigos.TryGetValue(animalLote.AnimalId, out var codigo))
+                    animalLote.CodigoAnimal = codigo;
+            }
+        }
+
         return Result<LoteDto>.Success(dto);
     }
 }

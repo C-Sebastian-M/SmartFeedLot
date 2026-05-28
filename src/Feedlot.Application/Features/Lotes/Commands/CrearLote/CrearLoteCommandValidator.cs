@@ -6,12 +6,6 @@ public sealed class CrearLoteCommandValidator : AbstractValidator<CrearLoteComma
 {
     public CrearLoteCommandValidator()
     {
-        RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código del lote es requerido.")
-            .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
-            .Matches("^[A-Za-z0-9-]+$")
-            .WithMessage("El código solo puede contener letras, números y guiones.");
-
         RuleFor(x => x.Nombre)
             .NotEmpty().WithMessage("El nombre del lote es requerido.")
             .MaximumLength(100).WithMessage("El nombre no puede superar 100 caracteres.");

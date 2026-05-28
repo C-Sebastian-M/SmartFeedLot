@@ -42,6 +42,23 @@ public sealed class LoteRepository : ILoteRepository
         => await _context.Lotes
             .AnyAsync(l => l.Codigo == codigo.ToUpperInvariant(), ct);
 
+    public async Task<string> ObtenerSiguienteCodigoAsync(CancellationToken ct = default)
+    {
+        var maxCodigo = await _context.Lotes
+            .Select(l => l.Codigo)
+            .OrderByDescending(c => c.Length).ThenByDescending(c => c)
+            .FirstOrDefaultAsync(ct);
+
+        if (string.IsNullOrEmpty(maxCodigo))
+            return "LOT-001";
+
+        var partes = maxCodigo.Split('-');
+        if (partes.Length != 2 || !int.TryParse(partes[1], out var numero))
+            return "LOT-001";
+
+        return $"LOT-{numero + 1:D3}";
+    }
+
     public async Task<Lote?> ObtenerLoteActivoDelAnimalAsync(
         Guid animalId, CancellationToken ct = default)
     {

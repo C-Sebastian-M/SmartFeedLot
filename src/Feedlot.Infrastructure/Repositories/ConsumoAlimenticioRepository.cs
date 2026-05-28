@@ -35,30 +35,24 @@ public sealed class ConsumoAlimenticioRepository : IConsumoAlimenticioRepository
         return await query.OrderBy(c => c.Fecha).ToListAsync(ct);
     }
 
-    /// <summary>
-    /// CORRECCIÓN: en lugar de SumAsync sobre el Value Object (que EF Core no puede
-    /// traducir a SQL directamente), usamos EF.Property para acceder a la columna
-    /// subyacente por nombre, que SÍ se puede traducir a SUM() en PostgreSQL.
-    /// </summary>
     public async Task<decimal> SumarKilogramosPorLoteAsync(
         Guid loteId, DateOnly desde, DateOnly hasta, CancellationToken ct = default)
     {
-        var consumos = await _context.Consumos
-            .Where(c => c.LoteId == loteId && c.Fecha >= desde && c.Fecha <= hasta)
-            .ToListAsync(ct);
-
-        // Sumar en memoria usando el Value Object — correcto y type-safe.
-        return consumos.Sum(c => c.CantidadKg.Valor);
+        return await _context.Database
+            .SqlQueryRaw<decimal>(
+                """SELECT COALESCE(SUM(cantidad_kg), 0) AS "Value" FROM feedlot.consumos_alimenticios WHERE lote_id = {0} AND fecha >= {1} AND fecha <= {2}""",
+                loteId, desde, hasta)
+            .SingleAsync(ct);
     }
 
     public async Task<decimal> SumarCostoPorLoteAsync(
         Guid loteId, DateOnly desde, DateOnly hasta, CancellationToken ct = default)
     {
-        var consumos = await _context.Consumos
-            .Where(c => c.LoteId == loteId && c.Fecha >= desde && c.Fecha <= hasta)
-            .ToListAsync(ct);
-
-        return consumos.Sum(c => c.CostoTotal.Monto);
+        return await _context.Database
+            .SqlQueryRaw<decimal>(
+                """SELECT COALESCE(SUM(costo_total), 0) AS "Value" FROM feedlot.consumos_alimenticios WHERE lote_id = {0} AND fecha >= {1} AND fecha <= {2}""",
+                loteId, desde, hasta)
+            .SingleAsync(ct);
     }
 
     public async Task AgregarAsync(ConsumoAlimenticio consumo, CancellationToken ct = default)

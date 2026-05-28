@@ -26,7 +26,7 @@ public sealed class LoteResumenDto
 public sealed class AnimalLoteDto
 {
     public Guid AnimalId { get; init; }
-    public string CodigoAnimal { get; init; } = null!;
+    public string CodigoAnimal { get; set; } = null!;
     public DateOnly FechaIngreso { get; init; }
     public DateOnly? FechaEgreso { get; init; }
     public string MotivoIngreso { get; init; } = null!;

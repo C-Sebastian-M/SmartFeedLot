@@ -1,5 +1,7 @@
+using Feedlot.Application.Features.Animals.Commands.ModificarAnimal;
 using Feedlot.Application.Features.Animals.Commands.RegistrarAnimal;
 using Feedlot.Application.Features.Animals.Commands.RegistrarEventoSanitario;
+using Feedlot.Application.Features.Animals.Commands.EliminarPesaje;
 using Feedlot.Application.Features.Animals.Commands.RegistrarPesaje;
 using Feedlot.Application.Features.Animals.Queries.ObtenerAnimalPorId;
 using Feedlot.Application.Features.Animals.Queries.ObtenerAnimales;
@@ -65,6 +67,31 @@ public sealed class AnimalsController : ApiControllerBase
         return CreatedFromResult(result, "ObtenerAnimalPorId", new { id = result.Value });
     }
 
+    /// <summary>Modifica los datos de un animal existente.</summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Modificar(
+        Guid id,
+        [FromBody] ModificarAnimalRequest request,
+        CancellationToken ct = default)
+    {
+        var command = new ModificarAnimalCommand(
+            id,
+            request.Nombre,
+            request.NumeroArete,
+            request.Sexo,
+            request.Raza,
+            request.FechaNacimiento,
+            request.PesoIngresoKg,
+            request.PrecioCompra,
+            request.Moneda);
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
     /// <summary>Registra un nuevo pesaje sobre un animal.</summary>
     [HttpPost("{id:guid}/pesajes")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -78,6 +105,19 @@ public sealed class AnimalsController : ApiControllerBase
     {
         var command = new RegistrarPesajeCommand(
             id, request.FechaPesaje, request.PesoKg, request.Observaciones);
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>Elimina un pesaje del historial del animal.</summary>
+    [HttpDelete("{id:guid}/pesajes/{pesajeId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> EliminarPesaje(
+        Guid id, Guid pesajeId, CancellationToken ct = default)
+    {
+        var command = new EliminarPesajeCommand(id, pesajeId);
         var result = await _sender.Send(command, ct);
         return FromResult(result);
     }
@@ -117,3 +157,13 @@ public sealed record RegistrarEventoSanitarioRequest(
     string Descripcion,
     string Severidad,
     string? Tratamiento);
+
+public sealed record ModificarAnimalRequest(
+    string? Nombre,
+    string NumeroArete,
+    string Sexo,
+    string? Raza,
+    DateOnly? FechaNacimiento,
+    decimal PesoIngresoKg,
+    decimal PrecioCompra,
+    string Moneda);

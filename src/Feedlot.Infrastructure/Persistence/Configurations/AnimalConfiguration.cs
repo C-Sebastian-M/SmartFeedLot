@@ -51,6 +51,10 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .IsUnique()
             .HasDatabaseName("ix_animals_codigo_identificacion");
 
+        builder.Property(a => a.Nombre)
+            .HasColumnName("nombre")
+            .HasMaxLength(100);
+
         builder.Property(a => a.NumeroArete)
             .HasColumnName("numero_arete")
             .HasMaxLength(50)
@@ -88,12 +92,10 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
 
         builder.Property(a => a.Raza)
             .HasColumnName("raza")
-            .HasMaxLength(100)
-            .IsRequired();
+            .HasMaxLength(100);
 
         builder.Property(a => a.FechaNacimiento)
-            .HasColumnName("fecha_nacimiento")
-            .IsRequired();
+            .HasColumnName("fecha_nacimiento");
 
         builder.Property(a => a.FechaIngreso)
             .HasColumnName("fecha_ingreso")

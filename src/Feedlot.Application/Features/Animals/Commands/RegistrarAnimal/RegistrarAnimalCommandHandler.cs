@@ -39,24 +39,20 @@ public sealed class RegistrarAnimalCommandHandler
         RegistrarAnimalCommand request,
         CancellationToken ct)
     {
-        // Verificar unicidad del código antes de crear el aggregate.
-        var codigoExiste = await _animalRepository
-            .ExisteCodigoAsync(request.CodigoIdentificacion.ToUpperInvariant(), ct);
+        var codigoStr = await _animalRepository.ObtenerSiguienteCodigoAsync(ct);
+        var codigo = CodigoIdentificacion.Crear(codigoStr);
 
-        if (codigoExiste)
-            return Result<Guid>.Conflict(
-                $"Ya existe un animal con el código '{request.CodigoIdentificacion}'.");
+        var arete = await _animalRepository.ObtenerSiguienteAreteAsync(ct);
 
-        // Construir Value Objects — si hay datos inválidos, el dominio lanza DomainException.
-        var codigo = CodigoIdentificacion.Crear(request.CodigoIdentificacion);
         var pesoIngreso = Peso.Crear(request.PesoIngresoKg);
-        var precioCompra = Dinero.Crear(request.PrecioCompra, request.Moneda);
+        var precioCompra = Dinero.Crear(
+            request.PrecioCompraPorKg * request.PesoIngresoKg, request.Moneda);
         var sexo = Enum.Parse<Sexo>(request.Sexo, ignoreCase: true);
 
-        // Factory method del Aggregate Root — emite AnimalRegistradoEvent.
         var animal = Animal.Registrar(
             codigo,
-            request.NumeroArete,
+            request.Nombre,
+            arete,
             sexo,
             request.Raza,
             request.FechaNacimiento,
@@ -66,7 +62,6 @@ public sealed class RegistrarAnimalCommandHandler
 
         await _animalRepository.AgregarAsync(animal, ct);
 
-        // Asignar al lote inicial si se especificó.
         if (request.LoteInicialId.HasValue)
         {
             await _animalLoteService.IngresoInicialAsync(
@@ -76,7 +71,6 @@ public sealed class RegistrarAnimalCommandHandler
                 ct);
         }
 
-        // SaveChangesAsync lo ejecuta el UnitOfWorkBehavior automáticamente.
         return Result<Guid>.Success(animal.Id);
     }
 }

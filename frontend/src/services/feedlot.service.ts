@@ -26,19 +26,22 @@ export const animalsService = {
   },
 
   create: async (payload: {
-    codigoIdentificacion: string
-    numeroArete: string
+    nombre?: string
     sexo: string
-    raza: string
-    fechaNacimiento: string
+    raza?: string
+    fechaNacimiento?: string
     pesoIngresoKg: number
-    precioCompra: number
+    precioCompraPorKg: number
     moneda: string
     fechaIngreso: string
     loteInicialId?: string
   }): Promise<string> => {
     const { data } = await api.post('/animals', payload)
     return data
+  },
+
+  eliminarPesaje: async (animalId: string, pesajeId: string): Promise<void> => {
+    await api.delete(`/animals/${animalId}/pesajes/${pesajeId}`)
   },
 
   registrarPesaje: async (
@@ -62,6 +65,19 @@ export const animalsService = {
     const { data } = await api.post(`/animals/${animalId}/eventos-sanitarios`, payload)
     return data
   },
+
+  actualizar: async (id: string, payload: {
+    nombre?: string
+    numeroArete: string
+    sexo: string
+    raza?: string
+    fechaNacimiento?: string
+    pesoIngresoKg: number
+    precioCompra: number
+    moneda: string
+  }): Promise<void> => {
+    await api.put(`/animals/${id}`, payload)
+  },
 }
 
 // ─── Lotes ────────────────────────────────────────────────────────────────────
@@ -77,7 +93,6 @@ export const lotesService = {
   },
 
   create: async (payload: {
-    codigo: string
     nombre: string
     capacidadMaxima: number
   }): Promise<string> => {

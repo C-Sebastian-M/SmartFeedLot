@@ -50,8 +50,31 @@ export function useCreateAnimal() {
     mutationFn: animalsService.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.all })
-      // También invalidar lotes porque un animal puede haberse asignado a uno.
       qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+    },
+  })
+}
+
+export function useActualizarAnimal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { id: string; nombre?: string; numeroArete: string; sexo: string; raza?: string; fechaNacimiento?: string; pesoIngresoKg: number; precioCompra: number; moneda: string }) =>
+      animalsService.actualizar(input.id, input),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.id) })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+    },
+  })
+}
+
+export function useEliminarPesaje() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ animalId, pesajeId }: { animalId: string; pesajeId: string }) =>
+      animalsService.eliminarPesaje(animalId, pesajeId),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
     },
   })
 }

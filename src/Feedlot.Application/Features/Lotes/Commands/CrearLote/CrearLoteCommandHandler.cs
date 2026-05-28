@@ -17,14 +17,9 @@ public sealed class CrearLoteCommandHandler
 
     public async Task<Result<Guid>> Handle(CrearLoteCommand request, CancellationToken ct)
     {
-        var codigoExiste = await _loteRepository
-            .ExisteCodigoAsync(request.Codigo.ToUpperInvariant(), ct);
+        var codigo = await _loteRepository.ObtenerSiguienteCodigoAsync(ct);
 
-        if (codigoExiste)
-            return Result<Guid>.Conflict(
-                $"Ya existe un lote con el código '{request.Codigo}'.");
-
-        var lote = Lote.Crear(request.Codigo, request.Nombre, request.CapacidadMaxima);
+        var lote = Lote.Crear(codigo, request.Nombre, request.CapacidadMaxima);
 
         await _loteRepository.AgregarAsync(lote, ct);
 

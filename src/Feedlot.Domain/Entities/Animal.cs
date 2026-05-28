@@ -26,18 +26,20 @@ public sealed class Animal : AggregateRoot<Guid>
     private Animal(
         Guid id,
         CodigoIdentificacion codigoIdentificacion,
+        string? nombre,
         string numeroArete,
         Sexo sexo,
-        string raza,
-        DateOnly fechaNacimiento,
+        string? raza,
+        DateOnly? fechaNacimiento,
         Peso pesoIngreso,
         Dinero precioCompra,
         DateOnly fechaIngreso) : base(id)
     {
         CodigoIdentificacion = codigoIdentificacion;
+        Nombre = nombre;
         NumeroArete = numeroArete;
         Sexo = sexo;
-        Raza = raza;
+        Raza = raza?.Trim();
         FechaNacimiento = fechaNacimiento;
         PesoIngreso = pesoIngreso;
         PrecioCompra = precioCompra;
@@ -48,10 +50,11 @@ public sealed class Animal : AggregateRoot<Guid>
 
     // --- Propiedades ---
     public CodigoIdentificacion CodigoIdentificacion { get; private set; } = null!;
+    public string? Nombre { get; private set; }
     public string NumeroArete { get; private set; } = null!;
     public Sexo Sexo { get; private set; }
-    public string Raza { get; private set; } = null!;
-    public DateOnly FechaNacimiento { get; private set; }
+    public string? Raza { get; private set; }
+    public DateOnly? FechaNacimiento { get; private set; }
     public Peso PesoIngreso { get; private set; } = null!;
     public Dinero PrecioCompra { get; private set; } = null!;
     public DateOnly FechaIngreso { get; private set; }
@@ -69,10 +72,11 @@ public sealed class Animal : AggregateRoot<Guid>
     /// </summary>
     public static Animal Registrar(
         CodigoIdentificacion codigoIdentificacion,
+        string? nombre,
         string numeroArete,
         Sexo sexo,
-        string raza,
-        DateOnly fechaNacimiento,
+        string? raza,
+        DateOnly? fechaNacimiento,
         Peso pesoIngreso,
         Dinero precioCompra,
         DateOnly fechaIngreso)
@@ -80,19 +84,17 @@ public sealed class Animal : AggregateRoot<Guid>
         if (string.IsNullOrWhiteSpace(numeroArete))
             throw new DomainException("El número de arete no puede estar vacío.");
 
-        if (string.IsNullOrWhiteSpace(raza))
-            throw new DomainException("La raza del animal es requerida.");
-
-        if (fechaNacimiento >= fechaIngreso)
+        if (fechaNacimiento.HasValue && fechaNacimiento.Value >= fechaIngreso)
             throw new DomainException(
                 "La fecha de ingreso debe ser posterior a la fecha de nacimiento.");
 
         var animal = new Animal(
             Guid.NewGuid(),
             codigoIdentificacion,
+            nombre?.Trim(),
             numeroArete.Trim().ToUpperInvariant(),
             sexo,
-            raza.Trim(),
+            raza?.Trim(),
             fechaNacimiento,
             pesoIngreso,
             precioCompra,
@@ -107,12 +109,53 @@ public sealed class Animal : AggregateRoot<Guid>
         return animal;
     }
 
+    /// <summary>
+    /// Modifica los datos editables del animal.
+    /// No cambia identidad, estado productivo, fechas de ingreso ni colecciones.
+    /// </summary>
+    public void Modificar(
+        string? nombre,
+        string numeroArete,
+        string? raza,
+        DateOnly? fechaNacimiento,
+        Peso pesoIngreso,
+        Dinero precioCompra)
+    {
+        if (string.IsNullOrWhiteSpace(numeroArete))
+            throw new DomainException("El número de arete no puede estar vacío.");
+
+        if (fechaNacimiento.HasValue && FechaIngreso <= fechaNacimiento.Value)
+            throw new DomainException("La fecha de nacimiento debe ser anterior a la fecha de ingreso.");
+
+        Nombre = nombre?.Trim();
+        NumeroArete = numeroArete.Trim().ToUpperInvariant();
+        Raza = raza?.Trim();
+        FechaNacimiento = fechaNacimiento;
+        PesoIngreso = pesoIngreso;
+        PrecioCompra = precioCompra;
+    }
+
     // --- Comportamiento de dominio ---
 
     /// <summary>
     /// Registra un nuevo pesaje sobre el animal.
     /// Aplica invariantes: animal activo + orden cronológico.
     /// </summary>
+    /// <summary>
+    /// Elimina un pesaje del historial.
+    /// Solo permite eliminar si el animal está activo.
+    /// </summary>
+    public void EliminarPesaje(Guid pesajeId)
+    {
+        ValidarAnimalActivo();
+
+        var pesaje = _pesajes.FirstOrDefault(p => p.Id == pesajeId);
+        if (pesaje is null)
+            throw new DomainException("El pesaje no existe en este animal.");
+
+        _pesajes.Remove(pesaje);
+    }
+
     public Pesaje RegistrarPesaje(DateOnly fechaPesaje, Peso peso, string? observaciones = null)
     {
         ValidarAnimalActivo();

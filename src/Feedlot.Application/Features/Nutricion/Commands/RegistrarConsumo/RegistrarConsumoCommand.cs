@@ -1,5 +1,4 @@
 using Feedlot.Application.Common;
-using MediatR;
 
 namespace Feedlot.Application.Features.Nutricion.Commands.RegistrarConsumo;
 
@@ -11,4 +10,4 @@ public sealed record RegistrarConsumoCommand(
     decimal CostoTotal,
     string Moneda,
     Guid RegistradoPorId
-) : IRequest<Result<Guid>>;
+) : ICommand<Guid>;

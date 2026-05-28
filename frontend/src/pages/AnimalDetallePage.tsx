@@ -5,9 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
   ArrowLeft, Beef, Scale, AlertTriangle,
-  Calendar, TrendingUp, X, CheckCircle2, Plus
+  Calendar, TrendingUp, X, CheckCircle2, Plus, Pencil, Trash2
 } from 'lucide-react'
-import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario } from '@/hooks/useFeedlot'
+import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualizarAnimal, useEliminarPesaje } from '@/hooks/useFeedlot'
 import {
   Button, Card, CardHeader, CardTitle, CardContent, Badge,
   Skeleton, EmptyState, Dialog, DialogHeader, DialogTitle,
@@ -16,7 +16,7 @@ import {
 import {
   fmt, estadoProductivoColor, estadoSanitarioColor, severidadColor,
 } from '@/utils'
-import type { Pesaje, EventoSanitario, SeveridadEvento } from '@/types'
+import type { Animal, Pesaje, EventoSanitario, SeveridadEvento } from '@/types'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
@@ -257,12 +257,167 @@ const PesajeTooltip = ({ active, payload, label }: any) => {
   )
 }
 
+// ─── Schema modificar animal ───────────────────────────────────────────────────
+const modificarSchema = z.object({
+  nombre: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  numeroArete: z.string().min(1, 'Requerido').max(50, 'Máximo 50 caracteres'),
+  sexo: z.enum(['Macho', 'Hembra'], { required_error: 'Requerido' }),
+  raza: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  fechaNacimiento: z.string().optional(),
+  pesoIngresoKg: z.number({ invalid_type_error: 'Número requerido' }).positive('Mayor a 0'),
+  precioCompra: z.number({ invalid_type_error: 'Número requerido' }).min(0, 'No negativo'),
+  moneda: z.enum(['COP', 'USD', 'EUR']).default('COP'),
+})
+type ModificarForm = z.infer<typeof modificarSchema>
+
+// ─── Modal modificar animal ────────────────────────────────────────────────────
+function ModificarAnimalModal({ animal, open, onClose }: {
+  animal: Animal
+  open: boolean
+  onClose: () => void
+}) {
+  const [exito, setExito] = useState(false)
+  const [errorApi, setErrorApi] = useState<string>()
+  const mutation = useActualizarAnimal()
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    useForm<ModificarForm>({
+      resolver: zodResolver(modificarSchema),
+      values: {
+        nombre: animal.nombre,
+        numeroArete: animal.numeroArete,
+        sexo: animal.sexo,
+        raza: animal.raza,
+        fechaNacimiento: animal.fechaNacimiento ?? '',
+        pesoIngresoKg: animal.pesoIngresoKg,
+        precioCompra: animal.precioCompra,
+        moneda: animal.moneda as 'COP' | 'USD' | 'EUR',
+      },
+    })
+
+  const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); onClose() }
+
+  const onSubmit = async (data: ModificarForm) => {
+    setErrorApi(undefined)
+    try {
+      await mutation.mutateAsync({
+        id: animal.id,
+        nombre: data.nombre || undefined,
+        numeroArete: data.numeroArete,
+        sexo: data.sexo,
+        raza: data.raza,
+        fechaNacimiento: data.fechaNacimiento || undefined,
+        pesoIngresoKg: data.pesoIngresoKg,
+        precioCompra: data.precioCompra,
+        moneda: data.moneda,
+      })
+      setExito(true)
+      setTimeout(handleClose, 1500)
+    } catch (err: any) {
+      setErrorApi(err?.response?.data?.error ?? err?.response?.data?.detail ?? 'Error al modificar el animal.')
+    }
+  }
+
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <div className="rounded-xl border border-border bg-card shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card z-10">
+          <DialogHeader className="mb-0">
+            <DialogTitle>Modificar animal</DialogTitle>
+            <DialogDescription>{animal.codigoIdentificacion}</DialogDescription>
+          </DialogHeader>
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground ml-4">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {exito ? (
+            <div className="flex flex-col items-center py-6 gap-3 animate-fade-in">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              </div>
+              <p className="text-sm font-medium">¡Animal modificado!</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Nombre" error={errors.nombre?.message} hint="Opcional">
+                  <Input {...register('nombre')} placeholder="Ej: La Flaca"
+                    className={errors.nombre ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Número de arete" error={errors.numeroArete?.message} required>
+                  <Input {...register('numeroArete')} placeholder="AR-0001"
+                    className={errors.numeroArete ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Sexo" error={errors.sexo?.message} required>
+                  <select {...register('sexo')}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
+                    <option value="Macho">Macho</option>
+                    <option value="Hembra">Hembra</option>
+                  </select>
+                </FormField>
+                <FormField label="Raza" error={errors.raza?.message} required>
+                  <Input {...register('raza')} placeholder="Brahman"
+                    className={errors.raza ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Fecha de nacimiento" error={errors.fechaNacimiento?.message} hint="Opcional">
+                  <Input {...register('fechaNacimiento')} type="date"
+                    className={errors.fechaNacimiento ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Fecha de ingreso" hint="No editable">
+                  <Input value={animal.fechaIngreso} disabled />
+                </FormField>
+                <FormField label="Peso ingreso (kg)" error={errors.pesoIngresoKg?.message} required>
+                  <Input {...register('pesoIngresoKg', { valueAsNumber: true })}
+                    type="number" step="0.1" min={1}
+                    className={errors.pesoIngresoKg ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Precio compra" error={errors.precioCompra?.message} required>
+                  <Input {...register('precioCompra', { valueAsNumber: true })}
+                    type="number" min={0} step={1000}
+                    className={errors.precioCompra ? 'border-destructive' : ''} />
+                </FormField>
+              </div>
+
+              {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
+
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isSubmitting}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="flex-1" loading={isSubmitting}>
+                  <Beef className="w-3.5 h-3.5" />
+                  Guardar cambios
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </Dialog>
+  )
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function AnimalDetallePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [modalPesaje, setModalPesaje] = useState(false)
   const [modalEvento, setModalEvento] = useState(false)
+  const [modalEditar, setModalEditar] = useState(false)
+
+  const [eliminandoPesajeId, setEliminandoPesajeId] = useState<string | null>(null)
+  const eliminarPesaje = useEliminarPesaje()
+
+  const handleEliminarPesaje = async (pesajeId: string) => {
+    setEliminandoPesajeId(pesajeId)
+    try {
+      await eliminarPesaje.mutateAsync({ animalId: id!, pesajeId })
+    } finally {
+      setEliminandoPesajeId(null)
+    }
+  }
 
   const { data: animal, isLoading, error } = useAnimal(id ?? '')
 
@@ -294,7 +449,7 @@ export default function AnimalDetallePage() {
   // Datos para el gráfico de evolución de peso
   const datosGrafico = [
     { fecha: fmt.fecha(animal.fechaIngreso), peso: animal.pesoIngresoKg, label: 'Ingreso' },
-    ...(animal as any).pesajes
+    ...animal.pesajes
       ?.sort((a: Pesaje, b: Pesaje) => a.fechaPesaje.localeCompare(b.fechaPesaje))
       .map((p: Pesaje) => ({
         fecha: fmt.fecha(p.fechaPesaje),
@@ -306,10 +461,10 @@ export default function AnimalDetallePage() {
   const pesoGanado = animal.pesoActualKg - animal.pesoIngresoKg
   const gmd = animal.diasEnEngorde > 0 ? pesoGanado / animal.diasEnEngorde : 0
 
-  const pesajes: Pesaje[] = (animal as any).pesajes
+  const pesajes: Pesaje[] = animal.pesajes
     ?.sort((a: Pesaje, b: Pesaje) => b.fechaPesaje.localeCompare(a.fechaPesaje)) ?? []
 
-  const eventos: EventoSanitario[] = (animal as any).eventosSanitarios
+  const eventos: EventoSanitario[] = animal.eventosSanitarios
     ?.sort((a: EventoSanitario, b: EventoSanitario) =>
       b.fechaEvento.localeCompare(a.fechaEvento)) ?? []
 
@@ -334,12 +489,16 @@ export default function AnimalDetallePage() {
                 {animal.estadoSanitario}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {animal.raza} · {animal.sexo} · Arete {animal.numeroArete}
-            </p>
+              <p className="text-xs text-muted-foreground">
+                {animal.raza} · {animal.sexo}{animal.nombre ? ` · "${animal.nombre}"` : ''} · Arete {animal.numeroArete}
+              </p>
           </div>
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setModalEditar(true)}>
+            <Pencil className="w-3.5 h-3.5" />
+            Editar
+          </Button>
           {animal.estadoProductivo === 'EnEngorde' && (
             <>
               <Button size="sm" variant="outline" onClick={() => setModalEvento(true)}>
@@ -416,10 +575,11 @@ export default function AnimalDetallePage() {
               <dl className="space-y-2.5">
                 {[
                   { label: 'Código', value: animal.codigoIdentificacion },
+                  { label: 'Nombre', value: animal.nombre ?? '—' },
                   { label: 'Arete', value: animal.numeroArete },
                   { label: 'Raza', value: animal.raza },
                   { label: 'Sexo', value: animal.sexo },
-                  { label: 'Nacimiento', value: fmt.fecha(animal.fechaNacimiento) },
+                  { label: 'Nacimiento', value: animal.fechaNacimiento ? fmt.fecha(animal.fechaNacimiento) : 'No registrada' },
                   { label: 'Ingreso', value: fmt.fecha(animal.fechaIngreso) },
                   { label: 'Peso ingreso', value: fmt.kg(animal.pesoIngresoKg) },
                   { label: 'Precio compra', value: fmt.cop(animal.precioCompra) },
@@ -453,18 +613,28 @@ export default function AnimalDetallePage() {
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {pesajes.map((p, i) => (
-                    <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/40">
+                    <div key={p.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/40 group">
                       <div>
                         <p className="text-xs font-medium">{fmt.fecha(p.fechaPesaje)}</p>
                         {p.observaciones && <p className="text-[10px] text-muted-foreground">{p.observaciones}</p>}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold tabular-nums">{fmt.kg(p.pesoKg)}</p>
-                        {i < pesajes.length - 1 && (
-                          <p className={`text-[10px] tabular-nums ${p.pesoKg > pesajes[i + 1].pesoKg ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {p.pesoKg > pesajes[i + 1].pesoKg ? '+' : ''}{fmt.kg(p.pesoKg - pesajes[i + 1].pesoKg)}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-sm font-bold tabular-nums">{fmt.kg(p.pesoKg)}</p>
+                          {i < pesajes.length - 1 && (
+                            <p className={`text-[10px] tabular-nums ${p.pesoKg > pesajes[i + 1].pesoKg ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {p.pesoKg > pesajes[i + 1].pesoKg ? '+' : ''}{fmt.kg(p.pesoKg - pesajes[i + 1].pesoKg)}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEliminarPesaje(p.id) }}
+                          disabled={eliminandoPesajeId === p.id}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          title="Eliminar pesaje"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -509,6 +679,7 @@ export default function AnimalDetallePage() {
         </div>
       </div>
 
+      <ModificarAnimalModal animal={animal} open={modalEditar} onClose={() => setModalEditar(false)} />
       <RegistrarPesajeModal animalId={id!} open={modalPesaje} onClose={() => setModalPesaje(false)} />
       <RegistrarEventoModal animalId={id!} open={modalEvento} onClose={() => setModalEvento(false)} />
     </div>

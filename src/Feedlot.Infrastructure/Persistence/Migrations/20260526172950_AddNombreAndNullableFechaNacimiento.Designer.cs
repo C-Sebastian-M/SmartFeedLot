@@ -3,6 +3,7 @@ using System;
 using Feedlot.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Feedlot.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(FeedlotDbContext))]
-    partial class FeedlotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526172950_AddNombreAndNullableFechaNacimiento")]
+    partial class AddNombreAndNullableFechaNacimiento
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,6 +80,7 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                         .HasColumnName("precio_compra");
 
                     b.Property<string>("Raza")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("raza");
