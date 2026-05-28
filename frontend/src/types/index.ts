@@ -233,6 +233,37 @@ export interface CostoDetalle {
   observaciones?: string
 }
 
+// ─── Ventas ───────────────────────────────────────────────────────────────────
+export interface Comprador {
+  id: string
+  nombre: string
+  contacto?: string
+  telefono?: string
+  email?: string
+}
+
+export interface VentaItem {
+  id: string
+  ventaId: string
+  animalId: string
+  codigoAnimal: string
+  nombreAnimal?: string
+  precioVenta: number
+  pesoVentaKg: number
+}
+
+export interface Venta {
+  id: string
+  compradorId: string
+  nombreComprador: string
+  fecha: string
+  montoTotal: number
+  moneda: string
+  descripcion?: string
+  totalAnimales: number
+  items: VentaItem[]
+}
+
 // ─── API Error ────────────────────────────────────────────────────────────────
 export interface ApiError {
   status: number
@@ -248,4 +279,31 @@ export interface VacunaProxima {
   diagnostico: string
   proximaDosis: string
   responsable?: string
+}
+
+// ─── Proveedores ──────────────────────────────────────────────────────────────
+export interface Proveedor {
+  id: string
+  nombre: string
+  contacto?: string
+  telefono?: string
+  email?: string
+}
+
+export interface Compra {
+  id: string
+  proveedorId: string
+  nombreProveedor: string
+  fecha: string
+  tipoCompra: string
+  costoTotal: number
+  moneda: string
+  descripcion?: string
+  cantidadCabezas?: number
+  precioPorCabeza?: number
+  pesoPromedioKg?: number
+  loteId?: string
+  tipoInsumo?: string
+  cantidadInsumo?: number
+  unidadMedida?: string
 }

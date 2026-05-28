@@ -10,6 +10,10 @@ import LoteDetallePage from '@/pages/LoteDetallePage'
 import AnaliticaPage from '@/pages/AnaliticaPage'
 import AlertasPage from '@/pages/AlertasPage'
 import CostosPage from '@/pages/CostosPage'
+import ProveedoresPage from '@/pages/ProveedoresPage'
+import ComprasPage from '@/pages/ComprasPage'
+import VentasPage from '@/pages/VentasPage'
+import CompradoresPage from '@/pages/CompradoresPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -39,6 +43,10 @@ const router = createBrowserRouter(
         { path: 'analitica', element: <AnaliticaPage /> },
         { path: 'alertas', element: <AlertasPage /> },
         { path: 'costos', element: <CostosPage /> },
+        { path: 'proveedores', element: <ProveedoresPage /> },
+        { path: 'compras', element: <ComprasPage /> },
+        { path: 'ventas', element: <VentasPage /> },
+        { path: 'compradores', element: <CompradoresPage /> },
       ],
     },
   ] as any,

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService } from '@/services/feedlot.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const queryKeys = {
@@ -26,6 +26,22 @@ export const queryKeys = {
       ['costos', 'totales', loteId, params] as const,
     detalleLote: (loteId: string, params: object) =>
       ['costos', 'detalle', loteId, params] as const,
+  },
+  proveedores: {
+    all: ['proveedores'] as const,
+    list: () => ['proveedores', 'list'] as const,
+    detail: (id: string) => ['proveedores', 'detail', id] as const,
+  },
+  compras: {
+    all: ['compras'] as const,
+    list: () => ['compras', 'list'] as const,
+    byProveedor: (proveedorId: string) => ['compras', 'byProveedor', proveedorId] as const,
+  },
+  ventas: {
+    all: ['ventas'] as const,
+    list: () => ['ventas', 'list'] as const,
+    detail: (id: string) => ['ventas', 'detail', id] as const,
+    compradores: () => ['ventas', 'compradores'] as const,
   },
 }
 
@@ -243,9 +259,7 @@ export function useRegistrarCostoOperativo() {
   return useMutation({
     mutationFn: costosService.registrarCosto,
     onSuccess: () => {
-      // Invalidar todos los costos para refrescar el desglose
       qc.invalidateQueries({ queryKey: ['costos'] })
-      // Invalidar analítica porque el costo afecta la rentabilidad
       qc.invalidateQueries({ queryKey: ['analitica'] })
     },
   })
@@ -256,5 +270,121 @@ export function useVacunasProximas(dias = 15) {
     queryKey: ['analitica', 'vacunas-proximas', dias],
     queryFn: () => analiticaService.getVacunasProximas(dias),
     staleTime: 60_000,
+  })
+}
+
+// ─── Proveedores ──────────────────────────────────────────────────────────────
+export function useProveedores() {
+  return useQuery({
+    queryKey: queryKeys.proveedores.list(),
+    queryFn: () => proveedoresService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useProveedor(id: string) {
+  return useQuery({
+    queryKey: queryKeys.proveedores.detail(id),
+    queryFn: () => proveedoresService.getById(id),
+    enabled: Boolean(id),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearProveedor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: proveedoresService.create,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.proveedores.all })
+    },
+  })
+}
+
+export function useModificarProveedor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: string; nombre: string; contacto?: string; telefono?: string; email?: string }) =>
+      proveedoresService.update(id, { id, ...payload }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: queryKeys.proveedores.all })
+      qc.invalidateQueries({ queryKey: queryKeys.proveedores.detail(variables.id) })
+    },
+  })
+}
+
+export function useEliminarProveedor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => proveedoresService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.proveedores.all })
+    },
+  })
+}
+
+// ─── Compras ──────────────────────────────────────────────────────────────────
+export function useCompras() {
+  return useQuery({
+    queryKey: queryKeys.compras.list(),
+    queryFn: () => comprasService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useComprasPorProveedor(proveedorId: string) {
+  return useQuery({
+    queryKey: queryKeys.compras.byProveedor(proveedorId),
+    queryFn: () => comprasService.getByProveedor(proveedorId),
+    enabled: Boolean(proveedorId),
+    staleTime: 60_000,
+  })
+}
+
+// ─── Ventas ───────────────────────────────────────────────────────────────────
+export function useVentas() {
+  return useQuery({
+    queryKey: queryKeys.ventas.list(),
+    queryFn: () => ventasService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useVenta(id: string) {
+  return useQuery({
+    queryKey: queryKeys.ventas.detail(id),
+    queryFn: () => ventasService.getById(id),
+    enabled: Boolean(id),
+    staleTime: 60_000,
+  })
+}
+
+export function useCompradores() {
+  return useQuery({
+    queryKey: queryKeys.ventas.compradores(),
+    queryFn: () => ventasService.getCompradores(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearVenta() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ventasService.create,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.ventas.all })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+    },
+  })
+}
+
+export function useCrearCompra() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: comprasService.create,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.compras.all })
+    },
   })
 }

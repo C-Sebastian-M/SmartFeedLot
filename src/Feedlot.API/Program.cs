@@ -61,9 +61,6 @@ try
 
     await DatabaseInitializer.InitializeAsync(app.Services);
 
-    // CORRECCIÓN 4: ExceptionHandlingMiddleware antes que todo, incluido HTTPS redirect.
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
-
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
@@ -80,6 +77,10 @@ try
         options.MessageTemplate =
             "HTTP {RequestMethod} {RequestPath} → {StatusCode} en {Elapsed:0.0000}ms";
     });
+
+    // ExceptionHandlingMiddleware después de Serilog para que
+    // capture las excepciones antes de que Serilog las loguee como 500.
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
 
     // CORRECCIÓN 5: en desarrollo no redirigir a HTTPS porque el frontend
     // Vite corre en HTTP. Solo redirigir en producción.

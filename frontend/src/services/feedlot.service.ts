@@ -3,7 +3,7 @@ import type {
   Animal, AnimalResumen, PagedResult, VacunaProxima,
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
   LoginResponse, Racion, Lote, LoteResumen,
-  CosteoLote,
+  CosteoLote, Proveedor, Compra, Comprador, Venta,
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -159,6 +159,35 @@ export const analiticaService = {
   },
 }
 
+// ─── Ventas ───────────────────────────────────────────────────────────────────
+export const ventasService = {
+  getAll: async (): Promise<Venta[]> => {
+    const { data } = await api.get('/ventas')
+    return data
+  },
+
+  getById: async (id: string): Promise<Venta> => {
+    const { data } = await api.get(`/ventas/${id}`)
+    return data
+  },
+
+  create: async (payload: {
+    compradorId: string
+    fecha: string
+    moneda: string
+    descripcion?: string
+    animales: { animalId: string; precioVenta: number; pesoVentaKg: number }[]
+  }): Promise<string> => {
+    const { data } = await api.post('/ventas', payload)
+    return data
+  },
+
+  getCompradores: async (): Promise<Comprador[]> => {
+    const { data } = await api.get('/ventas/compradores')
+    return data
+  },
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const authService = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
@@ -233,6 +262,75 @@ export const costosService = {
     registradoPorId: string
   }): Promise<string> => {
     const { data } = await api.post('/costos', payload)
+    return data
+  },
+}
+
+// ─── Proveedores ──────────────────────────────────────────────────────────────
+export const proveedoresService = {
+  getAll: async (): Promise<Proveedor[]> => {
+    const { data } = await api.get('/proveedores')
+    return data
+  },
+
+  getById: async (id: string): Promise<Proveedor> => {
+    const { data } = await api.get(`/proveedores/${id}`)
+    return data
+  },
+
+  create: async (payload: {
+    nombre: string
+    contacto?: string
+    telefono?: string
+    email?: string
+  }): Promise<string> => {
+    const { data } = await api.post('/proveedores', payload)
+    return data
+  },
+
+  update: async (id: string, payload: {
+    id: string
+    nombre: string
+    contacto?: string
+    telefono?: string
+    email?: string
+  }): Promise<void> => {
+    await api.put(`/proveedores/${id}`, payload)
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/proveedores/${id}`)
+  },
+}
+
+// ─── Compras ──────────────────────────────────────────────────────────────────
+export const comprasService = {
+  getAll: async (): Promise<Compra[]> => {
+    const { data } = await api.get('/compras')
+    return data
+  },
+
+  getByProveedor: async (proveedorId: string): Promise<Compra[]> => {
+    const { data } = await api.get(`/compras/por-proveedor/${proveedorId}`)
+    return data
+  },
+
+  create: async (payload: {
+    proveedorId: string
+    fecha: string
+    tipoCompra: string
+    costoTotal: number
+    moneda: string
+    descripcion?: string
+    cantidadCabezas?: number
+    precioPorCabeza?: number
+    pesoPromedioKg?: number
+    loteId?: string
+    tipoInsumo?: string
+    cantidadInsumo?: number
+    unidadMedida?: string
+  }): Promise<string> => {
+    const { data } = await api.post('/compras', payload)
     return data
   },
 }

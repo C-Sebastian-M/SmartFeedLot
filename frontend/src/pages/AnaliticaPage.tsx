@@ -52,7 +52,7 @@ const GmdTooltip = ({ active, payload }: any) => {
   const d = payload[0]?.payload as IndicadorProductivo
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2.5 shadow-lg text-xs space-y-1">
-      <p className="font-semibold font-mono">{d.codigoAnimal}</p>
+      <p className="font-semibold">{d.codigoAnimal}{d.nombreAnimal ? ` — ${d.nombreAnimal}` : ''}</p>
       <p className="text-muted-foreground">{d.raza}</p>
       <p className="text-emerald-400">GMD: {fmt.kgDia(d.gmd)}</p>
       <p className="text-blue-400">ICA: {fmt.decimal(d.ica)}</p>

@@ -40,8 +40,8 @@ public sealed class RegistrarEventoSanitarioCommandValidator
             .When(x => x.TipoEvento is not null);
 
         RuleFor(x => x.ProximaDosis)
-            .Must(f => f > DateOnly.FromDateTime(DateTime.UtcNow))
-            .WithMessage("La próxima dosis debe ser una fecha futura.")
+            .Must(f => f >= DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("La próxima dosis debe ser hoy o una fecha futura.")
             .When(x => x.ProximaDosis is not null);
 
         RuleFor(x => x.Responsable)

@@ -152,6 +152,120 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                     b.ToTable("animal_lotes", "feedlot");
                 });
 
+            modelBuilder.Entity("Feedlot.Domain.Entities.Compra", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("CantidadCabezas")
+                        .HasColumnType("integer")
+                        .HasColumnName("cantidad_cabezas");
+
+                    b.Property<decimal?>("CantidadInsumo")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("cantidad_insumo");
+
+                    b.Property<decimal>("CostoTotal")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("costo_total");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<Guid?>("LoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lote_id");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("moneda");
+
+                    b.Property<decimal?>("PesoPromedioKg")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("peso_promedio_kg");
+
+                    b.Property<decimal?>("PrecioPorCabeza")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("precio_por_cabeza");
+
+                    b.Property<Guid>("ProveedorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proveedor_id");
+
+                    b.Property<string>("TipoCompra")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("tipo_compra");
+
+                    b.Property<string>("TipoInsumo")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("tipo_insumo");
+
+                    b.Property<string>("UnidadMedida")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("unidad_medida");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha")
+                        .HasDatabaseName("ix_compras_fecha");
+
+                    b.HasIndex("ProveedorId")
+                        .HasDatabaseName("ix_compras_proveedor");
+
+                    b.HasIndex("TipoCompra")
+                        .HasDatabaseName("ix_compras_tipo");
+
+                    b.ToTable("compras", "feedlot");
+                });
+
+            modelBuilder.Entity("Feedlot.Domain.Entities.Comprador", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Contacto")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("contacto");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nombre");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("telefono");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .HasDatabaseName("ix_compradores_nombre");
+
+                    b.ToTable("compradores", "feedlot");
+                });
+
             modelBuilder.Entity("Feedlot.Domain.Entities.ConsumoAlimenticio", b =>
                 {
                     b.Property<Guid>("Id")
@@ -436,6 +550,41 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                     b.ToTable("pesajes", "feedlot");
                 });
 
+            modelBuilder.Entity("Feedlot.Domain.Entities.Proveedor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Contacto")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("contacto");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nombre");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("telefono");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .HasDatabaseName("ix_proveedores_nombre");
+
+                    b.ToTable("proveedores", "feedlot");
+                });
+
             modelBuilder.Entity("Feedlot.Domain.Entities.Racion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -511,6 +660,75 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_racion_ingredientes_unique");
 
                     b.ToTable("racion_ingredientes", "feedlot");
+                });
+
+            modelBuilder.Entity("Feedlot.Domain.Entities.Venta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompradorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("comprador_id");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("moneda");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompradorId")
+                        .HasDatabaseName("ix_ventas_comprador");
+
+                    b.HasIndex("Fecha")
+                        .HasDatabaseName("ix_ventas_fecha");
+
+                    b.ToTable("ventas", "feedlot");
+                });
+
+            modelBuilder.Entity("Feedlot.Domain.Entities.VentaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AnimalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("animal_id");
+
+                    b.Property<decimal>("PesoVentaKg")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("peso_venta_kg");
+
+                    b.Property<decimal>("PrecioVenta")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("precio_venta");
+
+                    b.Property<Guid>("VentaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("venta_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnimalId")
+                        .HasDatabaseName("ix_venta_items_animal");
+
+                    b.HasIndex("VentaId")
+                        .HasDatabaseName("ix_venta_items_venta");
+
+                    b.ToTable("venta_items", "feedlot");
                 });
 
             modelBuilder.Entity("Feedlot.Infrastructure.Identity.ApplicationRole", b =>
@@ -637,6 +855,15 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Feedlot.Domain.Entities.VentaItem", b =>
+                {
+                    b.HasOne("Feedlot.Domain.Entities.Venta", null)
+                        .WithMany("Items")
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Feedlot.Infrastructure.Identity.ApplicationUserRole", b =>
                 {
                     b.HasOne("Feedlot.Infrastructure.Identity.ApplicationRole", "Role")
@@ -671,6 +898,11 @@ namespace Feedlot.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Feedlot.Domain.Entities.Racion", b =>
                 {
                     b.Navigation("Ingredientes");
+                });
+
+            modelBuilder.Entity("Feedlot.Domain.Entities.Venta", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Feedlot.Infrastructure.Identity.ApplicationRole", b =>

@@ -4,7 +4,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
-  LogOut, User, Activity, DollarSign, Menu, X
+  LogOut, User, Activity, DollarSign, Menu, X,
+  Building2, ShoppingCart, HandCoins, UserPlus,
 } from 'lucide-react'
 
 const navItems = [
@@ -14,6 +15,10 @@ const navItems = [
   { to: '/costos', icon: DollarSign, label: 'Costos' },
   { to: '/analitica', icon: BarChart3, label: 'Analítica' },
   { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
+  { to: '/proveedores', icon: Building2, label: 'Proveedores' },
+  { to: '/compras', icon: ShoppingCart, label: 'Compras' },
+  { to: '/ventas', icon: HandCoins, label: 'Ventas' },
+  { to: '/compradores', icon: UserPlus, label: 'Compradores' },
 ]
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
