@@ -10,10 +10,14 @@ public sealed class ModificarAnimalCommandHandler
     : IRequestHandler<ModificarAnimalCommand, Result>
 {
     private readonly IAnimalRepository _animalRepository;
+    private readonly ILoteRepository _loteRepository;
 
-    public ModificarAnimalCommandHandler(IAnimalRepository animalRepository)
+    public ModificarAnimalCommandHandler(
+        IAnimalRepository animalRepository,
+        ILoteRepository loteRepository)
     {
         _animalRepository = animalRepository;
+        _loteRepository = loteRepository;
     }
 
     public async Task<Result> Handle(
@@ -35,10 +39,14 @@ public sealed class ModificarAnimalCommandHandler
             request.NumeroArete,
             request.Raza,
             request.FechaNacimiento,
+            request.FechaIngreso,
             pesoIngreso,
             precioCompra);
 
         _animalRepository.Actualizar(animal);
+
+        // Sincronizar la fecha de ingreso en el lote activo del animal
+        await _loteRepository.ActualizarFechaIngresoAnimalAsync(request.AnimalId, request.FechaIngreso, ct);
 
         return Result.Success();
     }

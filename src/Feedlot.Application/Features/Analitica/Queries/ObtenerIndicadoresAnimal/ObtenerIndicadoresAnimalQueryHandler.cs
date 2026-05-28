@@ -60,6 +60,7 @@ public sealed class ObtenerIndicadoresAnimalQueryHandler
         {
             AnimalId = animal.Id,
             CodigoAnimal = animal.CodigoIdentificacion.Valor,
+            NombreAnimal = animal.Nombre,
             Raza = animal.Raza,
             PesoInicialKg = animal.PesoIngreso.Kilogramos,
             PesoActualKg = animal.PesoActual.Kilogramos,

@@ -74,6 +74,7 @@ public sealed class ObtenerAnimalesIneficientesQueryHandler
                 {
                     AnimalId = animal.Id,
                     CodigoAnimal = animal.CodigoIdentificacion.Valor,
+                    NombreAnimal = animal.Nombre,
                     Raza = animal.Raza,
                     LoteCodigo = lote.Codigo,
                     Gmd = indicador.GananciaMediaDiaria,

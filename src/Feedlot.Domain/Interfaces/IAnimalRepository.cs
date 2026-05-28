@@ -19,7 +19,8 @@ public interface IAnimalRepository
         CancellationToken ct = default);
     Task<string> ObtenerSiguienteCodigoAsync(CancellationToken ct = default);
     Task<string> ObtenerSiguienteAreteAsync(CancellationToken ct = default);
-    Task<Dictionary<Guid, string>> ObtenerCodigosPorIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default);
+    Task<Dictionary<Guid, (string Codigo, string? Nombre)>> ObtenerCodigosPorIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default);
     Task AgregarAsync(Animal animal, CancellationToken ct = default);
     void Actualizar(Animal animal);
+    Task EliminarAsync(Guid id, CancellationToken ct = default);
 }

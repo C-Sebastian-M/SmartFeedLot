@@ -42,11 +42,14 @@ public sealed class ObtenerLotePorIdQueryHandler
 
         if (animalIds.Count > 0)
         {
-            var codigos = await _animalRepository.ObtenerCodigosPorIdsAsync(animalIds, ct);
+            var info = await _animalRepository.ObtenerCodigosPorIdsAsync(animalIds, ct);
             foreach (var animalLote in dto.Animales)
             {
-                if (codigos.TryGetValue(animalLote.AnimalId, out var codigo))
-                    animalLote.CodigoAnimal = codigo;
+                if (info.TryGetValue(animalLote.AnimalId, out var animalInfo))
+                {
+                    animalLote.CodigoAnimal = animalInfo.Codigo;
+                    animalLote.NombreAnimal = animalInfo.Nombre;
+                }
             }
         }
 

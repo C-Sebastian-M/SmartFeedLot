@@ -78,4 +78,18 @@ public sealed class LoteRepository : ILoteRepository
 
     public void Actualizar(Lote lote)
         => _context.Lotes.Update(lote);
+
+    public async Task ActualizarFechaIngresoAnimalAsync(
+        Guid animalId, DateOnly nuevaFechaIngreso, CancellationToken ct = default)
+    {
+        var animalLote = await _context.AnimalesLote
+            .FirstOrDefaultAsync(al => al.AnimalId == animalId && al.EsActivo, ct);
+
+        if (animalLote is not null)
+        {
+            var entry = _context.Entry(animalLote);
+            entry.Property(al => al.FechaIngreso).CurrentValue = nuevaFechaIngreso;
+            entry.Property(al => al.FechaIngreso).IsModified = true;
+        }
+    }
 }

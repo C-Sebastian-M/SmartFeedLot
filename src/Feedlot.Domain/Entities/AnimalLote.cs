@@ -55,6 +55,14 @@ public sealed class AnimalLote : Entity<Guid>
         return new AnimalLote(Guid.NewGuid(), loteId, animalId, fechaIngreso, motivoIngreso);
     }
 
+    internal void ModificarFechaIngreso(DateOnly nuevaFechaIngreso)
+    {
+        if (EsActivo && nuevaFechaIngreso > DateOnly.FromDateTime(DateTime.UtcNow))
+            throw new DomainException("La fecha de ingreso no puede ser futura.");
+
+        FechaIngreso = nuevaFechaIngreso;
+    }
+
     internal void Cerrar(DateOnly fechaEgreso, MotivoMovimiento motivoEgreso)
     {
         if (!EsActivo)

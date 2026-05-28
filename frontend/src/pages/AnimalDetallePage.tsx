@@ -7,7 +7,7 @@ import {
   ArrowLeft, Beef, Scale, AlertTriangle,
   Calendar, TrendingUp, X, CheckCircle2, Plus, Pencil, Trash2
 } from 'lucide-react'
-import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualizarAnimal, useEliminarPesaje } from '@/hooks/useFeedlot'
+import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualizarAnimal, useEliminarPesaje, useEliminarAnimal } from '@/hooks/useFeedlot'
 import {
   Button, Card, CardHeader, CardTitle, CardContent, Badge,
   Skeleton, EmptyState, Dialog, DialogHeader, DialogTitle,
@@ -264,6 +264,7 @@ const modificarSchema = z.object({
   sexo: z.enum(['Macho', 'Hembra'], { required_error: 'Requerido' }),
   raza: z.string().max(100, 'Máximo 100 caracteres').optional(),
   fechaNacimiento: z.string().optional(),
+  fechaIngreso: z.string().min(1, 'Requerida'),
   pesoIngresoKg: z.number({ invalid_type_error: 'Número requerido' }).positive('Mayor a 0'),
   precioCompra: z.number({ invalid_type_error: 'Número requerido' }).min(0, 'No negativo'),
   moneda: z.enum(['COP', 'USD', 'EUR']).default('COP'),
@@ -271,6 +272,10 @@ const modificarSchema = z.object({
 type ModificarForm = z.infer<typeof modificarSchema>
 
 // ─── Modal modificar animal ────────────────────────────────────────────────────
+function formatPrecio(value: number) {
+  return Math.floor(value).toLocaleString('es-CO')
+}
+
 function ModificarAnimalModal({ animal, open, onClose }: {
   animal: Animal
   open: boolean
@@ -278,24 +283,26 @@ function ModificarAnimalModal({ animal, open, onClose }: {
 }) {
   const [exito, setExito] = useState(false)
   const [errorApi, setErrorApi] = useState<string>()
+  const [precioDisplay, setPrecioDisplay] = useState(formatPrecio(animal.precioCompra))
   const mutation = useActualizarAnimal()
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
     useForm<ModificarForm>({
       resolver: zodResolver(modificarSchema),
       values: {
         nombre: animal.nombre,
         numeroArete: animal.numeroArete,
         sexo: animal.sexo,
-        raza: animal.raza,
+        raza: animal.raza ?? '',
         fechaNacimiento: animal.fechaNacimiento ?? '',
+        fechaIngreso: animal.fechaIngreso,
         pesoIngresoKg: animal.pesoIngresoKg,
         precioCompra: animal.precioCompra,
         moneda: animal.moneda as 'COP' | 'USD' | 'EUR',
       },
     })
 
-  const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); onClose() }
+  const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); setPrecioDisplay(formatPrecio(animal.precioCompra)); onClose() }
 
   const onSubmit = async (data: ModificarForm) => {
     setErrorApi(undefined)
@@ -305,8 +312,9 @@ function ModificarAnimalModal({ animal, open, onClose }: {
         nombre: data.nombre || undefined,
         numeroArete: data.numeroArete,
         sexo: data.sexo,
-        raza: data.raza,
+        raza: data.raza || undefined,
         fechaNacimiento: data.fechaNacimiento || undefined,
+        fechaIngreso: data.fechaIngreso,
         pesoIngresoKg: data.pesoIngresoKg,
         precioCompra: data.precioCompra,
         moneda: data.moneda,
@@ -357,7 +365,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                     <option value="Hembra">Hembra</option>
                   </select>
                 </FormField>
-                <FormField label="Raza" error={errors.raza?.message} required>
+                <FormField label="Raza" error={errors.raza?.message}>
                   <Input {...register('raza')} placeholder="Brahman"
                     className={errors.raza ? 'border-destructive' : ''} />
                 </FormField>
@@ -365,18 +373,30 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                   <Input {...register('fechaNacimiento')} type="date"
                     className={errors.fechaNacimiento ? 'border-destructive' : ''} />
                 </FormField>
-                <FormField label="Fecha de ingreso" hint="No editable">
-                  <Input value={animal.fechaIngreso} disabled />
+                <FormField label="Fecha de ingreso" error={errors.fechaIngreso?.message} required>
+                  <Input {...register('fechaIngreso')} type="date"
+                    className={errors.fechaIngreso ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Peso ingreso (kg)" error={errors.pesoIngresoKg?.message} required>
                   <Input {...register('pesoIngresoKg', { valueAsNumber: true })}
                     type="number" step="0.1" min={1}
                     className={errors.pesoIngresoKg ? 'border-destructive' : ''} />
                 </FormField>
-                <FormField label="Precio compra" error={errors.precioCompra?.message} required>
-                  <Input {...register('precioCompra', { valueAsNumber: true })}
-                    type="number" min={0} step={1000}
-                    className={errors.precioCompra ? 'border-destructive' : ''} />
+                <FormField label="Precio compra ($)" error={errors.precioCompra?.message} required>
+                  <input
+                    type="text" inputMode="numeric"
+                    value={precioDisplay}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '')
+                      const num = raw ? parseInt(raw) : 0
+                      setValue('precioCompra', num, { shouldValidate: true })
+                      setPrecioDisplay(raw ? formatPrecio(num) : '')
+                    }}
+                    placeholder="1.000.000"
+                    className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors
+                      focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
+                      ${errors.precioCompra ? 'border-destructive' : 'border-input'}`}
+                  />
                 </FormField>
               </div>
 
@@ -409,6 +429,7 @@ export default function AnimalDetallePage() {
 
   const [eliminandoPesajeId, setEliminandoPesajeId] = useState<string | null>(null)
   const eliminarPesaje = useEliminarPesaje()
+  const eliminarAnimal = useEliminarAnimal()
 
   const handleEliminarPesaje = async (pesajeId: string) => {
     setEliminandoPesajeId(pesajeId)
@@ -495,6 +516,13 @@ export default function AnimalDetallePage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => {
+            if (window.confirm(`¿Eliminar ${animal.codigoIdentificacion}? Esta acción no se puede deshacer.`))
+              eliminarAnimal.mutate(id!)
+          }}>
+            <Trash2 className="w-3.5 h-3.5" />
+            Eliminar
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setModalEditar(true)}>
             <Pencil className="w-3.5 h-3.5" />
             Editar

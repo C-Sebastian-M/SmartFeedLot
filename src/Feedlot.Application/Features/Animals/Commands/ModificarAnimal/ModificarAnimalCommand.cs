@@ -9,6 +9,7 @@ public sealed record ModificarAnimalCommand(
     string Sexo,
     string? Raza,
     DateOnly? FechaNacimiento,
+    DateOnly FechaIngreso,
     decimal PesoIngresoKg,
     decimal PrecioCompra,
     string Moneda

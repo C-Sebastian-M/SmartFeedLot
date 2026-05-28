@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { animalsService, lotesService, analiticaService, costosService } from '@/services/feedlot.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -21,8 +22,10 @@ export const queryKeys = {
     ineficientes: (params: object) => ['analitica', 'ineficientes', params] as const,
   },
   costos: {
-    costosTotales: (loteId: string, params: object) =>
-      ['costos', 'costos-totales', loteId, params] as const,
+    totalesLote: (loteId: string, params: object) =>
+      ['costos', 'totales', loteId, params] as const,
+    detalleLote: (loteId: string, params: object) =>
+      ['costos', 'detalle', loteId, params] as const,
   },
 }
 
@@ -55,26 +58,28 @@ export function useCreateAnimal() {
   })
 }
 
-export function useActualizarAnimal() {
+export function useEliminarAnimal() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   return useMutation({
-    mutationFn: (input: { id: string; nombre?: string; numeroArete: string; sexo: string; raza?: string; fechaNacimiento?: string; pesoIngresoKg: number; precioCompra: number; moneda: string }) =>
-      animalsService.actualizar(input.id, input),
-    onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.id) })
+    mutationFn: (id: string) => animalsService.eliminar(id),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
+      navigate('/animales')
     },
   })
 }
 
-export function useEliminarPesaje() {
+export function useActualizarAnimal() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ animalId, pesajeId }: { animalId: string; pesajeId: string }) =>
-      animalsService.eliminarPesaje(animalId, pesajeId),
+    mutationFn: (input: { id: string; nombre?: string; numeroArete: string; sexo: string; raza?: string; fechaNacimiento?: string; fechaIngreso: string; pesoIngresoKg: number; precioCompra: number; moneda: string }) =>
+      animalsService.actualizar(input.id, input),
     onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.id) })
       qc.invalidateQueries({ queryKey: queryKeys.animals.all })
+      qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
     },
   })
 }
@@ -104,6 +109,18 @@ export function useRegistrarEventoSanitario() {
       animalsService.registrarEventoSanitario(animalId, payload),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
+    },
+  })
+}
+
+export function useEliminarPesaje() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ animalId, pesajeId }: { animalId: string; pesajeId: string }) =>
+      animalsService.eliminarPesaje(animalId, pesajeId),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.animalId) })
+      qc.invalidateQueries({ queryKey: queryKeys.animals.all })
     },
   })
 }
@@ -141,7 +158,6 @@ export function useActivarLote() {
   return useMutation({
     mutationFn: (loteId: string) => lotesService.activar(loteId),
     onSuccess: (_data, loteId) => {
-      // Invalidar lista y detalle del lote específico.
       qc.invalidateQueries({ queryKey: queryKeys.lotes.all })
       qc.invalidateQueries({ queryKey: queryKeys.lotes.detail(loteId) })
     },
@@ -208,13 +224,15 @@ export function useAnimalesIneficientes(
   })
 }
 
-// ─── Costos ────────────────────────────────────────────────────────────────────
-export function useCostosTotalesLote(
-  params: Parameters<typeof costosService.getCostosTotalesLote>[0]
-) {
+// ─── Costos ───────────────────────────────────────────────────────────────────
+export function useCostosTotalesLote(params: {
+  loteId: string
+  desde: string
+  hasta: string
+}) {
   return useQuery({
-    queryKey: queryKeys.costos.costosTotales(params.loteId, params),
-    queryFn: () => costosService.getCostosTotalesLote(params),
+    queryKey: queryKeys.costos.totalesLote(params.loteId, params),
+    queryFn: () => costosService.getCosteoLote(params),
     enabled: Boolean(params.loteId && params.desde && params.hasta),
     staleTime: 60_000,
   })
@@ -223,9 +241,12 @@ export function useCostosTotalesLote(
 export function useRegistrarCostoOperativo() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: costosService.registrarCostoOperativo,
+    mutationFn: costosService.registrarCosto,
     onSuccess: () => {
+      // Invalidar todos los costos para refrescar el desglose
       qc.invalidateQueries({ queryKey: ['costos'] })
+      // Invalidar analítica porque el costo afecta la rentabilidad
+      qc.invalidateQueries({ queryKey: ['analitica'] })
     },
   })
 }

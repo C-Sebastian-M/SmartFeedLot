@@ -92,7 +92,7 @@ function TablaIndicadores({ indicadores }: { indicadores: IndicadorProductivo[] 
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border">
-                {['Código', 'Raza', 'Peso inicial', 'Peso actual', 'Ganado', 'Días', 'GMD', 'ICA', 'Costo/kg', 'Rentabilidad', 'Estado'].map(h => (
+                {['Código', 'Nombre', 'Raza', 'Peso inicial', 'Peso actual', 'Ganado', 'Días', 'GMD', 'ICA', 'Costo/kg', 'Rentabilidad', 'Estado'].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">
                     {h}
                   </th>
@@ -107,6 +107,7 @@ function TablaIndicadores({ indicadores }: { indicadores: IndicadorProductivo[] 
                     ${ind.esIneficiente ? 'bg-rose-500/3' : ''}`}
                 >
                   <td className="px-4 py-2.5 font-mono font-semibold">{ind.codigoAnimal}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{ind.nombreAnimal || '-'}</td>
                   <td className="px-4 py-2.5 text-muted-foreground">{ind.raza}</td>
                   <td className="px-4 py-2.5 tabular-nums">{fmt.kg(ind.pesoInicialKg)}</td>
                   <td className="px-4 py-2.5 tabular-nums font-medium">{fmt.kg(ind.pesoActualKg)}</td>

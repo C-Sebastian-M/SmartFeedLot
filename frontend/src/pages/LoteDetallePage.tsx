@@ -158,6 +158,7 @@ export default function LoteDetallePage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left pb-2 text-muted-foreground font-medium">Código</th>
+                  <th className="text-left pb-2 text-muted-foreground font-medium">Nombre</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Ingreso</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Días</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Motivo</th>
@@ -170,6 +171,7 @@ export default function LoteDetallePage() {
                     className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
                     onClick={() => navigate(`/animales/${al.animalId}`)}>
                     <td className="py-2.5 font-mono font-semibold">{al.codigoAnimal}</td>
+                    <td className="py-2.5 text-muted-foreground">{al.nombreAnimal || '-'}</td>
                     <td className="py-2.5 text-muted-foreground">{fmt.fecha(al.fechaIngreso as string)}</td>
                     <td className="py-2.5 tabular-nums">{al.diasEnLote}d</td>
                     <td className="py-2.5 text-muted-foreground capitalize">{al.motivoIngreso}</td>
@@ -195,6 +197,7 @@ export default function LoteDetallePage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left pb-2 text-muted-foreground font-medium">Código</th>
+                  <th className="text-left pb-2 text-muted-foreground font-medium">Nombre</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Ingreso</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Egreso</th>
                   <th className="text-left pb-2 text-muted-foreground font-medium">Días</th>
@@ -207,6 +210,7 @@ export default function LoteDetallePage() {
                     className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
                     onClick={() => navigate(`/animales/${al.animalId}`)}>
                     <td className="py-2.5 font-mono font-semibold">{al.codigoAnimal}</td>
+                    <td className="py-2.5 text-muted-foreground">{al.nombreAnimal || '-'}</td>
                     <td className="py-2.5 text-muted-foreground">{fmt.fecha(al.fechaIngreso as string)}</td>
                     <td className="py-2.5 text-muted-foreground">{al.fechaEgreso ? fmt.fecha(al.fechaEgreso) : '-'}</td>
                     <td className="py-2.5 tabular-nums">{al.diasEnLote}d</td>

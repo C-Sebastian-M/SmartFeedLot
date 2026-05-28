@@ -26,22 +26,19 @@ export const animalsService = {
   },
 
   create: async (payload: {
-    nombre?: string
+    codigoIdentificacion: string
+    numeroArete: string
     sexo: string
-    raza?: string
-    fechaNacimiento?: string
+    raza: string
+    fechaNacimiento: string
     pesoIngresoKg: number
-    precioCompraPorKg: number
+    precioCompra: number
     moneda: string
     fechaIngreso: string
     loteInicialId?: string
   }): Promise<string> => {
     const { data } = await api.post('/animals', payload)
     return data
-  },
-
-  eliminarPesaje: async (animalId: string, pesajeId: string): Promise<void> => {
-    await api.delete(`/animals/${animalId}/pesajes/${pesajeId}`)
   },
 
   registrarPesaje: async (
@@ -66,17 +63,16 @@ export const animalsService = {
     return data
   },
 
-  actualizar: async (id: string, payload: {
-    nombre?: string
-    numeroArete: string
-    sexo: string
-    raza?: string
-    fechaNacimiento?: string
-    pesoIngresoKg: number
-    precioCompra: number
-    moneda: string
-  }): Promise<void> => {
+  actualizar: async <T>(id: string, payload: T): Promise<void> => {
     await api.put(`/animals/${id}`, payload)
+  },
+
+  eliminarPesaje: async (animalId: string, pesajeId: string): Promise<void> => {
+    await api.delete(`/animals/${animalId}/pesajes/${pesajeId}`)
+  },
+
+  eliminar: async (id: string): Promise<void> => {
+    await api.delete(`/animals/${id}`)
   },
 }
 
@@ -93,6 +89,7 @@ export const lotesService = {
   },
 
   create: async (payload: {
+    codigo: string
     nombre: string
     capacidadMaxima: number
   }): Promise<string> => {
@@ -194,19 +191,30 @@ export const nutricionService = {
   },
 }
 
-// ─── Costos Operativos ─────────────────────────────────────────────────────────
+// ─── Costos operativos ────────────────────────────────────────────────────────
 export const costosService = {
-  getCostosTotalesLote: async (params: {
+  getCosteoLote: async (params: {
     loteId: string
     desde: string
     hasta: string
   }): Promise<CosteoLote> => {
     const { loteId, ...rest } = params
-    const { data } = await api.get(`/costos/lotes/${loteId}/costos-totales`, { params: rest })
+    const { data } = await api.get(`/costos/lotes/${loteId}`, { params: rest })
     return data
   },
 
-  registrarCostoOperativo: async (payload: {
+  getDetalleLote: async (params: {
+    loteId: string
+    categoria?: string
+    desde?: string
+    hasta?: string
+  }) => {
+    const { loteId, ...rest } = params
+    const { data } = await api.get(`/costos/lotes/${loteId}/detalle`, { params: rest })
+    return data
+  },
+
+  registrarCosto: async (payload: {
     loteId: string
     categoria: string
     concepto: string
@@ -216,7 +224,7 @@ export const costosService = {
     observaciones?: string
     registradoPorId: string
   }): Promise<string> => {
-    const { data } = await api.post('/costos/costo-operativo', payload)
+    const { data } = await api.post('/costos', payload)
     return data
   },
 }

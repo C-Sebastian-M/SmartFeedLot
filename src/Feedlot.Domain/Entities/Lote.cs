@@ -107,6 +107,22 @@ public sealed class Lote : AggregateRoot<Guid>
         return animalLote;
     }
 
+    /// <summary>
+    /// Actualiza la fecha de ingreso del animal en este lote.
+    /// Se usa cuando se corrige la fecha de ingreso del animal desde su ficha.
+    /// </summary>
+    public void ActualizarFechaIngresoAnimal(Guid animalId, DateOnly nuevaFechaIngreso)
+    {
+        var animalLote = _animalesLote
+            .FirstOrDefault(al => al.AnimalId == animalId && al.EsActivo);
+
+        if (animalLote is null)
+            throw new DomainException(
+                $"El animal '{animalId}' no se encuentra activo en el lote '{Id}'.");
+
+        animalLote.ModificarFechaIngreso(nuevaFechaIngreso);
+    }
+
     public void RetirarAnimal(Guid animalId, DateOnly fechaEgreso, MotivoMovimiento motivo)
     {
         var animalLote = _animalesLote

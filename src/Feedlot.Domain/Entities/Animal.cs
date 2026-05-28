@@ -118,19 +118,21 @@ public sealed class Animal : AggregateRoot<Guid>
         string numeroArete,
         string? raza,
         DateOnly? fechaNacimiento,
+        DateOnly fechaIngreso,
         Peso pesoIngreso,
         Dinero precioCompra)
     {
         if (string.IsNullOrWhiteSpace(numeroArete))
             throw new DomainException("El número de arete no puede estar vacío.");
 
-        if (fechaNacimiento.HasValue && FechaIngreso <= fechaNacimiento.Value)
+        if (fechaNacimiento.HasValue && fechaIngreso <= fechaNacimiento.Value)
             throw new DomainException("La fecha de nacimiento debe ser anterior a la fecha de ingreso.");
 
         Nombre = nombre?.Trim();
         NumeroArete = numeroArete.Trim().ToUpperInvariant();
         Raza = raza?.Trim();
         FechaNacimiento = fechaNacimiento;
+        FechaIngreso = fechaIngreso;
         PesoIngreso = pesoIngreso;
         PrecioCompra = precioCompra;
     }

@@ -122,7 +122,7 @@ export default function AlertasPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
-                      {['#', 'Código', 'Raza', 'Lote', 'GMD real', 'GMD mín.', 'ICA real', 'ICA máx.', 'Días', 'Motivo', 'Alerta'].map(h => (
+                      {['#', 'Código', 'Nombre', 'Raza', 'Lote', 'GMD real', 'GMD mín.', 'ICA real', 'ICA máx.', 'Días', 'Motivo', 'Alerta'].map(h => (
                         <th key={h} className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">
                           {h}
                         </th>
@@ -142,6 +142,7 @@ export default function AlertasPage() {
                         >
                           <td className="px-4 py-3 text-muted-foreground tabular-nums">{i + 1}</td>
                           <td className="px-4 py-3 font-mono font-semibold">{animal.codigoAnimal}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{animal.nombreAnimal || '-'}</td>
                           <td className="px-4 py-3 text-muted-foreground">{animal.raza}</td>
                           <td className="px-4 py-3">
                             <Badge className="bg-secondary border-border text-foreground font-mono text-[10px]">

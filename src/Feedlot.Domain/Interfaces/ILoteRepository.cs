@@ -24,4 +24,7 @@ public interface ILoteRepository
 
     Task AgregarAsync(Lote lote, CancellationToken ct = default);
     void Actualizar(Lote lote);
+
+    /// <summary>Actualiza directamente la fecha de ingreso del animal en el lote activo.</summary>
+    Task ActualizarFechaIngresoAnimalAsync(Guid animalId, DateOnly nuevaFechaIngreso, CancellationToken ct = default);
 }

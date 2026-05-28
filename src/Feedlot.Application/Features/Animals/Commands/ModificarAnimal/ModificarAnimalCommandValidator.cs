@@ -27,13 +27,17 @@ public sealed class ModificarAnimalCommandValidator
             .WithMessage($"El sexo debe ser uno de: {string.Join(", ", SexosValidos)}.");
 
         RuleFor(x => x.Raza)
-            .NotEmpty().WithMessage("La raza es requerida.")
             .MaximumLength(100).WithMessage("La raza no puede superar 100 caracteres.");
 
         RuleFor(x => x.FechaNacimiento)
             .Must(f => !f.HasValue || f.Value < DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage("La fecha de nacimiento debe ser anterior a hoy.")
             .When(x => x.FechaNacimiento.HasValue);
+
+        RuleFor(x => x.FechaIngreso)
+            .NotEmpty().WithMessage("La fecha de ingreso es requerida.")
+            .Must(f => f <= DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("La fecha de ingreso no puede ser futura.");
 
         RuleFor(x => x.PesoIngresoKg)
             .GreaterThan(0).WithMessage("El peso de ingreso debe ser mayor a cero.")

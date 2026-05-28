@@ -144,10 +144,10 @@ public sealed class AnimalRepository : IAnimalRepository
         return $"AR-{numero + 1:D4}";
     }
 
-    public async Task<Dictionary<Guid, string>> ObtenerCodigosPorIdsAsync(
+    public async Task<Dictionary<Guid, (string Codigo, string? Nombre)>> ObtenerCodigosPorIdsAsync(
         IReadOnlyList<Guid> ids, CancellationToken ct = default)
     {
-        var dict = new Dictionary<Guid, string>();
+        var dict = new Dictionary<Guid, (string, string?)>();
         if (ids.Count == 0) return dict;
 
         var animales = await _context.Animals
@@ -155,7 +155,7 @@ public sealed class AnimalRepository : IAnimalRepository
             .ToListAsync(ct);
 
         foreach (var animal in animales)
-            dict[animal.Id] = animal.CodigoIdentificacion.Valor;
+            dict[animal.Id] = (animal.CodigoIdentificacion.Valor, animal.Nombre);
 
         return dict;
     }
@@ -165,4 +165,24 @@ public sealed class AnimalRepository : IAnimalRepository
 
     public void Actualizar(Animal animal)
         => _context.Animals.Update(animal);
+
+    public async Task EliminarAsync(Guid id, CancellationToken ct = default)
+    {
+        var animal = await _context.Animals
+            .Include(a => a.Pesajes)
+            .Include(a => a.EventosSanitarios)
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
+        if (animal is null) return;
+
+        _context.Pesajes.RemoveRange(animal.Pesajes);
+        _context.EventosSanitarios.RemoveRange(animal.EventosSanitarios);
+
+        var registrosLote = await _context.AnimalesLote
+            .Where(al => al.AnimalId == id)
+            .ToListAsync(ct);
+        _context.AnimalesLote.RemoveRange(registrosLote);
+
+        _context.Animals.Remove(animal);
+    }
 }

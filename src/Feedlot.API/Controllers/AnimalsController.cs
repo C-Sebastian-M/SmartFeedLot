@@ -1,3 +1,4 @@
+using Feedlot.Application.Features.Animals.Commands.EliminarAnimal;
 using Feedlot.Application.Features.Animals.Commands.ModificarAnimal;
 using Feedlot.Application.Features.Animals.Commands.RegistrarAnimal;
 using Feedlot.Application.Features.Animals.Commands.RegistrarEventoSanitario;
@@ -67,6 +68,16 @@ public sealed class AnimalsController : ApiControllerBase
         return CreatedFromResult(result, "ObtenerAnimalPorId", new { id = result.Value });
     }
 
+    /// <summary>Elimina un animal y todos sus registros asociados.</summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Eliminar(Guid id, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new EliminarAnimalCommand(id), ct);
+        return FromResult(result);
+    }
+
     /// <summary>Modifica los datos de un animal existente.</summary>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -85,6 +96,7 @@ public sealed class AnimalsController : ApiControllerBase
             request.Sexo,
             request.Raza,
             request.FechaNacimiento,
+            request.FechaIngreso,
             request.PesoIngresoKg,
             request.PrecioCompra,
             request.Moneda);
@@ -164,6 +176,7 @@ public sealed record ModificarAnimalRequest(
     string Sexo,
     string? Raza,
     DateOnly? FechaNacimiento,
+    DateOnly FechaIngreso,
     decimal PesoIngresoKg,
     decimal PrecioCompra,
     string Moneda);

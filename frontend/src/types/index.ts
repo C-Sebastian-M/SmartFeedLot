@@ -87,6 +87,7 @@ export interface LoteResumen {
 export interface AnimalLote {
   animalId: string
   codigoAnimal: string
+  nombreAnimal?: string
   fechaIngreso: string
   fechaEgreso?: string
   motivoIngreso: MotivoMovimiento
@@ -119,6 +120,7 @@ export interface ConsumoAlimenticio {
 export interface IndicadorProductivo {
   animalId: string
   codigoAnimal: string
+  nombreAnimal?: string
   raza: string
   pesoInicialKg: number
   pesoActualKg: number
@@ -150,6 +152,7 @@ export interface ResumenLote {
 export interface AnimalIneficiente {
   animalId: string
   codigoAnimal: string
+  nombreAnimal?: string
   raza: string
   loteCodigo: string
   gmd: number

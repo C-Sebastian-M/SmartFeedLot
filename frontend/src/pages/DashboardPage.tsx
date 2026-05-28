@@ -151,6 +151,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-mono font-medium">
                           {animal.codigoAnimal}
+                          {animal.nombreAnimal && <span className="text-muted-foreground ml-1.5 font-normal">{animal.nombreAnimal}</span>}
                         </span>
                         <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-[10px]">
                           {animal.loteCodigo}
