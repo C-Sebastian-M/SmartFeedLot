@@ -23,4 +23,6 @@ public interface IAnimalRepository
     Task AgregarAsync(Animal animal, CancellationToken ct = default);
     void Actualizar(Animal animal);
     Task EliminarAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<(Guid AnimalId, string Codigo, string? Nombre, string Diagnostico, DateOnly ProximaDosis, string? Responsable)>>
+        ObtenerVacunasProximasAsync(int dias, CancellationToken ct = default);
 }

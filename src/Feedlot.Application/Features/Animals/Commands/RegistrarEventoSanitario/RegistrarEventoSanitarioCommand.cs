@@ -8,5 +8,8 @@ public sealed record RegistrarEventoSanitarioCommand(
     string Diagnostico,
     string Descripcion,
     string Severidad,
-    string? Tratamiento
+    string? Tratamiento,
+    string? TipoEvento,
+    DateOnly? ProximaDosis,
+    string? Responsable
 ) : ICommand<Guid>;

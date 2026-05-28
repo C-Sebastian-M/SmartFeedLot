@@ -19,7 +19,10 @@ public sealed class EventoSanitario : Entity<Guid>
         string diagnostico,
         string descripcion,
         SeveridadEvento severidad,
-        string? tratamiento) : base(id)
+        string? tratamiento,
+        string? tipoEvento,
+        DateOnly? proximaDosis,
+        string? responsable) : base(id)
     {
         AnimalId = animalId;
         FechaEvento = fechaEvento;
@@ -27,6 +30,9 @@ public sealed class EventoSanitario : Entity<Guid>
         Descripcion = descripcion;
         Severidad = severidad;
         Tratamiento = tratamiento;
+        TipoEvento = tipoEvento;
+        ProximaDosis = proximaDosis;
+        Responsable = responsable;
     }
 
     public Guid AnimalId { get; private set; }
@@ -35,6 +41,9 @@ public sealed class EventoSanitario : Entity<Guid>
     public string Descripcion { get; private set; } = null!;
     public SeveridadEvento Severidad { get; private set; }
     public string? Tratamiento { get; private set; }
+    public string? TipoEvento { get; private set; }
+    public DateOnly? ProximaDosis { get; private set; }
+    public string? Responsable { get; private set; }
 
     internal static EventoSanitario Crear(
         Guid animalId,
@@ -42,11 +51,15 @@ public sealed class EventoSanitario : Entity<Guid>
         string diagnostico,
         string descripcion,
         SeveridadEvento severidad,
-        string? tratamiento)
+        string? tratamiento,
+        string? tipoEvento = null,
+        DateOnly? proximaDosis = null,
+        string? responsable = null)
     {
         return new EventoSanitario(
             Guid.NewGuid(), animalId, fechaEvento,
             diagnostico.Trim(), descripcion.Trim(),
-            severidad, tratamiento?.Trim());
+            severidad, tratamiento?.Trim(),
+            tipoEvento, proximaDosis, responsable?.Trim());
     }
 }

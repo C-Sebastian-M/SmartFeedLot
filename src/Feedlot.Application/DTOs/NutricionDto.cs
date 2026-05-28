@@ -18,6 +18,9 @@ public sealed class EventoSanitarioDto
     public string Descripcion { get; init; } = null!;
     public string Severidad { get; init; } = null!;
     public string? Tratamiento { get; init; }
+    public string? TipoEvento { get; init; }
+    public DateOnly? ProximaDosis { get; init; }
+    public string? Responsable { get; init; }
 }
 
 public sealed class ConsumoAlimenticioDto

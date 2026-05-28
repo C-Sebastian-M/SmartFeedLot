@@ -175,14 +175,47 @@ public sealed class AnimalRepository : IAnimalRepository
 
         if (animal is null) return;
 
-        _context.Pesajes.RemoveRange(animal.Pesajes);
-        _context.EventosSanitarios.RemoveRange(animal.EventosSanitarios);
-
-        var registrosLote = await _context.AnimalesLote
+        var animalLotes = await _context.AnimalesLote
             .Where(al => al.AnimalId == id)
             .ToListAsync(ct);
-        _context.AnimalesLote.RemoveRange(registrosLote);
 
-        _context.Animals.Remove(animal);
+        _context.RemoveRange(animal.Pesajes);
+        _context.RemoveRange(animal.EventosSanitarios);
+        _context.RemoveRange(animalLotes);
+        _context.Remove(animal);
+    }
+
+    public async Task<IReadOnlyList<(Guid AnimalId, string Codigo, string? Nombre, string Diagnostico, DateOnly ProximaDosis, string? Responsable)>>
+        ObtenerVacunasProximasAsync(int dias, CancellationToken ct = default)
+    {
+        var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
+        var limite = hoy.AddDays(dias);
+
+        var resultado = await _context.EventosSanitarios
+            .Where(e => e.TipoEvento == "Vacuna"
+                && e.ProximaDosis != null
+                && e.ProximaDosis >= hoy
+                && e.ProximaDosis <= limite)
+            .Join(_context.Animals, e => e.AnimalId, a => a.Id, (e, a) => new
+            {
+                a.Id,
+                a.CodigoIdentificacion.Valor,
+                a.Nombre,
+                e.Diagnostico,
+                e.ProximaDosis,
+                e.Responsable
+            })
+            .ToListAsync(ct);
+
+        return resultado
+            .Select(r => (
+                r.Id,
+                r.Valor,
+                r.Nombre,
+                r.Diagnostico,
+                r.ProximaDosis!.Value,
+                r.Responsable))
+            .ToList()
+            .AsReadOnly();
     }
 }

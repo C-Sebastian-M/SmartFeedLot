@@ -37,6 +37,9 @@ const eventoSchema = z.object({
   descripcion: z.string().min(5, 'Mínimo 5 caracteres').max(1000),
   severidad: z.enum(['Leve', 'Moderado', 'Grave', 'Critico'], { required_error: 'Requerida' }),
   tratamiento: z.string().max(500).optional(),
+  tipoEvento: z.enum(['Vacuna', 'Tratamiento', 'Otro']).optional(),
+  proximaDosis: z.string().optional(),
+  responsable: z.string().max(200).optional(),
 })
 type EventoForm = z.infer<typeof eventoSchema>
 
@@ -170,6 +173,9 @@ function RegistrarEventoModal({ animalId, open, onClose }: {
         descripcion: data.descripcion,
         severidad: data.severidad,
         tratamiento: data.tratamiento || undefined,
+        tipoEvento: data.tipoEvento || undefined,
+        proximaDosis: data.proximaDosis || undefined,
+        responsable: data.responsable || undefined,
       })
       setExito(true)
       setTimeout(handleClose, 1500)
@@ -231,6 +237,30 @@ function RegistrarEventoModal({ animalId, open, onClose }: {
               <FormField label="Tratamiento" error={errors.tratamiento?.message}>
                 <Input {...register('tratamiento')} placeholder="Medicamento, dosis, vía de administración..." />
               </FormField>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Tipo de evento" error={errors.tipoEvento?.message}>
+                  <Select
+                    placeholder="Seleccionar..."
+                    options={[
+                      { value: 'Tratamiento', label: 'Tratamiento' },
+                      { value: 'Vacuna', label: 'Vacuna' },
+                      { value: 'Otro', label: 'Otro' },
+                    ]}
+                    value={watch('tipoEvento')}
+                    onChange={v => setValue('tipoEvento', v as any, { shouldValidate: true })}
+                    error={!!errors.tipoEvento}
+                  />
+                </FormField>
+                <FormField label="Responsable" error={errors.responsable?.message}>
+                  <Input {...register('responsable')} placeholder="Nombre del veterinario..." />
+                </FormField>
+              </div>
+              {watch('tipoEvento') === 'Vacuna' && (
+                <FormField label="Próxima dosis" error={errors.proximaDosis?.message}>
+                  <Input {...register('proximaDosis')} type="date"
+                    className={errors.proximaDosis ? 'border-destructive' : ''} />
+                </FormField>
+              )}
               {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isSubmitting}>Cancelar</Button>
@@ -695,8 +725,19 @@ export default function AnimalDetallePage() {
                         <Badge className={`${severidadColor[e.severidad]} text-[10px]`}>{e.severidad}</Badge>
                       </div>
                       <p className="text-[10px] text-muted-foreground">{fmt.fecha(e.fechaEvento)}</p>
+                      {e.tipoEvento && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground/60">{e.tipoEvento}</span>
+                          {e.responsable && <span className="ml-2">por {e.responsable}</span>}
+                        </p>
+                      )}
                       {e.tratamiento && (
                         <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{e.tratamiento}</p>
+                      )}
+                      {e.proximaDosis && (
+                        <p className="text-[10px] text-amber-400/80 mt-1">
+                          Próxima dosis: {fmt.fecha(e.proximaDosis)}
+                        </p>
                       )}
                     </div>
                   ))}

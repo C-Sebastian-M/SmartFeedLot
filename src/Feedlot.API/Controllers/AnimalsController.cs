@@ -151,7 +151,10 @@ public sealed class AnimalsController : ApiControllerBase
             request.Diagnostico,
             request.Descripcion,
             request.Severidad,
-            request.Tratamiento);
+            request.Tratamiento,
+            request.TipoEvento,
+            request.ProximaDosis,
+            request.Responsable);
         var result = await _sender.Send(command, ct);
         return FromResult(result);
     }
@@ -168,7 +171,10 @@ public sealed record RegistrarEventoSanitarioRequest(
     string Diagnostico,
     string Descripcion,
     string Severidad,
-    string? Tratamiento);
+    string? Tratamiento,
+    string? TipoEvento,
+    DateOnly? ProximaDosis,
+    string? Responsable);
 
 public sealed record ModificarAnimalRequest(
     string? Nombre,

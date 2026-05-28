@@ -186,12 +186,16 @@ public sealed class Animal : AggregateRoot<Guid>
         string diagnostico,
         string descripcion,
         SeveridadEvento severidad,
-        string? tratamiento = null)
+        string? tratamiento = null,
+        string? tipoEvento = null,
+        DateOnly? proximaDosis = null,
+        string? responsable = null)
     {
         ValidarAnimalActivo();
 
         var evento = EventoSanitario.Crear(
-            Id, fechaEvento, diagnostico, descripcion, severidad, tratamiento);
+            Id, fechaEvento, diagnostico, descripcion, severidad, tratamiento,
+            tipoEvento, proximaDosis, responsable);
 
         _eventosSanitarios.Add(evento);
 

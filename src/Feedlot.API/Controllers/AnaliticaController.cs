@@ -1,6 +1,7 @@
 using Feedlot.Application.Features.Analitica.Queries.ObtenerAnimalesIneficientes;
 using Feedlot.Application.Features.Analitica.Queries.ObtenerIndicadoresAnimal;
 using Feedlot.Application.Features.Analitica.Queries.ObtenerResumenLote;
+using Feedlot.Application.Features.Analitica.Queries.ObtenerVacunasProximas;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,6 +81,18 @@ public sealed class AnaliticaController : ApiControllerBase
     {
         var query = new ObtenerAnimalesIneficientesQuery(
             loteId, desde, hasta, precioVentaEstimadoPorKg, gmdMinima, icaMaxima);
+        var result = await _sender.Send(query, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>Obtiene vacunas cuya próxima dosis vence en los próximos N días.</summary>
+    [HttpGet("vacunas-proximas")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerVacunasProximas(
+        [FromQuery] int dias = 15,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerVacunasProximasQuery(dias);
         var result = await _sender.Send(query, ct);
         return FromResult(result);
     }

@@ -32,7 +32,10 @@ public sealed class RegistrarEventoSanitarioCommandHandler
             request.Diagnostico,
             request.Descripcion,
             severidad,
-            request.Tratamiento);
+            request.Tratamiento,
+            request.TipoEvento,
+            request.ProximaDosis,
+            request.Responsable);
 
         _animalRepository.Actualizar(animal);
 

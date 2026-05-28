@@ -33,5 +33,20 @@ public sealed class RegistrarEventoSanitarioCommandValidator
             .MaximumLength(500)
             .WithMessage("El tratamiento no puede superar 500 caracteres.")
             .When(x => x.Tratamiento is not null);
+
+        RuleFor(x => x.TipoEvento)
+            .Must(t => t is null || t is "Vacuna" or "Tratamiento" or "Otro")
+            .WithMessage("Tipo de evento inválido. Valores válidos: Vacuna, Tratamiento, Otro.")
+            .When(x => x.TipoEvento is not null);
+
+        RuleFor(x => x.ProximaDosis)
+            .Must(f => f > DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("La próxima dosis debe ser una fecha futura.")
+            .When(x => x.ProximaDosis is not null);
+
+        RuleFor(x => x.Responsable)
+            .MaximumLength(200)
+            .WithMessage("El responsable no puede superar 200 caracteres.")
+            .When(x => x.Responsable is not null);
     }
 }

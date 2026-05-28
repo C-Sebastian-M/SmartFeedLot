@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { AlertTriangle, TrendingDown, Beef, ChevronDown } from 'lucide-react'
-import { useLotes, useAnimalesIneficientes } from '@/hooks/useFeedlot'
+import { AlertTriangle, TrendingDown, Beef, ChevronDown, Syringe } from 'lucide-react'
+import { useLotes, useAnimalesIneficientes, useVacunasProximas } from '@/hooks/useFeedlot'
 import {
-  PageHeader, Card, CardContent, Badge, Skeleton, EmptyState,
+  PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton, EmptyState,
 } from '@/components/ui'
 import { fmt } from '@/utils'
-import type { AnimalIneficiente, LoteResumen } from '@/types'
+import type { AnimalIneficiente, LoteResumen, VacunaProxima } from '@/types'
 
 export default function AlertasPage() {
   const hoy = format(new Date(), 'yyyy-MM-dd')
@@ -30,7 +30,10 @@ export default function AlertasPage() {
     precioVentaEstimadoPorKg: 5500,
   })
 
+  const { data: vacunasProximas, isLoading: loadingVacunas } = useVacunasProximas()
+
   const alertas = (ineficientes as AnimalIneficiente[] | undefined) ?? []
+  const vacunas = (vacunasProximas as VacunaProxima[] | undefined) ?? []
 
   const porSeveridad = {
     critico: alertas.filter(a => a.gmd < 0.5),
@@ -186,6 +189,42 @@ export default function AlertasPage() {
             </p>
           </div>
         )}
+
+        {/* Vacunas próximas */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Syringe className="w-4 h-4 text-blue-400" />
+              <CardTitle>Vacunas próximas ({vacunas.length})</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingVacunas ? (
+              <Skeleton className="h-20" />
+            ) : !vacunas.length ? (
+              <EmptyState icon={<Syringe className="w-4 h-4" />} title="Sin vacunas pendientes" description="No hay vacunas con próxima dosis en los próximos 15 días." />
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {vacunas.map(v => (
+                  <div key={`${v.animalId}-${v.proximaDosis}`}
+                    className="p-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-mono font-medium">{v.codigoAnimal}</span>
+                      <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]">
+                        {fmt.fecha(v.proximaDosis)}
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      {v.nombreAnimal && <span className="mr-1">{v.nombreAnimal} · </span>}
+                      {v.diagnostico}
+                      {v.responsable && <span className="ml-1">· por {v.responsable}</span>}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

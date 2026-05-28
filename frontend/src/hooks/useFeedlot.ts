@@ -250,3 +250,11 @@ export function useRegistrarCostoOperativo() {
     },
   })
 }
+
+export function useVacunasProximas(dias = 15) {
+  return useQuery({
+    queryKey: ['analitica', 'vacunas-proximas', dias],
+    queryFn: () => analiticaService.getVacunasProximas(dias),
+    staleTime: 60_000,
+  })
+}

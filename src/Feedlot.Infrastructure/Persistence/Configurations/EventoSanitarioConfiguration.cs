@@ -46,8 +46,23 @@ public sealed class EventoSanitarioConfiguration : IEntityTypeConfiguration<Even
             .HasColumnName("tratamiento")
             .HasMaxLength(500);
 
+        builder.Property(e => e.TipoEvento)
+            .HasColumnName("tipo_evento")
+            .HasMaxLength(20);
+
+        builder.Property(e => e.ProximaDosis)
+            .HasColumnName("proxima_dosis");
+
+        builder.Property(e => e.Responsable)
+            .HasColumnName("responsable")
+            .HasMaxLength(200);
+
         builder.HasIndex(e => new { e.AnimalId, e.FechaEvento })
             .HasDatabaseName("ix_eventos_sanitarios_animal_fecha");
+
+        builder.HasIndex(e => e.ProximaDosis)
+            .HasDatabaseName("ix_eventos_sanitarios_proxima_dosis")
+            .HasFilter("\"proxima_dosis\" IS NOT NULL");
 
         builder.HasIndex(e => e.Severidad)
             .HasDatabaseName("ix_eventos_sanitarios_severidad");

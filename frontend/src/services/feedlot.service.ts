@@ -1,6 +1,6 @@
 import api from './api'
 import type {
-  Animal, AnimalResumen, PagedResult,
+  Animal, AnimalResumen, PagedResult, VacunaProxima,
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
   LoginResponse, Racion, Lote, LoteResumen,
   CosteoLote,
@@ -57,6 +57,9 @@ export const animalsService = {
       descripcion: string
       severidad: string
       tratamiento?: string
+      tipoEvento?: string
+      proximaDosis?: string
+      responsable?: string
     }
   ): Promise<string> => {
     const { data } = await api.post(`/animals/${animalId}/eventos-sanitarios`, payload)
@@ -147,6 +150,11 @@ export const analiticaService = {
     icaMaxima?: number
   }): Promise<AnimalIneficiente[]> => {
     const { data } = await api.get('/analitica/animales-ineficientes', { params })
+    return data
+  },
+
+  getVacunasProximas: async (dias = 15): Promise<VacunaProxima[]> => {
+    const { data } = await api.get('/analitica/vacunas-proximas', { params: { dias } })
     return data
   },
 }

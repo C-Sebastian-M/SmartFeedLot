@@ -60,6 +60,9 @@ export interface EventoSanitario {
   descripcion: string
   severidad: SeveridadEvento
   tratamiento?: string
+  tipoEvento?: string
+  proximaDosis?: string
+  responsable?: string
 }
 
 // ─── Lote ─────────────────────────────────────────────────────────────────────
@@ -236,4 +239,13 @@ export interface ApiError {
   title: string
   detail: string
   errors?: Record<string, string[]>
+}
+
+export interface VacunaProxima {
+  animalId: string
+  codigoAnimal: string
+  nombreAnimal?: string
+  diagnostico: string
+  proximaDosis: string
+  responsable?: string
 }
