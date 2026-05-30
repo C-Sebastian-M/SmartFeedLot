@@ -4,8 +4,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
-  LogOut, User, Activity, DollarSign, Menu, X,
-  Building2, ShoppingCart, HandCoins, UserPlus,
+  LogOut, User, Activity, DollarSign, Menu,
+  Building2, ShoppingCart, HandCoins, UserPlus, Landmark,
 } from 'lucide-react'
 
 const navItems = [
@@ -13,6 +13,8 @@ const navItems = [
   { to: '/animales', icon: Beef, label: 'Animales' },
   { to: '/lotes', icon: Package, label: 'Lotes' },
   { to: '/costos', icon: DollarSign, label: 'Costos' },
+  { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
+  { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
   { to: '/analitica', icon: BarChart3, label: 'Analítica' },
   { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
   { to: '/proveedores', icon: Building2, label: 'Proveedores' },

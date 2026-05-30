@@ -190,8 +190,6 @@ export interface PagedResult<T> {
 }
 
 // ─── Costos / Finanzas ────────────────────────────────────────────────────────
-export type CategoriaCosto = 'ManoDeObra' | 'CIF'
-
 export interface CategoriaGasto {
   id: string
   nombre: string
@@ -241,18 +239,6 @@ export interface Prestamo {
   fechaInicio: string
   descripcion: string
   cuotas: CuotaAmortizacion[]
-}
-
-export interface CostoOperativo {
-  id: string
-  loteId: string
-  categoria: CategoriaCosto
-  concepto: string
-  fecha: string
-  monto: number
-  moneda: string
-  observaciones?: string
-  registradoPorId: string
 }
 
 export interface CosteoLote {

@@ -43,6 +43,14 @@ export const queryKeys = {
     detail: (id: string) => ['ventas', 'detail', id] as const,
     compradores: () => ['ventas', 'compradores'] as const,
   },
+  finanzas: {
+    categorias: () => ['finanzas', 'categorias'] as const,
+    socios: () => ['finanzas', 'socios'] as const,
+    movimientos: (params?: object) => ['finanzas', 'movimientos', params] as const,
+  },
+  prestamos: {
+    all: ['prestamos'] as const,
+  },
 }
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -254,17 +262,6 @@ export function useCostosTotalesLote(params: {
   })
 }
 
-export function useRegistrarCostoOperativo() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: costosService.registrarCosto,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['costos'] })
-      qc.invalidateQueries({ queryKey: ['analitica'] })
-    },
-  })
-}
-
 export function useVacunasProximas(dias = 15) {
   return useQuery({
     queryKey: ['analitica', 'vacunas-proximas', dias],
@@ -385,6 +382,88 @@ export function useCrearCompra() {
     mutationFn: comprasService.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.compras.all })
+    },
+  })
+}
+
+// ─── Finanzas ─────────────────────────────────────────────────────────────────
+export function useCategoriasGasto() {
+  return useQuery({
+    queryKey: queryKeys.finanzas.categorias(),
+    queryFn: () => finanzasService.getCategorias(),
+    staleTime: 120_000,
+  })
+}
+
+export function useCrearCategoriaGasto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: finanzasService.crearCategoria,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.finanzas.categorias() })
+    },
+  })
+}
+
+export function useSocios() {
+  return useQuery({
+    queryKey: queryKeys.finanzas.socios(),
+    queryFn: () => finanzasService.getSocios(),
+    staleTime: 120_000,
+  })
+}
+
+export function useCrearSocio() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: finanzasService.crearSocio,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.finanzas.socios() })
+    },
+  })
+}
+
+export function useMovimientosFinancieros(params?: {
+  anio?: number
+  mes?: number
+  origen?: string
+  categoriaGastoId?: string
+  socioId?: string
+}) {
+  return useQuery({
+    queryKey: queryKeys.finanzas.movimientos(params),
+    queryFn: () => finanzasService.getMovimientos(params),
+    staleTime: 30_000,
+  })
+}
+
+export function useRegistrarMovimiento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: finanzasService.registrarMovimiento,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['finanzas'] })
+      qc.invalidateQueries({ queryKey: ['costos'] })
+      qc.invalidateQueries({ queryKey: ['analitica'] })
+    },
+  })
+}
+
+// ─── Préstamos ────────────────────────────────────────────────────────────────
+export function usePrestamos() {
+  return useQuery({
+    queryKey: queryKeys.prestamos.all,
+    queryFn: () => prestamosService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearPrestamo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: prestamosService.create,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.prestamos.all })
     },
   })
 }

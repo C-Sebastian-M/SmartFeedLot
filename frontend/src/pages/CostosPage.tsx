@@ -1,35 +1,19 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import {
-  DollarSign, Plus, X, CheckCircle2, ChevronDown, Beef,
+  DollarSign, ChevronDown, Beef,
   Wrench, FileText, CalendarDays, Users
 } from 'lucide-react'
-import { useLotes, useCostosTotalesLote, useRegistrarCostoOperativo } from '@/hooks/useFeedlot'
-import { useAuthStore } from '@/stores/auth.store'
+import { useLotes, useCostosTotalesLote } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
-  Skeleton, EmptyState, StatCard, Button,
-  Dialog, DialogHeader, DialogTitle, DialogDescription,
-  FormField, Input, Alert,
+  Skeleton, EmptyState, StatCard,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { LoteResumen, CostoDetalle } from '@/types'
 
 const hoy = format(new Date(), 'yyyy-MM-dd')
 const hace30 = format(subDays(new Date(), 30), 'yyyy-MM-dd')
-
-const registrarCostoSchema = z.object({
-  categoria: z.enum(['ManoDeObra', 'CIF'], { required_error: 'Selecciona una categoría' }),
-  concepto: z.string().min(3, 'Mínimo 3 caracteres').max(200, 'Máximo 200 caracteres'),
-  fecha: z.string().min(1, 'La fecha es requerida'),
-  monto: z.number({ invalid_type_error: 'Ingresa un número' }).positive('Debe ser mayor a cero'),
-  moneda: z.string().length(3, 'Código ISO de 3 caracteres').default('COP'),
-  observaciones: z.string().max(500, 'Máximo 500 caracteres').optional(),
-})
-type RegistrarCostoForm = z.infer<typeof registrarCostoSchema>
 
 function SelectorLote({
   lotes, value, onChange,
@@ -56,140 +40,6 @@ function SelectorLote({
       </select>
       <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
     </div>
-  )
-}
-
-function RegistrarCostoModal({
-  open, onClose, loteId, lotes,
-}: {
-  open: boolean
-  onClose: () => void
-  loteId: string
-  lotes: LoteResumen[]
-}) {
-  const [exito, setExito] = useState(false)
-  const [errorApi, setErrorApi] = useState<string>()
-  const registrarCosto = useRegistrarCostoOperativo()
-  const currentUser = useAuthStore(s => s.user)
-  const lote = lotes.find(l => l.id === loteId)
-
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
-    useForm<RegistrarCostoForm>({
-      resolver: zodResolver(registrarCostoSchema),
-      defaultValues: { moneda: 'COP', fecha: hoy },
-    })
-
-  const categoria = watch('categoria')
-
-  const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); onClose() }
-
-  const onSubmit = async (data: RegistrarCostoForm) => {
-    setErrorApi(undefined)
-    try {
-      if (!currentUser?.id) throw new Error('Usuario no autenticado')
-      await registrarCosto.mutateAsync({
-        loteId,
-        categoria: data.categoria,
-        concepto: data.concepto,
-        fecha: data.fecha,
-        monto: data.monto,
-        moneda: data.moneda,
-        observaciones: data.observaciones || undefined,
-        registradoPorId: currentUser.id,
-      })
-      setExito(true)
-      setTimeout(() => handleClose(), 1500)
-    } catch (err: any) {
-      setErrorApi(err?.response?.data?.error ?? err?.response?.data?.detail ?? 'Error al registrar el costo.')
-    }
-  }
-
-  return (
-    <Dialog open={open} onClose={handleClose}>
-      <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[480px] mx-4">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <DialogHeader className="mb-0">
-            <DialogTitle>Registrar costo operativo</DialogTitle>
-            <DialogDescription>
-              {lote ? `${lote.codigo} — ${lote.nombre}` : 'Selecciona un lote'}
-            </DialogDescription>
-          </DialogHeader>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground ml-4">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-5">
-          {exito ? (
-            <div className="flex flex-col items-center py-6 gap-3 animate-fade-in">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-              </div>
-              <p className="text-sm font-medium">¡Costo registrado!</p>
-              <p className="text-xs text-muted-foreground">El costo se prorrateará entre los animales del lote.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <FormField label="Categoría" error={errors.categoria?.message} required>
-                <div className="flex gap-2">
-                  {(['ManoDeObra', 'CIF'] as const).map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setValue('categoria', cat)}
-                      className={`flex-1 flex items-center justify-center gap-2 h-9 rounded-md border text-sm font-medium transition-colors ${
-                        categoria === cat
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-input text-muted-foreground hover:border-border hover:text-foreground'
-                      }`}
-                    >
-                      {cat === 'ManoDeObra' ? <Wrench className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
-                      {cat === 'ManoDeObra' ? 'Mano de obra' : 'CIF'}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
-
-              <FormField label="Concepto" error={errors.concepto?.message} required
-                hint="Ej: Suministrar alimentación, Gasolina moto bomba">
-                <Input {...register('concepto')} placeholder="Describe el concepto del costo"
-                  className={errors.concepto ? 'border-destructive' : ''} />
-              </FormField>
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Fecha" error={errors.fecha?.message} required>
-                  <Input {...register('fecha')} type="date" max={hoy}
-                    className={errors.fecha ? 'border-destructive' : ''} />
-                </FormField>
-                <FormField label="Monto" error={errors.monto?.message} required>
-                  <Input {...register('monto', { valueAsNumber: true })}
-                    type="number" min={1} step={100} placeholder="0"
-                    className={errors.monto ? 'border-destructive' : ''} />
-                </FormField>
-              </div>
-
-              <FormField label="Observaciones" error={errors.observaciones?.message}
-                hint="Opcional">
-                <Input {...register('observaciones')} placeholder="Detalles adicionales"
-                  className={errors.observaciones ? 'border-destructive' : ''} />
-              </FormField>
-
-              {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
-
-              <div className="flex gap-2 pt-1">
-                <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={isSubmitting}>
-                  Cancelar
-                </Button>
-                <Button type="submit" className="flex-1" loading={isSubmitting}>
-                  <DollarSign className="w-3.5 h-3.5" />
-                  Registrar costo
-                </Button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    </Dialog>
   )
 }
 
@@ -241,7 +91,6 @@ export default function CostosPage() {
   const [loteId, setLoteId] = useState('')
   const [desde, setDesde] = useState(hace30)
   const [hasta, setHasta] = useState(hoy)
-  const [modalAbierto, setModalAbierto] = useState(false)
 
   const { data: lotes, isLoading: loadingLotes } = useLotes()
   const lotesArray = (lotes as LoteResumen[] | undefined) ?? []
@@ -257,12 +106,6 @@ export default function CostosPage() {
       <PageHeader
         title="Costos operativos"
         description="Registro y consulta de costos de mano de obra y CIF por lote"
-        action={
-          <Button size="sm" onClick={() => setModalAbierto(true)} disabled={!loteId}>
-            <Plus className="w-3.5 h-3.5" />
-            Registrar costo
-          </Button>
-        }
       />
 
       {/* Controles */}
@@ -316,12 +159,7 @@ export default function CostosPage() {
             icon={<DollarSign className="w-5 h-5" />}
             title="Sin datos de costos"
             description="No hay costos registrados para este lote en el período seleccionado."
-            action={
-              <Button size="sm" onClick={() => setModalAbierto(true)}>
-                <Plus className="w-3.5 h-3.5" />
-                Registrar primer costo
-              </Button>
-            }
+
           />
         ) : (
           <div className="space-y-6">
@@ -394,7 +232,6 @@ export default function CostosPage() {
         )}
       </div>
 
-      <RegistrarCostoModal open={modalAbierto} onClose={() => setModalAbierto(false)} loteId={loteId} lotes={lotesArray} />
     </div>
   )
 }
