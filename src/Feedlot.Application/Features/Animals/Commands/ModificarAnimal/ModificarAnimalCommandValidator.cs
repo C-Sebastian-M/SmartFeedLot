@@ -50,5 +50,9 @@ public sealed class ModificarAnimalCommandValidator
             .NotEmpty().WithMessage("La moneda es requerida.")
             .Must(m => MonedasValidas.Contains(m.ToUpperInvariant()))
             .WithMessage($"La moneda debe ser una de: {string.Join(", ", MonedasValidas)}.");
+
+        RuleFor(x => x.NuevoLoteId)
+            .NotEmpty().WithMessage("El ID del lote destino no puede ser vacío.")
+            .When(x => x.NuevoLoteId.HasValue);
     }
 }

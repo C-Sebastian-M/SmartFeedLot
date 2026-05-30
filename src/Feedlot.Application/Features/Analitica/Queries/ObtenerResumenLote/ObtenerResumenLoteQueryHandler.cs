@@ -45,22 +45,30 @@ public sealed class ObtenerResumenLoteQueryHandler
 
         var cantidadAnimales = Math.Max(animalesIdActivos.Count, 1);
 
-        // Calcular indicadores individuales para cada animal del lote.
+        // ── OPTIMIZACIÓN N+1 ──────────────────────────────────────────────────
+        // ANTES: N llamadas a ObtenerPorIdAsync + 4N queries de costos = ~5N queries.
+        // AHORA: 1 query batch de animales + 4 queries de costos = 5 queries totales,
+        //        sin importar cuántos animales tenga el lote.
+
+        // 1. Cargar TODOS los animales del lote en una sola consulta.
+        var animales = await _animalRepository.ObtenerPorIdsAsync(animalesIdActivos, ct);
+
+        // 2. Cargar los costos del lote UNA sola vez (no por animal).
+        var costosLote = await _indicadorService.ObtenerCostosLoteAsync(
+            request.LoteId, request.Desde, request.Hasta, ct);
+
+        // 3. Calcular indicadores en memoria — cero queries adicionales.
         var indicadores = new List<IndicadorProductivoDto>();
 
-        foreach (var animalId in animalesIdActivos)
+        foreach (var animal in animales)
         {
-            var animal = await _animalRepository.ObtenerPorIdAsync(animalId, ct);
-            if (animal is null) continue;
-
-            var indicador = await _indicadorService.CalcularParaAnimalAsync(
+            var indicador = _indicadorService.CalcularConCostos(
                 animal,
-                request.LoteId,
                 cantidadAnimales,
                 request.Desde,
                 request.Hasta,
                 request.PrecioVentaEstimadoPorKg,
-                ct);
+                costosLote);
 
             var pesoGanado = animal.PesoActual.Kilogramos - animal.PesoIngreso.Kilogramos;
             var esIneficiente = indicador.EsIneficiente(GmdMinimaKgDia, IcaMaxima);
@@ -90,13 +98,6 @@ public sealed class ObtenerResumenLoteQueryHandler
             });
         }
 
-        // Agregar totales del lote.
-        var consumoTotalKg = await _consumoRepository
-            .SumarKilogramosPorLoteAsync(request.LoteId, request.Desde, request.Hasta, ct);
-
-        var costoTotalAlimento = await _consumoRepository
-            .SumarCostoPorLoteAsync(request.LoteId, request.Desde, request.Hasta, ct);
-
         var resumen = new ResumenLoteDto
         {
             LoteId = lote.Id,
@@ -107,12 +108,12 @@ public sealed class ObtenerResumenLoteQueryHandler
                 ? indicadores.Average(i => i.Gmd) : 0,
             IcaPromedio = indicadores.Count > 0
                 ? indicadores.Average(i => i.Ica) : 0,
-            CostoTotalAlimento = costoTotalAlimento,
+            CostoTotalAlimento = costosLote.CostoAlimentoTotal,
             CostoPorKgGanadoPromedio = indicadores.Count > 0
                 ? indicadores.Average(i => i.CostoPorKgGanado) : 0,
             RentabilidadProyectadaTotal = indicadores.Sum(i => i.RentabilidadProyectada),
             AnimalesIneficientes = indicadores.Count(i => i.EsIneficiente),
-            ConsumoTotalKg = consumoTotalKg,
+            ConsumoTotalKg = costosLote.ConsumoTotalKg,
             Indicadores = indicadores.AsReadOnly()
         };
 

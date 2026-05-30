@@ -48,6 +48,22 @@ public sealed class AnimalRepository : IAnimalRepository
             .ToList();
     }
 
+    public async Task<IReadOnlyList<Animal>> ObtenerPorIdsAsync(
+        IReadOnlyList<Guid> ids, CancellationToken ct = default)
+    {
+        if (ids.Count == 0)
+            return [];
+
+        // Una sola consulta con Include de Pesajes para los N animales.
+        // Reemplaza N llamadas individuales a ObtenerPorIdAsync (resuelve N+1).
+        var animales = await _context.Animals
+            .Include(a => a.Pesajes)
+            .Where(a => ids.Contains(a.Id))
+            .ToListAsync(ct);
+
+        return animales;
+    }
+
     public async Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default)
     {
         var normalizado = codigo.Trim().ToUpperInvariant();

@@ -12,5 +12,6 @@ public sealed record ModificarAnimalCommand(
     DateOnly FechaIngreso,
     decimal PesoIngresoKg,
     decimal PrecioCompra,
-    string Moneda
+    string Moneda,
+    Guid? NuevoLoteId = null
 ) : ICommand;

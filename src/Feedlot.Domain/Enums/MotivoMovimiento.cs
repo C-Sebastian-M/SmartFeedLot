@@ -22,5 +22,8 @@ public enum MotivoMovimiento
     Muerte = 6,
 
     /// <summary>Otro motivo no clasificado.</summary>
-    Otro = 7
+    Otro = 7,
+
+    /// <summary>Cambio de lote manual desde edición de animal.</summary>
+    CambioDeLote = 8
 }

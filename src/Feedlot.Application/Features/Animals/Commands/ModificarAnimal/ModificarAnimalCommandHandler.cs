@@ -1,6 +1,7 @@
 using Feedlot.Application.Common;
 using Feedlot.Domain.Enums;
 using Feedlot.Domain.Interfaces;
+using Feedlot.Domain.Services;
 using Feedlot.Domain.ValueObjects;
 using MediatR;
 
@@ -11,13 +12,16 @@ public sealed class ModificarAnimalCommandHandler
 {
     private readonly IAnimalRepository _animalRepository;
     private readonly ILoteRepository _loteRepository;
+    private readonly AnimalLoteService _animalLoteService;
 
     public ModificarAnimalCommandHandler(
         IAnimalRepository animalRepository,
-        ILoteRepository loteRepository)
+        ILoteRepository loteRepository,
+        AnimalLoteService animalLoteService)
     {
         _animalRepository = animalRepository;
         _loteRepository = loteRepository;
+        _animalLoteService = animalLoteService;
     }
 
     public async Task<Result> Handle(
@@ -44,6 +48,21 @@ public sealed class ModificarAnimalCommandHandler
             precioCompra);
 
         _animalRepository.Actualizar(animal);
+
+        // Mover el animal a otro lote si se especificó
+        if (request.NuevoLoteId.HasValue)
+        {
+            var loteActual = await _loteRepository.ObtenerLoteActivoDelAnimalAsync(request.AnimalId, ct);
+            if (loteActual is null || loteActual.Id != request.NuevoLoteId.Value)
+            {
+                await _animalLoteService.MoverAnimalAsync(
+                    request.AnimalId,
+                    request.NuevoLoteId.Value,
+                    request.FechaIngreso,
+                    MotivoMovimiento.CambioDeLote,
+                    ct);
+            }
+        }
 
         // Sincronizar la fecha de ingreso en el lote activo del animal
         await _loteRepository.ActualizarFechaIngresoAnimalAsync(request.AnimalId, request.FechaIngreso, ct);

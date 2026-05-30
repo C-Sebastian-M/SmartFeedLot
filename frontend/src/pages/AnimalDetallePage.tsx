@@ -7,7 +7,7 @@ import {
   ArrowLeft, Beef, Scale, AlertTriangle,
   Calendar, TrendingUp, X, CheckCircle2, Plus, Pencil, Trash2
 } from 'lucide-react'
-import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualizarAnimal, useEliminarPesaje, useEliminarAnimal } from '@/hooks/useFeedlot'
+import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualizarAnimal, useEliminarPesaje, useEliminarAnimal, useLotes } from '@/hooks/useFeedlot'
 import {
   Button, Card, CardHeader, CardTitle, CardContent, Badge,
   Skeleton, EmptyState, Dialog, DialogHeader, DialogTitle,
@@ -298,6 +298,7 @@ const modificarSchema = z.object({
   pesoIngresoKg: z.number({ invalid_type_error: 'Número requerido' }).positive('Mayor a 0'),
   precioCompra: z.number({ invalid_type_error: 'Número requerido' }).min(0, 'No negativo'),
   moneda: z.enum(['COP', 'USD', 'EUR']).default('COP'),
+  nuevoLoteId: z.string().optional(),
 })
 type ModificarForm = z.infer<typeof modificarSchema>
 
@@ -315,6 +316,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
   const [errorApi, setErrorApi] = useState<string>()
   const [precioDisplay, setPrecioDisplay] = useState(formatPrecio(animal.precioCompra))
   const mutation = useActualizarAnimal()
+  const { data: lotesActivos } = useLotes(true)
 
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
     useForm<ModificarForm>({
@@ -329,6 +331,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
         pesoIngresoKg: animal.pesoIngresoKg,
         precioCompra: animal.precioCompra,
         moneda: animal.moneda as 'COP' | 'USD' | 'EUR',
+        nuevoLoteId: '',
       },
     })
 
@@ -348,6 +351,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
         pesoIngresoKg: data.pesoIngresoKg,
         precioCompra: data.precioCompra,
         moneda: data.moneda,
+        nuevoLoteId: data.nuevoLoteId || undefined,
       })
       setExito(true)
       setTimeout(handleClose, 1500)
@@ -399,6 +403,17 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                   <Input {...register('raza')} placeholder="Brahman"
                     className={errors.raza ? 'border-destructive' : ''} />
                 </FormField>
+                <div className="col-span-2">
+                  <FormField label="Cambiar de lote" hint="Opcional — dejar vacío para mantener el actual">
+                    <select {...register('nuevoLoteId')}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
+                      <option value="">— Sin cambios —</option>
+                      {lotesActivos?.map(l => (
+                        <option key={l.id} value={l.id}>{l.codigo} — {l.nombre}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                </div>
                 <FormField label="Fecha de nacimiento" error={errors.fechaNacimiento?.message} hint="Opcional">
                   <Input {...register('fechaNacimiento')} type="date"
                     className={errors.fechaNacimiento ? 'border-destructive' : ''} />

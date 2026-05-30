@@ -41,6 +41,7 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
   const [exito, setExito] = useState(false)
   const [errorApi, setErrorApi] = useState<string>()
   const [animalesRows, setAnimalesRows] = useState<AnimalRow[]>([])
+  const [precioPorKg, setPrecioPorKg] = useState(0)
   const crearVenta = useCrearVenta()
   const { data: compradoresData } = useCompradores()
   const { data: animalsData } = useAnimals({ page: 1, pageSize: 200, estadoProductivo: 'EnEngorde' })
@@ -59,6 +60,8 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
 
   const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); setAnimalesRows([]); onClose() }
 
+  const calcularPrecioVenta = (pesoKg: number) => Math.round(pesoKg * precioPorKg)
+
   const agregarAnimal = (animalId: string) => {
     const animal = animalesDisponibles.find(a => a.id === animalId)
     if (!animal) return
@@ -66,7 +69,7 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
       animalId: animal.id,
       codigo: animal.codigoIdentificacion,
       nombre: animal.nombre,
-      precioVenta: 0,
+      precioVenta: calcularPrecioVenta(animal.pesoActualKg),
       pesoVentaKg: animal.pesoActualKg,
     }])
   }
@@ -76,7 +79,11 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
   }
 
   const actualizarRow = (animalId: string, campo: 'precioVenta' | 'pesoVentaKg', valor: number) => {
-    setAnimalesRows(prev => prev.map(r => r.animalId === animalId ? { ...r, [campo]: valor } : r))
+    setAnimalesRows(prev => prev.map(r => {
+      if (r.animalId !== animalId) return r
+      if (campo === 'pesoVentaKg') return { ...r, pesoVentaKg: valor, precioVenta: calcularPrecioVenta(valor) }
+      return { ...r, [campo]: valor }
+    }))
   }
 
   const montoTotal = animalesRows.reduce((sum, r) => sum + r.precioVenta, 0)
@@ -151,6 +158,16 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
                 <FormField label="Moneda" error={errors.moneda?.message} required>
                   <Input {...register('moneda')} placeholder="COP"
                     className={errors.moneda ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Precio por kg ($)" hint="Base para cálculo automático">
+                  <input type="number" min={0} step={100} value={precioPorKg || ''}
+                    onChange={e => {
+                      const valor = Number(e.target.value)
+                      setPrecioPorKg(valor)
+                      setAnimalesRows(prev => prev.map(r => ({ ...r, precioVenta: Math.round(valor * r.pesoVentaKg) })))
+                    }}
+                    className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border-input`}
+                    placeholder="Ej: 5500" />
                 </FormField>
                 <FormField label="Descripción">
                   <Input {...register('descripcion')} placeholder="Notas de la venta" />

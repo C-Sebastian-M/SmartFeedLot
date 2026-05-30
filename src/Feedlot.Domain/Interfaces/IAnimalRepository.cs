@@ -8,6 +8,14 @@ public interface IAnimalRepository
     Task<Animal?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
     Task<Animal?> ObtenerPorCodigoAsync(string codigo, CancellationToken ct = default);
     Task<IReadOnlyList<Animal>> ObtenerTodosAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Carga múltiples animales por sus IDs en una sola consulta, incluyendo
+    /// sus pesajes. Resuelve el problema N+1 en los handlers de analítica:
+    /// en lugar de N llamadas a ObtenerPorIdAsync, se hace una sola query.
+    /// </summary>
+    Task<IReadOnlyList<Animal>> ObtenerPorIdsAsync(
+        IReadOnlyList<Guid> ids, CancellationToken ct = default);
     Task<bool> ExisteCodigoAsync(string codigo, CancellationToken ct = default);
     Task<(IReadOnlyList<Animal> Items, int TotalCount)> ObtenerPaginadosAsync(
         int page,

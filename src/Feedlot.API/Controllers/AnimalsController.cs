@@ -99,7 +99,8 @@ public sealed class AnimalsController : ApiControllerBase
             request.FechaIngreso,
             request.PesoIngresoKg,
             request.PrecioCompra,
-            request.Moneda);
+            request.Moneda,
+            request.NuevoLoteId);
         var result = await _sender.Send(command, ct);
         return FromResult(result);
     }
@@ -185,4 +186,5 @@ public sealed record ModificarAnimalRequest(
     DateOnly FechaIngreso,
     decimal PesoIngresoKg,
     decimal PrecioCompra,
-    string Moneda);
+    string Moneda,
+    Guid? NuevoLoteId = null);

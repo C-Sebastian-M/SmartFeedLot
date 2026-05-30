@@ -27,7 +27,7 @@ public sealed class ObtenerAnimalesIneficientesQueryHandler
         ObtenerAnimalesIneficientesQuery request,
         CancellationToken ct)
     {
-        // Si se especificó un lote, analizar solo ese. Si no, analizar todos los activos.
+        // Si se especificó un lote, analizar solo ese. Si no, todos los activos.
         var lotes = request.LoteId.HasValue
             ? new[] { await _loteRepository.ObtenerPorIdAsync(request.LoteId.Value, ct) }
                 .Where(l => l is not null)
@@ -37,29 +37,40 @@ public sealed class ObtenerAnimalesIneficientesQueryHandler
 
         var ineficientes = new List<AnimalIneficienteDto>();
 
+        // ── OPTIMIZACIÓN N+1 ──────────────────────────────────────────────────
+        // Por cada lote: 1 query batch de animales + 4 queries de costos.
+        // ANTES era ~5 queries POR ANIMAL. Ahora es ~5 queries POR LOTE.
         foreach (var lote in lotes)
         {
-            var animalesActivos = lote.AnimalesLote
+            var animalesIdActivos = lote.AnimalesLote
                 .Where(al => al.EsActivo)
+                .Select(al => al.AnimalId)
                 .ToList();
 
-            var cantidadAnimales = Math.Max(animalesActivos.Count, 1);
+            if (animalesIdActivos.Count == 0)
+                continue;
 
-            foreach (var animalLote in animalesActivos)
+            var cantidadAnimales = animalesIdActivos.Count;
+
+            // 1. Batch load de todos los animales del lote.
+            var animales = await _animalRepository.ObtenerPorIdsAsync(animalesIdActivos, ct);
+
+            // 2. Costos del lote una sola vez.
+            var costosLote = await _indicadorService.ObtenerCostosLoteAsync(
+                lote.Id, request.Desde, request.Hasta, ct);
+
+            // 3. Cálculo en memoria.
+            foreach (var animal in animales)
             {
-                var animal = await _animalRepository
-                    .ObtenerPorIdAsync(animalLote.AnimalId, ct);
+                if (!animal.EstaActivo) continue;
 
-                if (animal is null || !animal.EstaActivo) continue;
-
-                var indicador = await _indicadorService.CalcularParaAnimalAsync(
+                var indicador = _indicadorService.CalcularConCostos(
                     animal,
-                    lote.Id,
                     cantidadAnimales,
                     request.Desde,
                     request.Hasta,
                     request.PrecioVentaEstimadoPorKg,
-                    ct);
+                    costosLote);
 
                 if (!indicador.EsIneficiente(request.GmdMinimaKgDia, request.IcaMaxima))
                     continue;

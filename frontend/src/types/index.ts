@@ -6,7 +6,7 @@ export type Sexo = 'Macho' | 'Hembra'
 export type SeveridadEvento = 'Leve' | 'Moderado' | 'Grave' | 'Critico'
 export type MotivoMovimiento =
   | 'IngresoInicial' | 'Reclasificacion' | 'Sanitario'
-  | 'Capacidad' | 'Venta' | 'Muerte' | 'Otro'
+  | 'Capacidad' | 'Venta' | 'Muerte' | 'Otro' | 'CambioDeLote'
 export type ClasificacionGmd = 'Excelente' | 'Bueno' | 'Regular' | 'Deficiente'
 
 // ─── Animal ───────────────────────────────────────────────────────────────────

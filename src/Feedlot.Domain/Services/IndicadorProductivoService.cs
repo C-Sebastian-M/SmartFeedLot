@@ -123,4 +123,100 @@ public sealed class IndicadorProductivoService
             costoMoIndividual,
             costoCifIndividual);
     }
+
+    /// <summary>
+    /// Costos de un lote en un período, ya consultados una sola vez.
+    /// Se calculan una vez por lote y se reutilizan para todos sus animales,
+    /// evitando el problema N+1 (4 queries idénticas por cada animal).
+    /// </summary>
+    public sealed record CostosLote(
+        decimal ConsumoTotalKg,
+        decimal CostoAlimentoTotal,
+        decimal CostoManoDeObraTotal,
+        decimal CostoCifTotal);
+
+    /// <summary>
+    /// Carga los costos de un lote (alimento, MO, CIF) en 4 consultas totales,
+    /// independientemente de cuántos animales tenga el lote.
+    /// Llamar UNA vez por lote y pasar el resultado a CalcularConCostos.
+    /// </summary>
+    public async Task<CostosLote> ObtenerCostosLoteAsync(
+        Guid loteId,
+        DateOnly desde,
+        DateOnly hasta,
+        CancellationToken ct = default)
+    {
+        var consumoKg = await _consumoRepo.SumarKilogramosPorLoteAsync(loteId, desde, hasta, ct);
+        var costoAlimento = await _consumoRepo.SumarCostoPorLoteAsync(loteId, desde, hasta, ct);
+        var costoMo = await _costoOperativoRepo.SumarMontoPorLoteAsync(
+            loteId, desde, hasta, CategoriaCosto.ManoDeObra, ct);
+        var costoCif = await _costoOperativoRepo.SumarMontoPorLoteAsync(
+            loteId, desde, hasta, CategoriaCosto.CIF, ct);
+
+        return new CostosLote(consumoKg, costoAlimento, costoMo, costoCif);
+    }
+
+    /// <summary>
+    /// Calcula los indicadores de un animal usando costos del lote pre-cargados.
+    /// NO accede a la base de datos: es pura computación en memoria.
+    /// Esta es la versión que se usa en bucles sobre los animales de un lote.
+    /// </summary>
+    public IndicadorProductivo CalcularConCostos(
+        Animal animal,
+        int cantidadAnimalesEnLote,
+        DateOnly desde,
+        DateOnly hasta,
+        decimal precioVentaEstimadoPorKg,
+        CostosLote costosLote)
+    {
+        if (hasta <= desde)
+            throw new DomainException(
+                $"La fecha 'hasta' ({hasta}) debe ser posterior a 'desde' ({desde}).");
+
+        if (cantidadAnimalesEnLote <= 0)
+            throw new DomainException(
+                "La cantidad de animales en el lote debe ser mayor a cero.");
+
+        int dias = Math.Max(hasta.DayNumber - desde.DayNumber, 1);
+
+        var pesajeInicial = animal.Pesajes
+            .Where(p => p.FechaPesaje <= desde)
+            .OrderByDescending(p => p.FechaPesaje)
+            .FirstOrDefault();
+
+        var pesajeFinal = animal.Pesajes
+            .Where(p => p.FechaPesaje <= hasta)
+            .OrderByDescending(p => p.FechaPesaje)
+            .FirstOrDefault();
+
+        decimal pesoInicialKg = pesajeInicial?.Peso.Kilogramos
+            ?? animal.PesoIngreso.Kilogramos;
+        decimal pesoFinalKg = pesajeFinal?.Peso.Kilogramos
+            ?? animal.PesoIngreso.Kilogramos;
+
+        // Prorrateo de costos del lote (ya cargados) entre los animales.
+        decimal consumoIndividualKg = costosLote.ConsumoTotalKg / cantidadAnimalesEnLote;
+        decimal costoAlimentoIndividual = costosLote.CostoAlimentoTotal / cantidadAnimalesEnLote;
+        decimal costoMoIndividual = costosLote.CostoManoDeObraTotal / cantidadAnimalesEnLote;
+        decimal costoCifIndividual = costosLote.CostoCifTotal / cantidadAnimalesEnLote;
+
+        decimal costoTotalIndividual =
+            animal.PrecioCompra.Monto
+            + costoAlimentoIndividual
+            + costoMoIndividual
+            + costoCifIndividual;
+
+        decimal precioVentaEstimado = pesoFinalKg * precioVentaEstimadoPorKg;
+
+        return IndicadorProductivo.Calcular(
+            pesoInicialKg,
+            pesoFinalKg,
+            dias,
+            consumoIndividualKg,
+            costoAlimentoIndividual,
+            precioVentaEstimado,
+            costoTotalIndividual,
+            costoMoIndividual,
+            costoCifIndividual);
+    }
 }
