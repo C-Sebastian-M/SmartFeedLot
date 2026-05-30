@@ -72,6 +72,10 @@ public static class DependencyInjection
         services.AddScoped<IVentaRepository, VentaRepository>();
         services.AddScoped<IEtapaInversionRepository, EtapaInversionRepository>();
         services.AddScoped<IAporteSocioRepository, AporteSocioRepository>();
+        services.AddScoped<IPotreroRepository, PotreroRepository>();
+        services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+        services.AddScoped<ICultivoCaniaRepository, CultivoCaniaRepository>();
+        services.AddScoped<ILoteSiloRepository, LoteSiloRepository>();
 
 
         // Identity.

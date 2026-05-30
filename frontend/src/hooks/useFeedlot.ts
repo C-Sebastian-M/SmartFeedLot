@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService } from '@/services/feedlot.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const queryKeys = {
@@ -54,6 +54,12 @@ export const queryKeys = {
     inversion: {
       etapas: ['inversion', 'etapas'] as const,
       aportes: ['inversion', 'aportes'] as const,
+    },
+    operacion: {
+      potreros: ['operacion', 'potreros'] as const,
+      empleados: ['operacion', 'empleados'] as const,
+      cultivos: ['operacion', 'cultivos'] as const,
+      lotesSilo: ['operacion', 'lotes-silo'] as const,
     },
 }
 
@@ -527,5 +533,112 @@ export function useCrearAporteSocio() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inversion', 'aportes'] })
     },
+  })
+}
+
+// ─── Operación ─────────────────────────────────────────────────────────────────
+// Potreros
+export function usePotreros() {
+  return useQuery({
+    queryKey: queryKeys.operacion.potreros,
+    queryFn: () => potrerosService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearPotrero() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: potrerosService.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.potreros }),
+  })
+}
+
+export function useIngresarAnimalPotrero() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ potreroId, ...payload }: { potreroId: string; animalId: string; fechaEntrada: string }) =>
+      potrerosService.ingresarAnimal(potreroId, { potreroId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.potreros }),
+  })
+}
+
+export function useRetirarAnimalPotrero() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ potreroId, ...payload }: { potreroId: string; estanciaId: string; fechaSalida: string }) =>
+      potrerosService.retirarAnimal(potreroId, { potreroId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.potreros }),
+  })
+}
+
+// Empleados
+export function useEmpleados() {
+  return useQuery({
+    queryKey: queryKeys.operacion.empleados,
+    queryFn: () => empleadosService.getAll(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearEmpleado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: empleadosService.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
+  })
+}
+
+export function useRegistrarActividadManoObra() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ empleadoId, ...payload }: {
+      empleadoId: string; tipo: string; fecha: string; costo: number; moneda: string
+    }) => empleadosService.registrarActividad(empleadoId, { empleadoId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
+  })
+}
+
+// Caña
+export function useCultivosCania() {
+  return useQuery({
+    queryKey: queryKeys.operacion.cultivos,
+    queryFn: () => caniaService.getCultivos(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearCultivoCania() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: caniaService.crearCultivo,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.cultivos }),
+  })
+}
+
+export function useRegistrarCorteCania() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ cultivoId, ...payload }: {
+      cultivoId: string; fecha: string; nCalles: number; horas: number;
+      bolsasSilo: number; melaza: number; costoJornal: number; moneda: string
+    }) => caniaService.registrarCorte(cultivoId, { cultivoCaniaId: cultivoId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.cultivos }),
+  })
+}
+
+export function useLotesSilo(soloDisponibles?: boolean) {
+  return useQuery({
+    queryKey: [...queryKeys.operacion.lotesSilo, { soloDisponibles }],
+    queryFn: () => caniaService.getLotesSilo(soloDisponibles),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearLoteSilo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: caniaService.crearLoteSilo,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.lotesSilo }),
   })
 }

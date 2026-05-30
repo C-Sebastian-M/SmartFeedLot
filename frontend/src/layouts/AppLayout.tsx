@@ -16,6 +16,7 @@ const navItems = [
   { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
   { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
   { to: '/inversion', icon: ClipboardList, label: 'Inversión' },
+  { to: '/operacion', icon: ClipboardList, label: 'Operación' },
   { to: '/analitica', icon: BarChart3, label: 'Analítica' },
   { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
   { to: '/proveedores', icon: Building2, label: 'Proveedores' },

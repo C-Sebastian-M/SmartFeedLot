@@ -376,3 +376,67 @@ export interface AporteSocio {
   monto: number
   moneda: string
 }
+
+// ─── Operación ─────────────────────────────────────────────────────────────────
+export interface Potrero {
+  id: string
+  nombre: string
+  capacidad: number
+  animalesActuales: number
+  estancias: EstanciaAnimal[]
+}
+
+export interface EstanciaAnimal {
+  id: string
+  animalId: string
+  fechaEntrada: string
+  salida: string | null
+}
+
+export interface Empleado {
+  id: string
+  nombre: string
+  pagoMensualMonto: number
+  pagoMensualMoneda: string
+  actividades: ActividadManoObra[]
+}
+
+export interface ActividadManoObra {
+  id: string
+  tipo: string
+  fecha: string
+  costoMonto: number
+  costoMoneda: string
+}
+
+export interface CultivoCania {
+  id: string
+  nombre: string
+  callesTotales: number
+  totalBolsasSilo: number
+  totalHoras: number
+  totalCortes: number
+  cortes: CorteCania[]
+}
+
+export interface CorteCania {
+  id: string
+  fecha: string
+  nCalles: number
+  horas: number
+  bolsasSilo: number
+  melaza: number
+  costoJornalMonto: number
+  costoJornalMoneda: string
+}
+
+export interface LoteSilo {
+  id: string
+  corteCaniaId: string | null
+  fechaProduccion: string
+  bolsas: number
+  costoUnitarioMonto: number
+  costoUnitarioMoneda: string
+  costoTotal: number
+  observacion: string | null
+}

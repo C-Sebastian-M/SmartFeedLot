@@ -1,0 +1,11 @@
+using Feedlot.Domain.Entities;
+
+namespace Feedlot.Domain.Interfaces;
+
+public interface ICultivoCaniaRepository
+{
+    Task<CultivoCania?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<CultivoCania>> ObtenerTodosAsync(CancellationToken ct = default);
+    Task AgregarAsync(CultivoCania cultivo, CancellationToken ct = default);
+    void Eliminar(CultivoCania cultivo);
+}

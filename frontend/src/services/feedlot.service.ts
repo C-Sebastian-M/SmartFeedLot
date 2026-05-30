@@ -5,7 +5,8 @@ import type {
   LoginResponse, Racion, Lote, LoteResumen,
   CosteoLote, Proveedor, Compra, Comprador, Venta,
   CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
-  EtapaInversion, AporteSocio
+  EtapaInversion, AporteSocio,
+  Potrero, Empleado, CultivoCania, LoteSilo
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -432,6 +433,71 @@ export const inversionService = {
     moneda: string
   }): Promise<string> => {
     const { data } = await api.post('/inversion/aportes', payload)
+    return data
+  },
+}
+
+// ─── Operación ─────────────────────────────────────────────────────────────────
+export const potrerosService = {
+  getAll: async (): Promise<Potrero[]> => {
+    const { data } = await api.get('/potreros')
+    return data
+  },
+  create: async (payload: { nombre: string; capacidad: number }): Promise<string> => {
+    const { data } = await api.post('/potreros', payload)
+    return data
+  },
+  ingresarAnimal: async (potreroId: string, payload: { potreroId: string; animalId: string; fechaEntrada: string }): Promise<string> => {
+    const { data } = await api.post(`/potreros/${potreroId}/ingresar`, payload)
+    return data
+  },
+  retirarAnimal: async (potreroId: string, payload: { potreroId: string; estanciaId: string; fechaSalida: string }): Promise<void> => {
+    await api.post(`/potreros/${potreroId}/retirar`, payload)
+  },
+}
+
+export const empleadosService = {
+  getAll: async (): Promise<Empleado[]> => {
+    const { data } = await api.get('/empleados')
+    return data
+  },
+  create: async (payload: { nombre: string; pagoMensual: number; moneda: string }): Promise<string> => {
+    const { data } = await api.post('/empleados', payload)
+    return data
+  },
+  registrarActividad: async (empleadoId: string, payload: {
+    empleadoId: string; tipo: string; fecha: string; costo: number; moneda: string
+  }): Promise<string> => {
+    const { data } = await api.post(`/empleados/${empleadoId}/actividades`, payload)
+    return data
+  },
+}
+
+export const caniaService = {
+  getCultivos: async (): Promise<CultivoCania[]> => {
+    const { data } = await api.get('/cania/cultivos')
+    return data
+  },
+  crearCultivo: async (payload: { nombre: string; callesTotales: number }): Promise<string> => {
+    const { data } = await api.post('/cania/cultivos', payload)
+    return data
+  },
+  registrarCorte: async (cultivoId: string, payload: {
+    cultivoCaniaId: string; fecha: string; nCalles: number; horas: number;
+    bolsasSilo: number; melaza: number; costoJornal: number; moneda: string
+  }): Promise<string> => {
+    const { data } = await api.post(`/cania/cultivos/${cultivoId}/cortes`, payload)
+    return data
+  },
+  getLotesSilo: async (soloDisponibles?: boolean): Promise<LoteSilo[]> => {
+    const { data } = await api.get('/cania/lotes-silo', { params: { soloDisponibles } })
+    return data
+  },
+  crearLoteSilo: async (payload: {
+    fechaProduccion: string; bolsas: number; costoUnitario: number;
+    moneda: string; observacion?: string; corteCaniaId?: string
+  }): Promise<string> => {
+    const { data } = await api.post('/cania/lotes-silo', payload)
     return data
   },
 }
