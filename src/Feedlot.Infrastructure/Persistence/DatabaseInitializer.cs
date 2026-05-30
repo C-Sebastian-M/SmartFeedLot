@@ -1,4 +1,6 @@
 using Feedlot.Infrastructure.Identity;
+using Feedlot.Domain.Entities;
+using Feedlot.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,6 +32,7 @@ public static class DatabaseInitializer
 
             await SembrarRolesAsync(context);
             await SembrarUsuarioAdminAsync(context, scope.ServiceProvider);
+            await SembrarCategoriasYSociosAsync(context);
 
             logger.LogInformation("Feedlot — Base de datos inicializada correctamente.");
         }
@@ -38,6 +41,41 @@ public static class DatabaseInitializer
             logger.LogError(ex, "Feedlot — Error al inicializar la base de datos.");
             throw;
         }
+    }
+
+    private static async Task SembrarCategoriasYSociosAsync(FeedlotDbContext context)
+    {
+        // 1. Categorías de Gasto
+        if (!await context.Set<CategoriaGasto>().AnyAsync())
+        {
+            var categorias = new List<CategoriaGasto>
+            {
+                CategoriaGasto.Crear("Mano de Obra", TipoCategoriaGasto.Operativo),
+                CategoriaGasto.Crear("Gasolina y Combustibles", TipoCategoriaGasto.Indirecto),
+                CategoriaGasto.Crear("Alquiler de Potrero", TipoCategoriaGasto.Indirecto),
+                CategoriaGasto.Crear("Grama Fin (Matamaleza)", TipoCategoriaGasto.Indirecto),
+                CategoriaGasto.Crear("Urea y Cal Agrícola", TipoCategoriaGasto.Indirecto),
+                CategoriaGasto.Crear("Medicinas y Vacunas", TipoCategoriaGasto.Directo),
+                CategoriaGasto.Crear("Alimento y Melaza", TipoCategoriaGasto.Directo),
+                CategoriaGasto.Crear("Compra de Animales", TipoCategoriaGasto.Directo),
+                CategoriaGasto.Crear("Inversión Infraestructura", TipoCategoriaGasto.Inversion),
+                CategoriaGasto.Crear("Otros Gastos Generales", TipoCategoriaGasto.Indirecto)
+            };
+            await context.Set<CategoriaGasto>().AddRangeAsync(categorias);
+        }
+
+        // 2. Socios
+        if (!await context.Set<Socio>().AnyAsync())
+        {
+            var socios = new List<Socio>
+            {
+                Socio.Crear("Estefania", 50.00m),
+                Socio.Crear("Levir", 50.00m)
+            };
+            await context.Set<Socio>().AddRangeAsync(socios);
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SembrarRolesAsync(FeedlotDbContext context)

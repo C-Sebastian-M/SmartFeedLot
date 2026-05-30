@@ -26,7 +26,10 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     public DbSet<ConsumoAlimenticio> Consumos => Set<ConsumoAlimenticio>();
     public DbSet<Racion> Raciones => Set<Racion>();
     public DbSet<Ingrediente> Ingredientes => Set<Ingrediente>();
-    public DbSet<CostoOperativo> CostosOperativos => Set<CostoOperativo>();
+    public DbSet<MovimientoFinanciero> MovimientosFinancieros => Set<MovimientoFinanciero>();
+    public DbSet<CategoriaGasto> CategoriasGasto => Set<CategoriaGasto>();
+    public DbSet<Socio> Socios => Set<Socio>();
+    public DbSet<Prestamo> Prestamos => Set<Prestamo>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<Compra> Compras => Set<Compra>();
     public DbSet<Comprador> Compradores => Set<Comprador>();
@@ -37,6 +40,7 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     public DbSet<Pesaje> Pesajes => Set<Pesaje>();
     public DbSet<AnimalLote> AnimalesLote => Set<AnimalLote>();
     public DbSet<EventoSanitario> EventosSanitarios => Set<EventoSanitario>();
+    public DbSet<CuotaAmortizacion> CuotasAmortizacion => Set<CuotaAmortizacion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

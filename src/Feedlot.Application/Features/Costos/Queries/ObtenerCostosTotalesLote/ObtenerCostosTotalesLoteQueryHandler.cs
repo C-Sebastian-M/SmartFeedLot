@@ -1,5 +1,4 @@
 using Feedlot.Application.Common;
-using Feedlot.Application.Features.Costos.Queries.ObtenerCostosTotalesLote;
 using Feedlot.Domain.Enums;
 using Feedlot.Domain.Interfaces;
 using MediatR;
@@ -11,16 +10,16 @@ public sealed class ObtenerCostosTotalesLoteQueryHandler
 {
     private readonly ILoteRepository _loteRepo;
     private readonly IConsumoAlimenticioRepository _consumoRepo;
-    private readonly ICostoOperativoRepository _costoRepo;
+    private readonly IMovimientoFinancieroRepository _movimientoRepo;
 
     public ObtenerCostosTotalesLoteQueryHandler(
         ILoteRepository loteRepo,
         IConsumoAlimenticioRepository consumoRepo,
-        ICostoOperativoRepository costoRepo)
+        IMovimientoFinancieroRepository movimientoRepo)
     {
         _loteRepo = loteRepo;
         _consumoRepo = consumoRepo;
-        _costoRepo = costoRepo;
+        _movimientoRepo = movimientoRepo;
     }
 
     public async Task<Result<CosteoLoteDto>> Handle(
@@ -40,15 +39,53 @@ public sealed class ObtenerCostosTotalesLoteQueryHandler
         var costoAlimento = await _consumoRepo.SumarCostoPorLoteAsync(
             request.LoteId, request.Desde, request.Hasta, ct);
 
+        // Obtener todos los lotes activos para calcular población total y prorratear
+        var lotesActivos = await _loteRepo.ObtenerActivosAsync(ct);
+        decimal totalAnimalesGranja = lotesActivos.Sum(l => l.CantidadAnimalesActivos);
+        if (totalAnimalesGranja == 0) totalAnimalesGranja = 1;
+
+        // Obtener movimientos financieros del periodo para Bovino y General
+        var movimientosBovino = await _movimientoRepo.ObtenerPorRangoFechasAsync(
+            request.Desde, request.Hasta, OrigenFinanciero.Bovino, ct);
+        var movimientosGeneral = await _movimientoRepo.ObtenerPorRangoFechasAsync(
+            request.Desde, request.Hasta, OrigenFinanciero.General, ct);
+        var todosMovimientos = movimientosBovino.Concat(movimientosGeneral).ToList();
+
         // ── Mano de obra ──────────────────────────────────────────────────────
-        var detallesMo = await _costoRepo.ObtenerPorLoteAsync(
-            request.LoteId, request.Desde, request.Hasta, CategoriaCosto.ManoDeObra, ct);
-        var costoMoTotal = detallesMo.Sum(c => c.Monto.Monto);
+        var detallesMo = todosMovimientos
+            .Where(m => m.CategoriaGasto.Tipo == TipoCategoriaGasto.Operativo)
+            .Select(m => {
+                decimal proratedMonto = (m.Monto.Monto / totalAnimalesGranja) * totalAnimales;
+                return new CostoDetalleDto
+                {
+                    Id = m.Id,
+                    Categoria = m.CategoriaGasto.Nombre,
+                    Concepto = m.Descripcion,
+                    Fecha = m.Fecha,
+                    Monto = Math.Round(proratedMonto, 2),
+                    Moneda = m.Monto.Moneda,
+                    Observaciones = $"Prorrateado de {m.Monto} registrado en {m.Origen}"
+                };
+            }).ToList();
+        var costoMoTotal = detallesMo.Sum(c => c.Monto);
 
         // ── CIF ───────────────────────────────────────────────────────────────
-        var detallesCif = await _costoRepo.ObtenerPorLoteAsync(
-            request.LoteId, request.Desde, request.Hasta, CategoriaCosto.CIF, ct);
-        var costoCifTotal = detallesCif.Sum(c => c.Monto.Monto);
+        var detallesCif = todosMovimientos
+            .Where(m => m.CategoriaGasto.Tipo == TipoCategoriaGasto.Indirecto)
+            .Select(m => {
+                decimal proratedMonto = (m.Monto.Monto / totalAnimalesGranja) * totalAnimales;
+                return new CostoDetalleDto
+                {
+                    Id = m.Id,
+                    Categoria = m.CategoriaGasto.Nombre,
+                    Concepto = m.Descripcion,
+                    Fecha = m.Fecha,
+                    Monto = Math.Round(proratedMonto, 2),
+                    Moneda = m.Monto.Moneda,
+                    Observaciones = $"Prorrateado de {m.Monto} registrado en {m.Origen}"
+                };
+            }).ToList();
+        var costoCifTotal = detallesCif.Sum(c => c.Monto);
 
         // ── Totales ───────────────────────────────────────────────────────────
         var costoOperativoTotal = costoAlimento + costoMoTotal + costoCifTotal;
@@ -67,29 +104,11 @@ public sealed class ObtenerCostosTotalesLoteQueryHandler
 
             CostoTotalManoDeObra = costoMoTotal,
             CostoManoDeObraPorAnimal = costoMoTotal / totalAnimales,
-            DetallesManoDeObra = detallesMo.Select(c => new CostoDetalleDto
-            {
-                Id = c.Id,
-                Categoria = c.Categoria.ToString(),
-                Concepto = c.Concepto,
-                Fecha = c.Fecha,
-                Monto = c.Monto.Monto,
-                Moneda = c.Monto.Moneda,
-                Observaciones = c.Observaciones,
-            }).ToList(),
+            DetallesManoDeObra = detallesMo,
 
             CostoTotalCif = costoCifTotal,
             CostoCifPorAnimal = costoCifTotal / totalAnimales,
-            DetallesCif = detallesCif.Select(c => new CostoDetalleDto
-            {
-                Id = c.Id,
-                Categoria = c.Categoria.ToString(),
-                Concepto = c.Concepto,
-                Fecha = c.Fecha,
-                Monto = c.Monto.Monto,
-                Moneda = c.Monto.Moneda,
-                Observaciones = c.Observaciones,
-            }).ToList(),
+            DetallesCif = detallesCif,
 
             CostoOperativoTotal = costoOperativoTotal,
             CostoOperativoPorAnimal = costoOperativoTotal / totalAnimales,

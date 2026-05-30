@@ -62,7 +62,10 @@ public static class DependencyInjection
         services.AddScoped<IConsumoAlimenticioRepository, ConsumoAlimenticioRepository>();
         services.AddScoped<IRacionRepository, RacionRepository>();
         services.AddScoped<IIngredienteRepository, IngredienteRepository>();
-        services.AddScoped<ICostoOperativoRepository, CostoOperativoRepository>();
+        services.AddScoped<IMovimientoFinancieroRepository, MovimientoFinancieroRepository>();
+        services.AddScoped<ICategoriaGastoRepository, CategoriaGastoRepository>();
+        services.AddScoped<ISocioRepository, SocioRepository>();
+        services.AddScoped<IPrestamoRepository, PrestamoRepository>();
         services.AddScoped<IProveedorRepository, ProveedorRepository>();
         services.AddScoped<ICompraRepository, CompraRepository>();
         services.AddScoped<ICompradorRepository, CompradorRepository>();

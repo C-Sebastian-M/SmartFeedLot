@@ -4,6 +4,7 @@ import type {
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
   LoginResponse, Racion, Lote, LoteResumen,
   CosteoLote, Proveedor, Compra, Comprador, Venta,
+  CategoriaGasto, Socio, MovimientoFinanciero, Prestamo
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -236,32 +237,77 @@ export const costosService = {
     hasta: string
   }): Promise<CosteoLote> => {
     const { loteId, ...rest } = params
-    const { data } = await api.get(`/costos/lotes/${loteId}`, { params: rest })
+    const { data } = await api.get(`/finanzas/lotes/${loteId}`, { params: rest })
+    return data
+  },
+}
+
+// ─── Finanzas (Categorías, Socios, Movimientos) ───────────────────────────────
+export const finanzasService = {
+  getCategorias: async (): Promise<CategoriaGasto[]> => {
+    const { data } = await api.get('/finanzas/categorias')
     return data
   },
 
-  getDetalleLote: async (params: {
-    loteId: string
-    categoria?: string
-    desde?: string
-    hasta?: string
-  }) => {
-    const { loteId, ...rest } = params
-    const { data } = await api.get(`/costos/lotes/${loteId}/detalle`, { params: rest })
+  crearCategoria: async (payload: { nombre: string; tipo: string }): Promise<string> => {
+    const { data } = await api.post('/finanzas/categorias', payload)
     return data
   },
 
-  registrarCosto: async (payload: {
-    loteId: string
-    categoria: string
-    concepto: string
+  getSocios: async (): Promise<Socio[]> => {
+    const { data } = await api.get('/finanzas/socios')
+    return data
+  },
+
+  crearSocio: async (payload: { nombre: string; participacion: number }): Promise<string> => {
+    const { data } = await api.post('/finanzas/socios', payload)
+    return data
+  },
+
+  getMovimientos: async (params?: {
+    anio?: number
+    mes?: number
+    origen?: string
+    categoriaGastoId?: string
+    socioId?: string
+  }): Promise<MovimientoFinanciero[]> => {
+    const { data } = await api.get('/finanzas/movimientos', { params })
+    return data
+  },
+
+  registrarMovimiento: async (payload: {
     fecha: string
+    periodoAnio: number
+    periodoMes: number
+    categoriaGastoId: string
     monto: number
     moneda: string
-    observaciones?: string
+    origen: string
+    descripcion: string
+    socioId?: string
     registradoPorId: string
   }): Promise<string> => {
-    const { data } = await api.post('/costos', payload)
+    const { data } = await api.post('/finanzas/movimientos', payload)
+    return data
+  },
+}
+
+// ─── Préstamos ────────────────────────────────────────────────────────────────
+export const prestamosService = {
+  getAll: async (): Promise<Prestamo[]> => {
+    const { data } = await api.get('/prestamos')
+    return data
+  },
+
+  create: async (payload: {
+    monto: number
+    moneda: string
+    tasaMensual: number
+    nCuotas: number
+    fechaInicio: string
+    descripcion: string
+  }): Promise<string> => {
+    const { data } = await api.post('/prestamos', payload)
     return data
   },
 }

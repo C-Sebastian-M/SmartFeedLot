@@ -9,6 +9,9 @@ obj/
 ## Logs
 logs/
 *.log
+*.err
+api.log
+api.err
 
 ## Secrets
 appsettings.*.json

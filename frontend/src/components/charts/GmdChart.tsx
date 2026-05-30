@@ -1,46 +1,96 @@
+import { format, subDays } from 'date-fns'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui'
+import { TrendingUp } from 'lucide-react'
+import { useLotes, useResumenLote } from '@/hooks/useFeedlot'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Skeleton, EmptyState } from '@/components/ui'
 import { CHART_COLORS } from '@/utils'
+import type { LoteResumen } from '@/types'
 
-// Datos de ejemplo — en producción vienen de useResumenLote
-const mockData = [
-  { dia: 'Día 0', gmd: 0 },
-  { dia: 'Día 7', gmd: 0.92 },
-  { dia: 'Día 14', gmd: 1.05 },
-  { dia: 'Día 21', gmd: 1.18 },
-  { dia: 'Día 28', gmd: 1.31 },
-  { dia: 'Día 35', gmd: 1.24 },
-  { dia: 'Día 42', gmd: 1.38 },
-  { dia: 'Día 49', gmd: 1.42 },
-  { dia: 'Día 56', gmd: 1.35 },
-  { dia: 'Día 63', gmd: 1.51 },
-]
+const hoy = format(new Date(), 'yyyy-MM-dd')
+const hace60 = format(subDays(new Date(), 60), 'yyyy-MM-dd')
+
+const GMD_MIN = 0.8 // umbral mínimo productivo (kg/día)
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
+  const val: number = payload[0]?.value ?? 0
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg text-xs">
-      <p className="font-medium mb-1">{label}</p>
-      <p className="text-emerald-400">GMD: {payload[0]?.value?.toFixed(3)} kg/día</p>
+      <p className="font-medium mb-1 truncate max-w-[160px]">{label}</p>
+      <p style={{ color: val >= GMD_MIN ? CHART_COLORS.primary : CHART_COLORS.danger }}>
+        GMD: {val.toFixed(3)} kg/día
+      </p>
+      {val < GMD_MIN && (
+        <p className="text-rose-400 mt-0.5">⚠ Por debajo del umbral ({GMD_MIN} kg/día)</p>
+      )}
     </div>
   )
 }
 
-export function GmdChart() {
+function GmdChartInner({ lote }: { lote: LoteResumen }) {
+  const { data: resumen, isLoading } = useResumenLote({
+    loteId: lote.id,
+    desde: hace60,
+    hasta: hoy,
+  })
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Evolución GMD</CardTitle>
+          <CardDescription className="mt-1">Cargando datos del lote {lote.codigo}…</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[220px] w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const indicadores = resumen?.indicadores ?? []
+
+  if (!indicadores.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>GMD por Animal</CardTitle>
+          <CardDescription className="mt-1">Lote {lote.codigo} — últimos 60 días</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            icon={<TrendingUp className="w-5 h-5" />}
+            title="Sin datos de GMD"
+            description="Registra pesajes en los animales del lote para ver métricas productivas."
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const chartData = indicadores.map(ind => ({
+    animal: ind.codigoAnimal,
+    gmd: parseFloat(ind.gmd.toFixed(3)),
+  }))
+
+  const promedio = resumen!.gmdPromedioKgDia
+
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <CardTitle>Evolución GMD</CardTitle>
-            <CardDescription className="mt-1">Ganancia Media Diaria — últimos 63 días</CardDescription>
+            <CardTitle>GMD por Animal</CardTitle>
+            <CardDescription className="mt-1">
+              Lote {lote.codigo} — {lote.animalesActuales} animales · Promedio {promedio.toFixed(3)} kg/día
+            </CardDescription>
           </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 bg-emerald-400 inline-block rounded" />
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ background: CHART_COLORS.primary }} />
               GMD real
             </span>
             <span className="flex items-center gap-1.5">
@@ -52,52 +102,89 @@ export function GmdChart() {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={mockData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="gmdGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.15} />
-                <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
-              </linearGradient>
-            </defs>
+          <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
               strokeOpacity={0.5}
             />
             <XAxis
-              dataKey="dia"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              dataKey="animal"
+              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
               axisLine={false}
+              interval={0}
+              angle={chartData.length > 10 ? -45 : 0}
+              textAnchor={chartData.length > 10 ? 'end' : 'middle'}
+              height={chartData.length > 10 ? 40 : 20}
             />
             <YAxis
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
               axisLine={false}
-              domain={[0, 1.8]}
+              domain={[0, 'auto']}
               tickFormatter={(v) => `${v}`}
             />
             <Tooltip content={<CustomTooltip />} />
-            {/* Línea de referencia del umbral mínimo productivo */}
             <ReferenceLine
-              y={0.8}
+              y={GMD_MIN}
               stroke={CHART_COLORS.danger}
               strokeDasharray="4 2"
-              strokeOpacity={0.6}
+              strokeOpacity={0.7}
               label={{ value: 'Mín', position: 'right', fontSize: 9, fill: CHART_COLORS.danger }}
             />
-            <Area
-              type="monotone"
-              dataKey="gmd"
-              stroke={CHART_COLORS.primary}
-              strokeWidth={2}
-              fill="url(#gmdGradient)"
-              dot={{ r: 3, fill: CHART_COLORS.primary, strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: CHART_COLORS.primary, strokeWidth: 0 }}
-            />
-          </AreaChart>
+            <Bar dataKey="gmd" radius={[3, 3, 0, 0]}>
+              {chartData.map((entry, i) => (
+                <Cell
+                  key={i}
+                  fill={entry.gmd >= GMD_MIN ? CHART_COLORS.primary : CHART_COLORS.danger}
+                  fillOpacity={0.85}
+                />
+              ))}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
   )
+}
+
+export function GmdChart() {
+  const { data: lotes, isLoading } = useLotes(true)
+  const lotesArray = (lotes as LoteResumen[] | undefined) ?? []
+  const primerLote = lotesArray[0]
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>GMD por Animal</CardTitle>
+          <CardDescription className="mt-1">Cargando lotes…</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[220px] w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!primerLote) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>GMD por Animal</CardTitle>
+          <CardDescription className="mt-1">Ganancia Media Diaria por animal</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            icon={<TrendingUp className="w-5 h-5" />}
+            title="Sin lotes activos"
+            description="Crea y activa un lote para ver métricas de GMD."
+          />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return <GmdChartInner lote={primerLote} />
 }

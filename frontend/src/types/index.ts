@@ -189,8 +189,59 @@ export interface PagedResult<T> {
   hasNextPage: boolean
 }
 
-// ─── Costos ────────────────────────────────────────────────────────────────────
+// ─── Costos / Finanzas ────────────────────────────────────────────────────────
 export type CategoriaCosto = 'ManoDeObra' | 'CIF'
+
+export interface CategoriaGasto {
+  id: string
+  nombre: string
+  tipo: 'Directo' | 'Indirecto' | 'Operativo' | 'Inversion'
+}
+
+export interface Socio {
+  id: string
+  nombre: string
+  participacion: number
+}
+
+export interface MovimientoFinanciero {
+  id: string
+  fecha: string
+  periodoAnio: number
+  periodoMes: number
+  categoriaGastoId: string
+  categoriaGastoNombre: string
+  categoriaGastoTipo: string
+  monto: number
+  moneda: string
+  origen: 'Bovino' | 'Porcino' | 'Agricola' | 'General'
+  descripcion: string
+  socioId?: string
+  socioNombre?: string
+}
+
+export interface CuotaAmortizacion {
+  id: string
+  numeroCuota: number
+  fechaVencimiento: string
+  cuota: number
+  interes: number
+  abonoCapital: number
+  saldoPendiente: number
+  pagada: boolean
+  fechaPago?: string
+}
+
+export interface Prestamo {
+  id: string
+  capital: number
+  moneda: string
+  tasaMensual: number
+  nCuotas: number
+  fechaInicio: string
+  descripcion: string
+  cuotas: CuotaAmortizacion[]
+}
 
 export interface CostoOperativo {
   id: string
@@ -225,7 +276,7 @@ export interface CosteoLote {
 
 export interface CostoDetalle {
   id: string
-  categoria: CategoriaCosto
+  categoria: string // Modified from CategoriaCosto to support dynamic category names
   concepto: string
   fecha: string
   monto: number

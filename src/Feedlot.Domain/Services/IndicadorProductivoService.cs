@@ -23,18 +23,21 @@ namespace Feedlot.Domain.Services;
 public sealed class IndicadorProductivoService
 {
     private readonly IConsumoAlimenticioRepository _consumoRepo;
-    private readonly ICostoOperativoRepository _costoOperativoRepo;
+    private readonly IMovimientoFinancieroRepository _movimientoRepo;
+    private readonly ILoteRepository _loteRepo;
 
     public IndicadorProductivoService(
         IConsumoAlimenticioRepository consumoRepo,
-        ICostoOperativoRepository costoOperativoRepo)
+        IMovimientoFinancieroRepository movimientoRepo,
+        ILoteRepository loteRepo)
     {
         _consumoRepo = consumoRepo;
-        _costoOperativoRepo = costoOperativoRepo;
+        _movimientoRepo = movimientoRepo;
+        _loteRepo = loteRepo;
     }
 
     /// <summary>
-    /// Calcula todos los indicadores productivos y el costeo completo de un animal
+    /// Indica los indicadores productivos y el costeo completo de un animal
     /// en un período dado, distribuyendo MO y CIF del lote proporcionalmente.
     /// </summary>
     public async Task<IndicadorProductivo> CalcularParaAnimalAsync(
@@ -54,7 +57,6 @@ public sealed class IndicadorProductivoService
             throw new DomainException(
                 "La cantidad de animales en el lote debe ser mayor a cero.");
 
-        // Solución correcta
         int dias = Math.Max(hasta.DayNumber - desde.DayNumber, 1);
 
         // ── Peso inicial y final del período ──────────────────────────────────
@@ -73,24 +75,13 @@ public sealed class IndicadorProductivoService
         decimal pesoFinalKg = pesajeFinal?.Peso.Kilogramos
             ?? animal.PesoIngreso.Kilogramos;
 
-        // ── Materia prima: alimento del lote / n animales ────────────────────
-        decimal consumoTotalLoteKg = await _consumoRepo
-            .SumarKilogramosPorLoteAsync(loteId, desde, hasta, ct);
-        decimal costoAlimentoLote = await _consumoRepo
-            .SumarCostoPorLoteAsync(loteId, desde, hasta, ct);
+        // Cargar todos los costos prorrateados del lote
+        var costosLote = await ObtenerCostosLoteAsync(loteId, desde, hasta, ct);
 
-        decimal consumoIndividualKg = consumoTotalLoteKg / cantidadAnimalesEnLote;
-        decimal costoAlimentoIndividual = costoAlimentoLote / cantidadAnimalesEnLote;
-
-        // ── Mano de obra: total MO del lote / n animales ─────────────────────
-        decimal costoMoLote = await _costoOperativoRepo.SumarMontoPorLoteAsync(
-            loteId, desde, hasta, CategoriaCosto.ManoDeObra, ct);
-        decimal costoMoIndividual = costoMoLote / cantidadAnimalesEnLote;
-
-        // ── CIF: total CIF del lote / n animales ─────────────────────────────
-        decimal costoCifLote = await _costoOperativoRepo.SumarMontoPorLoteAsync(
-            loteId, desde, hasta, CategoriaCosto.CIF, ct);
-        decimal costoCifIndividual = costoCifLote / cantidadAnimalesEnLote;
+        decimal consumoIndividualKg = costosLote.ConsumoTotalKg / cantidadAnimalesEnLote;
+        decimal costoAlimentoIndividual = costosLote.CostoAlimentoTotal / cantidadAnimalesEnLote;
+        decimal costoMoIndividual = costosLote.CostoManoDeObraTotal / cantidadAnimalesEnLote;
+        decimal costoCifIndividual = costosLote.CostoCifTotal / cantidadAnimalesEnLote;
 
         // ── Costo total unitario (como en el Excel) ───────────────────────────
         decimal costoTotalIndividual =
@@ -136,9 +127,8 @@ public sealed class IndicadorProductivoService
         decimal CostoCifTotal);
 
     /// <summary>
-    /// Carga los costos de un lote (alimento, MO, CIF) en 4 consultas totales,
+    /// Carga los costos de un lote (alimento, MO, CIF) en consultas optimizadas,
     /// independientemente de cuántos animales tenga el lote.
-    /// Llamar UNA vez por lote y pasar el resultado a CalcularConCostos.
     /// </summary>
     public async Task<CostosLote> ObtenerCostosLoteAsync(
         Guid loteId,
@@ -148,12 +138,33 @@ public sealed class IndicadorProductivoService
     {
         var consumoKg = await _consumoRepo.SumarKilogramosPorLoteAsync(loteId, desde, hasta, ct);
         var costoAlimento = await _consumoRepo.SumarCostoPorLoteAsync(loteId, desde, hasta, ct);
-        var costoMo = await _costoOperativoRepo.SumarMontoPorLoteAsync(
-            loteId, desde, hasta, CategoriaCosto.ManoDeObra, ct);
-        var costoCif = await _costoOperativoRepo.SumarMontoPorLoteAsync(
-            loteId, desde, hasta, CategoriaCosto.CIF, ct);
 
-        return new CostosLote(consumoKg, costoAlimento, costoMo, costoCif);
+        // Prorrateo de MO y CIF globales de la granja
+        var lotesActivos = await _loteRepo.ObtenerActivosAsync(ct);
+        decimal totalAnimalesGranja = lotesActivos.Sum(l => l.CantidadAnimalesActivos);
+        if (totalAnimalesGranja == 0) totalAnimalesGranja = 1;
+
+        var movimientosBovino = await _movimientoRepo.ObtenerPorRangoFechasAsync(
+            desde, hasta, OrigenFinanciero.Bovino, ct);
+        var movimientosGeneral = await _movimientoRepo.ObtenerPorRangoFechasAsync(
+            desde, hasta, OrigenFinanciero.General, ct);
+        var todosMovimientos = movimientosBovino.Concat(movimientosGeneral).ToList();
+
+        decimal totalMoGlobal = todosMovimientos
+            .Where(m => m.CategoriaGasto.Tipo == TipoCategoriaGasto.Operativo)
+            .Sum(m => m.Monto.Monto);
+
+        decimal totalCifGlobal = todosMovimientos
+            .Where(m => m.CategoriaGasto.Tipo == TipoCategoriaGasto.Indirecto)
+            .Sum(m => m.Monto.Monto);
+
+        var lote = await _loteRepo.ObtenerPorIdAsync(loteId, ct);
+        int totalAnimalesLote = lote?.CantidadAnimalesActivos ?? 0;
+
+        decimal costoMoLote = (totalMoGlobal / totalAnimalesGranja) * totalAnimalesLote;
+        decimal costoCifLote = (totalCifGlobal / totalAnimalesGranja) * totalAnimalesLote;
+
+        return new CostosLote(consumoKg, costoAlimento, Math.Round(costoMoLote, 2), Math.Round(costoCifLote, 2));
     }
 
     /// <summary>
