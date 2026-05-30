@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X, CheckCircle2, DollarSign, Tag, Users, ChevronDown } from 'lucide-react'
+import { Plus, X, CheckCircle2, DollarSign, Tag, Users, ChevronDown, BarChart2, TrendingUp, Download } from 'lucide-react'
 import {
   useCategoriasGasto, useCrearCategoriaGasto,
   useSocios, useCrearSocio,
   useMovimientosFinancieros, useRegistrarMovimiento,
+  useEstadoResultados, useFlujoCaja,
 } from '@/hooks/useFeedlot'
+import { finanzasService } from '@/services/feedlot.service'
 import { useAuthStore } from '@/stores/auth.store'
 import {
   PageHeader, Card, CardContent, Skeleton, EmptyState, Button,
@@ -17,7 +19,7 @@ import {
 import { fmt } from '@/utils'
 import type { CategoriaGasto, Socio, MovimientoFinanciero } from '@/types'
 
-type Tab = 'movimientos' | 'categorias' | 'socios'
+type Tab = 'movimientos' | 'categorias' | 'socios' | 'pyg' | 'flujo'
 const hoy = new Date().toISOString().slice(0, 10)
 
 const movimientoSchema = z.object({
@@ -320,6 +322,225 @@ function CrearSocioModal({ open, onClose }: { open: boolean; onClose: () => void
   )
 }
 
+// ── Helpers compartidos ────────────────────────────────────────────────────────
+const mesesOpts = [
+  { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+  { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+  { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+]
+
+function FiltrosPeriodo({
+  anio, mes, origen,
+  onAnio, onMes, onOrigen,
+  sinMes = false,
+}: {
+  anio: number; mes?: number; origen?: string
+  onAnio: (v: number) => void; onMes?: (v?: number) => void; onOrigen: (v?: string) => void
+  sinMes?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap mb-4">
+      <select value={anio} onChange={e => onAnio(Number(e.target.value))}
+        className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
+        {[2024, 2025, 2026, 2027].map(a => <option key={a} value={a}>{a}</option>)}
+      </select>
+      {!sinMes && onMes && (
+        <select value={mes ?? ''} onChange={e => onMes(e.target.value ? Number(e.target.value) : undefined)}
+          className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
+          <option value="">Año completo</option>
+          {mesesOpts.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
+      )}
+      <select value={origen ?? ''} onChange={e => onOrigen(e.target.value || undefined)}
+        className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
+        <option value="">Todos los orígenes</option>
+        <option value="Bovino">Bovino</option>
+        <option value="Porcino">Porcino</option>
+        <option value="Agricola">Agrícola</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+  )
+}
+
+function FilaPyG({ label, monto, indent = false, subtotal = false, color }: {
+  label: string; monto: number; indent?: boolean; subtotal?: boolean; color?: string
+}) {
+  const montoFmt = fmt.cop(Math.abs(monto))
+  const neg = monto < 0
+  return (
+    <div className={`flex justify-between items-center py-2 px-4 ${subtotal ? 'bg-primary/5 rounded-lg my-1' : ''} ${indent ? 'pl-8' : ''}`}>
+      <span className={`text-sm ${subtotal ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+      <span className={`text-sm tabular-nums font-medium ${color ?? (neg ? 'text-red-400' : subtotal ? 'text-foreground' : 'text-foreground')}`}>
+        {neg ? `(${montoFmt})` : montoFmt}
+      </span>
+    </div>
+  )
+}
+
+function SeccionPyG({ titulo, lineas, total, colorTotal }: {
+  titulo: string; lineas: { concepto: string; monto: number }[]; total: number; colorTotal?: string
+}) {
+  return (
+    <div className="space-y-0.5">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-4 pt-3 pb-1">{titulo}</p>
+      {lineas.length === 0
+        ? <p className="text-xs text-muted-foreground italic px-8 pb-2">Sin movimientos</p>
+        : lineas.map((l, i) => <FilaPyG key={i} label={l.concepto} monto={l.monto} indent />)
+      }
+      <FilaPyG label={`Total ${titulo.toLowerCase()}`} monto={total} subtotal color={colorTotal} />
+    </div>
+  )
+}
+
+function TabPyG({ anio, mes, origen, onAnioChange, onMesChange, onOrigenChange }: {
+  anio: number; mes?: number; origen?: string
+  onAnioChange: (v: number) => void
+  onMesChange: (v?: number) => void
+  onOrigenChange: (v?: string) => void
+}) {
+  const { data, isLoading } = useEstadoResultados({ anio, mes, origen })
+
+  return (
+    <div>
+      <FiltrosPeriodo anio={anio} mes={mes} origen={origen}
+        onAnio={onAnioChange} onMes={onMesChange} onOrigen={onOrigenChange} />
+
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
+      ) : !data ? (
+        <EmptyState icon={<BarChart2 className="w-5 h-5" />} title="Sin datos" description="No hay datos financieros para el período seleccionado." />
+      ) : (
+        <Card>
+          <CardContent className="p-2 divide-y divide-border/40">
+            {/* Ingresos */}
+            <SeccionPyG titulo="Ingresos" lineas={data.ingresos} total={data.totalIngresos} colorTotal="text-emerald-400" />
+
+            {/* Costos directos */}
+            <SeccionPyG titulo="Costos directos" lineas={data.costosDirectos} total={data.totalCostosDirectos} />
+
+            {/* Utilidad Bruta */}
+            <div className="py-2">
+              <div className={`flex justify-between items-center px-4 py-2.5 rounded-lg ${data.utilidadBruta >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                <span className="text-sm font-bold">Utilidad Bruta</span>
+                <span className={`text-sm font-bold tabular-nums ${data.utilidadBruta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {data.utilidadBruta < 0 ? `(${fmt.cop(Math.abs(data.utilidadBruta))})` : fmt.cop(data.utilidadBruta)}
+                </span>
+              </div>
+            </div>
+
+            {/* Gastos indirectos */}
+            <SeccionPyG titulo="Gastos indirectos" lineas={data.gastosIndirectos} total={data.totalGastosIndirectos} />
+
+            {/* Gastos operativos */}
+            <SeccionPyG titulo="Gastos operativos" lineas={data.gastosOperativos} total={data.totalGastosOperativos} />
+
+            {/* Intereses */}
+            {data.totalInteresesPrestamo > 0 && (
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-4 pt-3 pb-1">Servicio de deuda</p>
+                <FilaPyG label="Intereses préstamos" monto={data.totalInteresesPrestamo} indent />
+              </div>
+            )}
+
+            {/* Utilidad Operativa */}
+            <div className="py-2">
+              <div className={`flex justify-between items-center px-4 py-2.5 rounded-lg ${data.utilidadOperativa >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                <span className="text-sm font-bold">Utilidad Operativa</span>
+                <span className={`text-sm font-bold tabular-nums ${data.utilidadOperativa >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {data.utilidadOperativa < 0 ? `(${fmt.cop(Math.abs(data.utilidadOperativa))})` : fmt.cop(data.utilidadOperativa)}
+                </span>
+              </div>
+            </div>
+
+            {/* Inversiones */}
+            {(data.inversiones.length > 0 || data.totalInversiones > 0) && (
+              <SeccionPyG titulo="Inversiones" lineas={data.inversiones} total={data.totalInversiones} />
+            )}
+
+            {/* Utilidad Neta */}
+            <div className="py-2">
+              <div className={`flex justify-between items-center px-4 py-3 rounded-lg ${data.utilidadNeta >= 0 ? 'bg-emerald-500/15 border border-emerald-500/20' : 'bg-red-500/15 border border-red-500/20'}`}>
+                <span className="font-bold">UTILIDAD NETA</span>
+                <span className={`text-base font-bold tabular-nums ${data.utilidadNeta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {data.utilidadNeta < 0 ? `(${fmt.cop(Math.abs(data.utilidadNeta))})` : fmt.cop(data.utilidadNeta)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+function TabFlujoCaja({ anio, origen, onAnioChange, onOrigenChange }: {
+  anio: number; origen?: string
+  onAnioChange: (v: number) => void
+  onOrigenChange: (v?: string) => void
+}) {
+  const { data, isLoading } = useFlujoCaja({ anio, origen })
+
+  return (
+    <div>
+      <FiltrosPeriodo anio={anio} origen={origen}
+        onAnio={onAnioChange} onOrigen={onOrigenChange} sinMes />
+
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 12 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
+      ) : !data ? (
+        <EmptyState icon={<TrendingUp className="w-5 h-5" />} title="Sin datos" description="No hay datos de flujo de caja para el año seleccionado." />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    {['Mes', 'Ingresos', 'Egresos', 'Saldo Neto', 'Saldo Acumulado'].map(h => (
+                      <th key={h} className="text-right first:text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.meses.map((m, i) => {
+                    const hasActivity = m.ingresos > 0 || m.egresos > 0
+                    return (
+                      <tr key={m.mes} className={`border-b border-border/40 transition-colors ${!hasActivity ? 'opacity-40' : 'hover:bg-secondary/30'} ${i === data.meses.length - 1 ? 'border-b-0' : ''}`}>
+                        <td className="px-4 py-3 font-medium">{m.nombreMes}</td>
+                        <td className="px-4 py-3 tabular-nums text-right text-emerald-400">{m.ingresos > 0 ? fmt.cop(m.ingresos) : '—'}</td>
+                        <td className="px-4 py-3 tabular-nums text-right text-red-400">{m.egresos > 0 ? fmt.cop(m.egresos) : '—'}</td>
+                        <td className={`px-4 py-3 tabular-nums text-right font-medium ${m.saldoNeto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {m.saldoNeto !== 0 ? (m.saldoNeto < 0 ? `(${fmt.cop(Math.abs(m.saldoNeto))})` : fmt.cop(m.saldoNeto)) : '—'}
+                        </td>
+                        <td className={`px-4 py-3 tabular-nums text-right font-semibold ${m.saldoAcumulado >= 0 ? 'text-foreground' : 'text-red-400'}`}>
+                          {m.saldoAcumulado !== 0 ? (m.saldoAcumulado < 0 ? `(${fmt.cop(Math.abs(m.saldoAcumulado))})` : fmt.cop(m.saldoAcumulado)) : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-secondary/30">
+                    <td className="px-4 py-3 font-bold">Total {anio}</td>
+                    <td className="px-4 py-3 tabular-nums text-right font-bold text-emerald-400">{fmt.cop(data.totalIngresos)}</td>
+                    <td className="px-4 py-3 tabular-nums text-right font-bold text-red-400">{fmt.cop(data.totalEgresos)}</td>
+                    <td className={`px-4 py-3 tabular-nums text-right font-bold ${data.saldoNeto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {data.saldoNeto < 0 ? `(${fmt.cop(Math.abs(data.saldoNeto))})` : fmt.cop(data.saldoNeto)}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
 export default function FinanzasPage() {
   const [tab, setTab] = useState<Tab>('movimientos')
   const [modalMovimiento, setModalMovimiento] = useState(false)
@@ -338,6 +559,8 @@ export default function FinanzasPage() {
 
   const tabs: { key: Tab; label: string; icon: typeof DollarSign }[] = [
     { key: 'movimientos', icon: DollarSign, label: 'Movimientos' },
+    { key: 'pyg', icon: BarChart2, label: 'P&L' },
+    { key: 'flujo', icon: TrendingUp, label: 'Flujo de Caja' },
     { key: 'categorias', icon: Tag, label: 'Categorías' },
     { key: 'socios', icon: Users, label: 'Socios' },
   ]
@@ -374,11 +597,21 @@ export default function FinanzasPage() {
             <Button size="sm" onClick={() => setModalCategoria(true)}>
               <Plus className="w-3.5 h-3.5" /> Nueva categoría
             </Button>
-          ) : (
+          ) : tab === 'socios' ? (
             <Button size="sm" onClick={() => setModalSocios(true)}>
               <Plus className="w-3.5 h-3.5" /> Crear socios
             </Button>
-          )
+          ) : tab === 'pyg' ? (
+            <a href={finanzasService.exportarEstadoResultados({ anio: filtroAnio, mes: filtroMes, origen: filtroOrigen })}
+               download className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Exportar Excel
+            </a>
+          ) : tab === 'flujo' ? (
+            <a href={finanzasService.exportarFlujoCaja({ anio: filtroAnio, origen: filtroOrigen })}
+               download className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Exportar Excel
+            </a>
+          ) : null
         }
       />
 
@@ -456,6 +689,14 @@ export default function FinanzasPage() {
             )}
           </div>
         )}
+
+        {/* ── Tab: P&L ── */}
+        {tab === 'pyg' && <TabPyG anio={filtroAnio} mes={filtroMes} origen={filtroOrigen}
+          onAnioChange={setFiltroAnio} onMesChange={setFiltroMes} onOrigenChange={setFiltroOrigen} />}
+
+        {/* ── Tab: Flujo de Caja ── */}
+        {tab === 'flujo' && <TabFlujoCaja anio={filtroAnio} origen={filtroOrigen}
+          onAnioChange={setFiltroAnio} onOrigenChange={setFiltroOrigen} />}
 
         {/* ── Tab: Categorías ── */}
         {tab === 'categorias' && (

@@ -47,6 +47,8 @@ export const queryKeys = {
     categorias: () => ['finanzas', 'categorias'] as const,
     socios: () => ['finanzas', 'socios'] as const,
     movimientos: (params?: object) => ['finanzas', 'movimientos', params] as const,
+    estadoResultados: (params: object) => ['finanzas', 'estadoResultados', params] as const,
+    flujoCaja: (params: object) => ['finanzas', 'flujoCaja', params] as const,
   },
     prestamos: {
       all: ['prestamos'] as const,
@@ -374,6 +376,24 @@ export function useCompradores() {
   })
 }
 
+// ─── Reportes Financieros ─────────────────────────────────────────────────────
+
+export function useEstadoResultados(params: { anio: number; mes?: number; origen?: string }) {
+  return useQuery({
+    queryKey: queryKeys.finanzas.estadoResultados(params),
+    queryFn: () => finanzasService.getEstadoResultados(params),
+    staleTime: 60_000,
+  })
+}
+
+export function useFlujoCaja(params: { anio: number; origen?: string }) {
+  return useQuery({
+    queryKey: queryKeys.finanzas.flujoCaja(params),
+    queryFn: () => finanzasService.getFlujoCaja(params),
+    staleTime: 60_000,
+  })
+}
+
 export function useCrearVenta() {
   const qc = useQueryClient()
   return useMutation({
@@ -478,7 +498,7 @@ export function useCrearPrestamo() {
   })
 }
 
-// ─── Inversión / Planeación ────────────────────────────────────────────────────
+// ─── Inversión / Planeación ───────────────────────────────────────────────────
 export function useEtapasInversion() {
   return useQuery({
     queryKey: queryKeys.inversion.etapas,
@@ -536,8 +556,7 @@ export function useCrearAporteSocio() {
   })
 }
 
-// ─── Operación ─────────────────────────────────────────────────────────────────
-// Potreros
+// ─── Operación ────────────────────────────────────────────────────────────────
 export function usePotreros() {
   return useQuery({
     queryKey: queryKeys.operacion.potreros,
@@ -572,7 +591,6 @@ export function useRetirarAnimalPotrero() {
   })
 }
 
-// Empleados
 export function useEmpleados() {
   return useQuery({
     queryKey: queryKeys.operacion.empleados,
@@ -599,7 +617,6 @@ export function useRegistrarActividadManoObra() {
   })
 }
 
-// Caña
 export function useCultivosCania() {
   return useQuery({
     queryKey: queryKeys.operacion.cultivos,

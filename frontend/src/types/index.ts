@@ -318,6 +318,52 @@ export interface VacunaProxima {
   responsable?: string
 }
 
+// ─── Reportes Financieros ─────────────────────────────────────────────────────
+
+export interface LineaResultado {
+  concepto: string
+  monto: number
+}
+
+export interface EstadoResultados {
+  anio: number
+  mes?: number
+  origen?: string
+  moneda: string
+  totalIngresos: number
+  ingresos: LineaResultado[]
+  totalCostosDirectos: number
+  costosDirectos: LineaResultado[]
+  utilidadBruta: number
+  totalGastosIndirectos: number
+  gastosIndirectos: LineaResultado[]
+  totalGastosOperativos: number
+  gastosOperativos: LineaResultado[]
+  totalInteresesPrestamo: number
+  utilidadOperativa: number
+  totalInversiones: number
+  inversiones: LineaResultado[]
+  utilidadNeta: number
+}
+
+export interface FlujoCajaMes {
+  mes: number
+  nombreMes: string
+  ingresos: number
+  egresos: number
+  saldoNeto: number
+  saldoAcumulado: number
+}
+
+export interface FlujoCaja {
+  anio: number
+  origen?: string
+  meses: FlujoCajaMes[]
+  totalIngresos: number
+  totalEgresos: number
+  saldoNeto: number
+}
+
 // ─── Proveedores ──────────────────────────────────────────────────────────────
 export interface Proveedor {
   id: string

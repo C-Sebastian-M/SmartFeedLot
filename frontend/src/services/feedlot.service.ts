@@ -6,7 +6,8 @@ import type {
   CosteoLote, Proveedor, Compra, Comprador, Venta,
   CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
   EtapaInversion, AporteSocio,
-  Potrero, Empleado, CultivoCania, LoteSilo
+  Potrero, Empleado, CultivoCania, LoteSilo,
+  EstadoResultados, FlujoCaja
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -291,6 +292,38 @@ export const finanzasService = {
   }): Promise<string> => {
     const { data } = await api.post('/finanzas/movimientos', payload)
     return data
+  },
+
+  getEstadoResultados: async (params: {
+    anio: number
+    mes?: number
+    origen?: string
+  }): Promise<EstadoResultados> => {
+    const { data } = await api.get('/finanzas/estado-resultados', { params })
+    return data
+  },
+
+  getFlujoCaja: async (params: {
+    anio: number
+    origen?: string
+  }): Promise<FlujoCaja> => {
+    const { data } = await api.get('/finanzas/flujo-caja', { params })
+    return data
+  },
+
+  exportarEstadoResultados: (params: { anio: number; mes?: number; origen?: string }) => {
+    const qs = new URLSearchParams()
+    qs.set('anio', String(params.anio))
+    if (params.mes) qs.set('mes', String(params.mes))
+    if (params.origen) qs.set('origen', params.origen)
+    return `${api.defaults.baseURL}/finanzas/estado-resultados/export?${qs}`
+  },
+
+  exportarFlujoCaja: (params: { anio: number; origen?: string }) => {
+    const qs = new URLSearchParams()
+    qs.set('anio', String(params.anio))
+    if (params.origen) qs.set('origen', params.origen)
+    return `${api.defaults.baseURL}/finanzas/flujo-caja/export?${qs}`
   },
 }
 

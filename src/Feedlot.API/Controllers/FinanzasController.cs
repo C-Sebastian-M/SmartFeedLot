@@ -1,8 +1,11 @@
+using Feedlot.API.Services;
 using Feedlot.Application.Features.Costos.Queries.ObtenerCostosTotalesLote;
 using Feedlot.Application.Features.Finanzas.Commands.CrearCategoriaGasto;
 using Feedlot.Application.Features.Finanzas.Commands.CrearSocio;
 using Feedlot.Application.Features.Finanzas.Commands.RegistrarMovimiento;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerCategoriasGasto;
+using Feedlot.Application.Features.Finanzas.Queries.ObtenerEstadoResultados;
+using Feedlot.Application.Features.Finanzas.Queries.ObtenerFlujoCaja;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerMovimientosFinancieros;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerSocios;
 using MediatR;
@@ -127,5 +130,84 @@ public sealed class FinanzasController : ApiControllerBase
         if (result.IsSuccess)
             return CreatedAtAction(nameof(ObtenerSocios), new { id = result.Value }, new { id = result.Value });
         return FromResult(result);
+    }
+
+    // ── Reportes financieros ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Estado de Resultados (P&amp;L) para un año, opcionalmente filtrado por mes y origen.
+    /// </summary>
+    [HttpGet("estado-resultados")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ObtenerEstadoResultados(
+        [FromQuery] int anio,
+        [FromQuery] int? mes,
+        [FromQuery] string? origen,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerEstadoResultadosQuery(anio, mes, origen);
+        var result = await _sender.Send(query, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Estado de Resultados exportado a Excel (.xlsx).
+    /// </summary>
+    [HttpGet("estado-resultados/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportarEstadoResultados(
+        [FromQuery] int anio,
+        [FromQuery] int? mes,
+        [FromQuery] string? origen,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerEstadoResultadosQuery(anio, mes, origen);
+        var result = await _sender.Send(query, ct);
+        if (result.IsFailure) return FromResult(result);
+
+        var bytes = ExcelExportService.GenerarEstadoResultados(result.Value!);
+        var periodoStr = mes.HasValue ? $"{mes:D2}-{anio}" : $"{anio}";
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"EstadoResultados_{periodoStr}.xlsx");
+    }
+
+    /// <summary>
+    /// Flujo de caja mensual para un año.
+    /// </summary>
+    [HttpGet("flujo-caja")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ObtenerFlujoCaja(
+        [FromQuery] int anio,
+        [FromQuery] string? origen,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerFlujoCajaQuery(anio, origen);
+        var result = await _sender.Send(query, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Flujo de caja exportado a Excel (.xlsx).
+    /// </summary>
+    [HttpGet("flujo-caja/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportarFlujoCaja(
+        [FromQuery] int anio,
+        [FromQuery] string? origen,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerFlujoCajaQuery(anio, origen);
+        var result = await _sender.Send(query, ct);
+        if (result.IsFailure) return FromResult(result);
+
+        var bytes = ExcelExportService.GenerarFlujoCaja(result.Value!);
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"FlujoCaja_{anio}.xlsx");
     }
 }
