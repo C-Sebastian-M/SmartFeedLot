@@ -4,7 +4,8 @@ import type {
   IndicadorProductivo, ResumenLote, AnimalIneficiente,
   LoginResponse, Racion, Lote, LoteResumen,
   CosteoLote, Proveedor, Compra, Comprador, Venta,
-  CategoriaGasto, Socio, MovimientoFinanciero, Prestamo
+  CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
+  EtapaInversion, AporteSocio
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -377,6 +378,60 @@ export const comprasService = {
     unidadMedida?: string
   }): Promise<string> => {
     const { data } = await api.post('/compras', payload)
+    return data
+  },
+}
+
+// ─── Inversión ─────────────────────────────────────────────────────────────────
+export const inversionService = {
+  getEtapas: async (): Promise<EtapaInversion[]> => {
+    const { data } = await api.get('/inversion/etapas')
+    return data
+  },
+
+  crearEtapa: async (payload: { numero: number; nombre: string }): Promise<string> => {
+    const { data } = await api.post('/inversion/etapas', payload)
+    return data
+  },
+
+  agregarItem: async (payload: {
+    etapaId: string
+    producto: string
+    monto: number
+    moneda: string
+    observacion?: string
+    estado: string
+    porcentajeAvance: number
+  }): Promise<string> => {
+    const { data } = await api.post('/inversion/items', payload)
+    return data
+  },
+
+  actualizarItem: async (payload: {
+    itemId: string
+    producto: string
+    monto: number
+    moneda: string
+    observacion?: string
+    estado: string
+    porcentajeAvance: number
+  }): Promise<void> => {
+    const { itemId, ...body } = payload
+    await api.patch(`/inversion/items/${itemId}`, body)
+  },
+
+  getAportes: async (params?: { socioId?: string; itemInversionId?: string }): Promise<AporteSocio[]> => {
+    const { data } = await api.get('/inversion/aportes', { params })
+    return data
+  },
+
+  crearAporte: async (payload: {
+    socioId: string
+    itemInversionId: string
+    monto: number
+    moneda: string
+  }): Promise<string> => {
+    const { data } = await api.post('/inversion/aportes', payload)
     return data
   },
 }

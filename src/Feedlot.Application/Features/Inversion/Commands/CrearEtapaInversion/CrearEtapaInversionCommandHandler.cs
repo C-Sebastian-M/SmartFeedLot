@@ -1,0 +1,33 @@
+using Feedlot.Application.Common;
+using Feedlot.Domain.Entities;
+using Feedlot.Domain.Interfaces;
+using MediatR;
+
+namespace Feedlot.Application.Features.Inversion.Commands.CrearEtapaInversion;
+
+public sealed class CrearEtapaInversionCommandHandler
+    : IRequestHandler<CrearEtapaInversionCommand, Result<Guid>>
+{
+    private readonly IEtapaInversionRepository _etapaRepo;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public CrearEtapaInversionCommandHandler(
+        IEtapaInversionRepository etapaRepo,
+        IUnitOfWork unitOfWork)
+    {
+        _etapaRepo = etapaRepo;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<Guid>> Handle(
+        CrearEtapaInversionCommand request,
+        CancellationToken ct)
+    {
+        var etapa = EtapaInversion.Crear(request.Numero, request.Nombre);
+
+        await _etapaRepo.AgregarAsync(etapa, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Result<Guid>.Success(etapa.Id);
+    }
+}

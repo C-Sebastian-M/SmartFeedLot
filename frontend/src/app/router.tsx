@@ -12,6 +12,7 @@ import AlertasPage from '@/pages/AlertasPage'
 import CostosPage from '@/pages/CostosPage'
 import FinanzasPage from '@/pages/FinanzasPage'
 import PrestamosPage from '@/pages/PrestamosPage'
+import InversionPage from '@/pages/InversionPage'
 import ProveedoresPage from '@/pages/ProveedoresPage'
 import ComprasPage from '@/pages/ComprasPage'
 import VentasPage from '@/pages/VentasPage'
@@ -47,6 +48,7 @@ const router = createBrowserRouter(
         { path: 'costos', element: <CostosPage /> },
         { path: 'finanzas', element: <FinanzasPage /> },
         { path: 'prestamos', element: <PrestamosPage /> },
+        { path: 'inversion', element: <InversionPage /> },
         { path: 'proveedores', element: <ProveedoresPage /> },
         { path: 'compras', element: <ComprasPage /> },
         { path: 'ventas', element: <VentasPage /> },

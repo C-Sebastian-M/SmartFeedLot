@@ -41,6 +41,9 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     public DbSet<AnimalLote> AnimalesLote => Set<AnimalLote>();
     public DbSet<EventoSanitario> EventosSanitarios => Set<EventoSanitario>();
     public DbSet<CuotaAmortizacion> CuotasAmortizacion => Set<CuotaAmortizacion>();
+    public DbSet<EtapaInversion> EtapasInversion => Set<EtapaInversion>();
+    public DbSet<ItemInversion> ItemsInversion => Set<ItemInversion>();
+    public DbSet<AporteSocio> AportesSocios => Set<AporteSocio>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

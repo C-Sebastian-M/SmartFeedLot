@@ -5,7 +5,7 @@ import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
   LogOut, User, Activity, DollarSign, Menu,
-  Building2, ShoppingCart, HandCoins, UserPlus, Landmark,
+  Building2, ShoppingCart, HandCoins, UserPlus, Landmark, ClipboardList,
 } from 'lucide-react'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/costos', icon: DollarSign, label: 'Costos' },
   { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
   { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
+  { to: '/inversion', icon: ClipboardList, label: 'Inversión' },
   { to: '/analitica', icon: BarChart3, label: 'Analítica' },
   { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
   { to: '/proveedores', icon: Building2, label: 'Proveedores' },

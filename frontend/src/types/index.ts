@@ -344,3 +344,35 @@ export interface Compra {
   cantidadInsumo?: number
   unidadMedida?: string
 }
+
+// ─── Inversión / Planeación ────────────────────────────────────────────────────
+export interface ItemInversion {
+  id: string
+  etapaId: string
+  producto: string
+  monto: number
+  moneda: string
+  observacion?: string
+  estado: 'OK' | 'Pendiente'
+  porcentajeAvance: number
+}
+
+export interface EtapaInversion {
+  id: string
+  numero: number
+  nombre: string
+  totalRealizadoMonto: number
+  totalPendienteMonto: number
+  moneda: string
+  items: ItemInversion[]
+}
+
+export interface AporteSocio {
+  id: string
+  socioId: string
+  socioNombre: string
+  itemInversionId: string
+  itemProducto: string
+  monto: number
+  moneda: string
+}

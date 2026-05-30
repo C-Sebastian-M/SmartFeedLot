@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService } from '@/services/feedlot.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const queryKeys = {
@@ -48,9 +48,13 @@ export const queryKeys = {
     socios: () => ['finanzas', 'socios'] as const,
     movimientos: (params?: object) => ['finanzas', 'movimientos', params] as const,
   },
-  prestamos: {
-    all: ['prestamos'] as const,
-  },
+    prestamos: {
+      all: ['prestamos'] as const,
+    },
+    inversion: {
+      etapas: ['inversion', 'etapas'] as const,
+      aportes: ['inversion', 'aportes'] as const,
+    },
 }
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -464,6 +468,64 @@ export function useCrearPrestamo() {
     mutationFn: prestamosService.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.prestamos.all })
+    },
+  })
+}
+
+// ─── Inversión / Planeación ────────────────────────────────────────────────────
+export function useEtapasInversion() {
+  return useQuery({
+    queryKey: queryKeys.inversion.etapas,
+    queryFn: () => inversionService.getEtapas(),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearEtapaInversion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: inversionService.crearEtapa,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.inversion.etapas })
+    },
+  })
+}
+
+export function useAgregarItemInversion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: inversionService.agregarItem,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.inversion.etapas })
+    },
+  })
+}
+
+export function useActualizarItemInversion() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: inversionService.actualizarItem,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.inversion.etapas })
+    },
+  })
+}
+
+export function useAportesSocios(params?: { socioId?: string; itemInversionId?: string }) {
+  return useQuery({
+    queryKey: ['inversion', 'aportes', params],
+    queryFn: () => inversionService.getAportes(params),
+    enabled: Boolean(params?.socioId || params?.itemInversionId),
+    staleTime: 60_000,
+  })
+}
+
+export function useCrearAporteSocio() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: inversionService.crearAporte,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['inversion', 'aportes'] })
     },
   })
 }

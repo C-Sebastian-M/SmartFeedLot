@@ -70,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<ICompraRepository, CompraRepository>();
         services.AddScoped<ICompradorRepository, CompradorRepository>();
         services.AddScoped<IVentaRepository, VentaRepository>();
+        services.AddScoped<IEtapaInversionRepository, EtapaInversionRepository>();
+        services.AddScoped<IAporteSocioRepository, AporteSocioRepository>();
 
 
         // Identity.
