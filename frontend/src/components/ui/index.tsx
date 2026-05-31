@@ -1,18 +1,18 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { cn } from '@/utils'
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('rounded-lg border border-border bg-card text-card-foreground', className)}
+      className={cn('rounded-lg border border-border/60 bg-card text-card-foreground shadow-sm', className)}
       {...props}
     />
   )
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex flex-col space-y-1 p-5', className)} {...props} />
+  return <div className={cn('flex flex-col space-y-1 px-5 py-4', className)} {...props} />
 }
 
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
@@ -24,7 +24,7 @@ export function CardDescription({ className, ...props }: React.HTMLAttributes<HT
 }
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('p-5 pt-0', className)} {...props} />
+  return <div className={cn('px-5 pb-4 pt-0', className)} {...props} />
 }
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ export function Badge({ className, variant = 'outline', ...props }: BadgeProps) 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border transition-colors',
+        'inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium border transition-colors',
         variant === 'outline' && 'bg-transparent',
         className
       )}
@@ -68,8 +68,8 @@ export function Button({
           'border border-border bg-transparent hover:bg-accent': variant === 'outline',
         },
         {
-          'h-7 px-2.5 text-xs': size === 'sm',
-          'h-9 px-4 text-sm': size === 'md',
+          'h-7 px-2.5 text-[11px] tracking-wide': size === 'sm',
+          'h-8 px-3.5 text-sm': size === 'md',
           'h-10 px-6 text-sm': size === 'lg',
           'h-8 w-8 p-0': size === 'icon',
         },
@@ -96,7 +96,7 @@ export const Input = React.forwardRef<
   <input
     ref={ref}
     className={cn(
-      'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors',
+      'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm transition-colors',
       'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
       'disabled:cursor-not-allowed disabled:opacity-50',
       className
@@ -128,7 +128,7 @@ Textarea.displayName = 'Textarea'
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
-      className={cn('text-xs font-medium leading-none text-muted-foreground', className)}
+      className={cn('text-[11px] font-medium leading-none text-muted-foreground/80 uppercase tracking-wide', className)}
       {...props}
     />
   )
@@ -250,41 +250,77 @@ interface StatCardProps {
   loading?: boolean
 }
 
-export function StatCard({ label, value, sub, delta, deltaPositive, icon, className, loading }: StatCardProps) {
+export function StatCard({ label, value, sub, delta, deltaPositive, icon: _icon, className, loading }: StatCardProps) {
   if (loading) {
     return (
-      <Card className={cn('p-5', className)}>
-        <Skeleton className="h-3 w-24 mb-3" />
-        <Skeleton className="h-7 w-32 mb-2" />
-        <Skeleton className="h-3 w-16" />
+      <Card className={cn('p-4', className)}>
+        <Skeleton className="h-3 w-20 mb-2.5" />
+        <Skeleton className="h-7 w-24" />
       </Card>
     )
   }
 
   return (
-    <Card className={cn('p-5 transition-all hover:border-border/80', className)}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold tabular-nums">{value}</p>
-          {sub && (
-            <p className="text-[11px] text-muted-foreground">{sub}</p>
-          )}
-          {delta && (
-            <p className={cn('text-xs font-medium', deltaPositive ? 'text-emerald-400' : 'text-rose-400')}>
-              {delta}
-            </p>
-          )}
-        </div>
-        {icon && (
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-            {icon}
-          </div>
-        )}
-      </div>
+    <Card className={cn('p-4', className)}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-1.5">{label}</p>
+      <p className="text-2xl font-bold tabular-nums tracking-tight leading-none">{value}</p>
+      {sub && <p className="text-[11px] text-muted-foreground mt-1.5">{sub}</p>}
+      {delta && (
+        <p className={cn('text-xs font-medium mt-1.5 flex items-center gap-1', deltaPositive ? 'text-emerald-400' : 'text-rose-400')}>
+          <span>{deltaPositive ? '↑' : '↓'}</span>{delta}
+        </p>
+      )}
     </Card>
   )
 }
+
+
+// ─── MoneyInput ───────────────────────────────────────────────────────────────
+// Formatea mientras escribe: 1000000 → 1.000.000
+export const MoneyInput = React.forwardRef<
+  HTMLInputElement,
+  Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> & {
+    value?: number | string
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  }
+>(({ value, onChange, className, ...props }, ref) => {
+  const fmt = (v: number | string | undefined): string => {
+    if (v === undefined || v === '' || v === null) return ''
+    const n = typeof v === 'number' ? v : parseFloat(String(v).replace(/\./g, ''))
+    if (isNaN(n) || n === 0) return ''
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0, useGrouping: true }).format(n).replace(/,/g, '.')
+  }
+
+  const [display, setDisplay] = useState(() => fmt(value))
+
+  useEffect(() => {
+    const external = String(value ?? '').replace(/\./g, '')
+    const current = display.replace(/\./g, '')
+    if (current !== external) setDisplay(fmt(value))
+  }, [value]) // eslint-disable-line
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '')
+    const n = raw === '' ? 0 : parseInt(raw, 10)
+    setDisplay(raw === '' ? '' : new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0, useGrouping: true }).format(n).replace(/,/g, '.'))
+    if (onChange) {
+      const syn = Object.create(e)
+      syn.target = { ...e.target, value: raw, name: props.name ?? '' }
+      onChange(syn as React.ChangeEvent<HTMLInputElement>)
+    }
+  }
+
+  return (
+    <input ref={ref} type="text" inputMode="numeric" value={display} onChange={handleChange}
+      className={cn(
+        'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm text-right tabular-nums transition-colors',
+        'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'disabled:cursor-not-allowed disabled:opacity-50', className
+      )}
+      {...props} />
+  )
+})
+MoneyInput.displayName = 'MoneyInput'
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 interface EmptyStateProps {
@@ -296,14 +332,10 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in">
-      {icon && (
-        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4 text-muted-foreground">
-          {icon}
-        </div>
-      )}
-      <h3 className="text-sm font-semibold mb-1">{title}</h3>
-      {description && <p className="text-xs text-muted-foreground mb-4 max-w-xs">{description}</p>}
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      {icon && <div className="text-muted-foreground/30 mb-3">{icon}</div>}
+      <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+      {description && <p className="text-[11px] text-muted-foreground/60 mb-3 max-w-xs leading-relaxed">{description}</p>}
       {action}
     </div>
   )
@@ -316,14 +348,11 @@ interface PageHeaderProps {
   action?: React.ReactNode
 }
 
-export function PageHeader({ title, description, action }: PageHeaderProps) {
+export function PageHeader({ title, description: _desc, action }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-      <div>
-        <h1 className="text-base font-semibold">{title}</h1>
-        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-      </div>
-      {action}
+    <div className="flex items-center justify-between px-6 border-b border-border/50 flex-shrink-0 h-12">
+      <h1 className="text-sm font-semibold tracking-tight">{title}</h1>
+      {action && <div className="flex items-center gap-2">{action}</div>}
     </div>
   )
 }

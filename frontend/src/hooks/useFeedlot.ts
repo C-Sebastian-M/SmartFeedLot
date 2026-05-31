@@ -732,6 +732,23 @@ export function useRegistrarVentaLoteCerdos() {
   })
 }
 
+export function useEliminarMarrana() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (marranaId: string) => porcinoService.eliminarMarrana(marranaId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
+  })
+}
+
+export function useAvanzarEstadoCamada() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ marranaId, camadaId, accionEstado }: { marranaId: string; camadaId: string; accionEstado: string }) =>
+      porcinoService.avanzarEstadoCamada(marranaId, camadaId, accionEstado),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
+  })
+}
+
 // ─── Mercado ──────────────────────────────────────────────────────────────────
 export function usePreciosMercado() {
   return useQuery({

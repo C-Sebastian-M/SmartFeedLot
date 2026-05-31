@@ -201,12 +201,12 @@ export default function CompradoresPage() {
                   <tbody>
                     {compradoresArray.map((c, i) => (
                       <tr key={c.id}
-                        className={`border-b border-border/40 hover:bg-secondary/30 transition-colors ${i === compradoresArray.length - 1 ? 'border-b-0' : ''}`}
+                        className={`border-b border-border/40 hover:bg-muted/20 transition-colors ${i === compradoresArray.length - 1 ? 'border-b-0' : ''}`}
                       >
-                        <td className="px-4 py-3 font-medium">{c.nombre}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.contacto ?? '—'}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.telefono ?? '—'}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.email ?? '—'}</td>
+                        <td className="px-4 py-2.5 font-medium">{c.nombre}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{c.contacto ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{c.telefono ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{c.email ?? '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 justify-end">
                             <button onClick={() => handleEditar(c)}

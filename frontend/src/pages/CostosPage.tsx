@@ -69,7 +69,7 @@ function TablaDetalles({ detalles, titulo }: { detalles: CostoDetalle[]; titulo:
             <tbody>
               {detalles.map((d, i) => (
                 <tr key={d.id}
-                  className={`border-b border-border/40 hover:bg-secondary/30 transition-colors ${
+                  className={`border-b border-border/40 hover:bg-muted/20 transition-colors ${
                     i === detalles.length - 1 ? 'border-b-0' : ''
                   }`}
                 >

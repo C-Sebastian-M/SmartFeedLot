@@ -9,6 +9,7 @@ import {
   PageHeader, Button, Card, CardContent, Badge, Skeleton, EmptyState,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt, estadoProductivoColor, estadoSanitarioColor } from '@/utils'
 import type { AnimalResumen } from '@/types'
@@ -277,12 +278,12 @@ export default function AnimalesPage() {
                   {animales.map((animal, i) => (
                     <tr key={animal.id}
                       onClick={() => navigate(`/animales/${animal.id}`)}
-                      className={`border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer group ${i === animales.length - 1 ? 'border-b-0' : ''}`}>
+                      className={`border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer group ${i === animales.length - 1 ? 'border-b-0' : ''}`}>
                       <td className="px-4 py-3 font-mono font-semibold">{animal.codigoIdentificacion}</td>
                       <td className="px-4 py-3">{animal.nombre || '-'}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{animal.numeroArete}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{animal.numeroArete}</td>
                       <td className="px-4 py-3">{animal.raza}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{animal.sexo}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{animal.sexo}</td>
                       <td className="px-4 py-3 tabular-nums font-medium">{fmt.kg(animal.pesoActualKg)}</td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">{animal.diasEnEngorde}d</td>
                       <td className="px-4 py-3">

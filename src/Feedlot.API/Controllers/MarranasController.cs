@@ -1,4 +1,6 @@
+using Feedlot.Application.Features.Porcino.Commands.AvanzarEstadoCamada;
 using Feedlot.Application.Features.Porcino.Commands.CrearMarrana;
+using Feedlot.Application.Features.Porcino.Commands.EliminarMarrana;
 using Feedlot.Application.Features.Porcino.Commands.RegistrarCamada;
 using Feedlot.Application.Features.Porcino.Queries.ObtenerMarranas;
 using MediatR;
@@ -29,6 +31,14 @@ public sealed class MarranasController : ApiControllerBase
         return FromResult(result);
     }
 
+    [HttpDelete("{marranaId:guid}")]
+    public async Task<IActionResult> EliminarMarrana(Guid marranaId, CancellationToken ct = default)
+    {
+        var command = new EliminarMarranaCommand(marranaId);
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
     [HttpPost("{marranaId:guid}/camadas")]
     public async Task<IActionResult> RegistrarCamada(Guid marranaId, [FromBody] RegistrarCamadaCommand command, CancellationToken ct = default)
     {
@@ -36,4 +46,17 @@ public sealed class MarranasController : ApiControllerBase
         var result = await _sender.Send(command, ct);
         return result.IsSuccess ? Ok(new { id = result.Value }) : FromResult(result);
     }
+
+    [HttpPatch("{marranaId:guid}/camadas/{camadaId:guid}/estado")]
+    public async Task<IActionResult> AvanzarEstadoCamada(
+        Guid marranaId, Guid camadaId,
+        [FromBody] AvanzarEstadoCamadaRequest request,
+        CancellationToken ct = default)
+    {
+        var command = new AvanzarEstadoCamadaCommand(marranaId, camadaId, request.AccionEstado);
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
 }
+
+public sealed record AvanzarEstadoCamadaRequest(string AccionEstado);

@@ -8,6 +8,7 @@ import {
   PageHeader, Card, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert, Badge,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Prestamo } from '@/types'
@@ -86,7 +87,7 @@ function CrearPrestamoModal({ open, onClose }: { open: boolean; onClose: () => v
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Monto" error={errors.monto?.message} required>
-                  <Input {...register('monto')} type="number" min={1} step={100000} placeholder="20000000" />
+                  <MoneyInput {...register('monto')} min={1} placeholder="20000000" />
                 </FormField>
                 <FormField label="Moneda" error={errors.moneda?.message} required>
                   <Input {...register('moneda')} placeholder="COP" />
@@ -214,7 +215,7 @@ export default function PrestamosPage() {
                             </thead>
                             <tbody>
                               {p.cuotas.map((c) => (
-                                <tr key={c.id} className={`border-b border-border/30 hover:bg-secondary/30 transition-colors ${c.pagada ? 'bg-emerald-500/5' : ''}`}>
+                                <tr key={c.id} className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${c.pagada ? 'bg-emerald-500/5' : ''}`}>
                                   <td className="px-3 py-2 font-medium tabular-nums">{c.numeroCuota}</td>
                                   <td className="px-3 py-2 text-muted-foreground">{fmt.fecha(c.fechaVencimiento)}</td>
                                   <td className="px-3 py-2 tabular-nums font-medium">{fmt.cop(c.cuota)}</td>

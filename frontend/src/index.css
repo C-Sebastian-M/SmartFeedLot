@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    /* Light mode — nunca se usa, el sistema arranca en dark */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Modo claro */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142 76% 36%;
-    --primary: 142 76% 36%;
-    --primary-foreground: 355 100% 97%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --card-foreground: 240 10% 8%;
+    --border: 240 5% 88%;
+    --input: 240 5% 88%;
+    --ring: 142 60% 32%;
+    --primary: 142 60% 32%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4% 94%;
+    --secondary-foreground: 240 6% 20%;
+    --muted: 240 4% 94%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 4% 94%;
+    --accent-foreground: 240 6% 20%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --success: 142 76% 36%;
+    --success: 142 60% 32%;
     --success-foreground: 0 0% 98%;
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
+    --warning-foreground: 0 0% 8%;
     --radius: 0.5rem;
   }
 
@@ -35,9 +35,9 @@
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
+    --card: 240 10% 5.5%;
     --card-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
+    --border: 240 3.7% 13%;
     --input: 240 3.7% 15.9%;
     --ring: 142 76% 36%;
     --primary: 142 69% 42%;
@@ -45,7 +45,7 @@
     --secondary: 240 3.7% 12%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 12%;
-    --muted-foreground: 240 5% 54%;
+    --muted-foreground: 240 5% 52%;
     --accent: 240 3.7% 12%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 72% 51%;
@@ -64,6 +64,8 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
 
   /* Scrollbar estilo dark */
@@ -72,11 +74,27 @@
   ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
   ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground; }
 
-  /* Calendar icon blanco sobre fondo dark */
-  input[type="date"]::-webkit-calendar-picker-indicator,
-  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+
+  ::selection {
+    background: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+  }
+
+  /* Better focus rings */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.6);
+    outline-offset: 2px;
+  }
+  /* Calendar icon: invertido en dark, normal en light */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
   }
 }
 

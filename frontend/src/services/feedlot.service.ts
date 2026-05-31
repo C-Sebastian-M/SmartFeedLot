@@ -590,6 +590,12 @@ export const porcinoService = {
   registrarVenta: async (loteId: string, payload: RegistrarVentaLoteCerdosPayload): Promise<void> => {
     await api.post(`/lotes-cerdos/${loteId}/vender`, payload)
   },
+  eliminarMarrana: async (marranaId: string): Promise<void> => {
+    await api.delete(`/marranas/${marranaId}`)
+  },
+  avanzarEstadoCamada: async (marranaId: string, camadaId: string, accionEstado: string): Promise<void> => {
+    await api.patch(`/marranas/${marranaId}/camadas/${camadaId}/estado`, { accionEstado })
+  },
 }
 
 export const mercadoService = {

@@ -10,6 +10,7 @@ import {
   Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle,
   FormField,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Potrero, Empleado, CultivoCania } from '@/types'
@@ -201,7 +202,7 @@ function EmpleadosSection() {
           </div>
           <form onSubmit={empForm.handleSubmit(onSubmitEmpleado)} className="p-5 space-y-4">
             <FormField label="Nombre" required><input {...empForm.register('nombre')} placeholder="Ej: Juan Pérez" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
-            <FormField label="Pago mensual" required><input type="number" min={0} step={10000} {...empForm.register('pagoMensual', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
+            <FormField label="Pago mensual" required><MoneyInput min={0} {...empForm.register('pagoMensual', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <Button type="submit" className="w-full" loading={crearEmpleado.isPending}>Crear empleado</Button>
           </form>
         </div>
@@ -216,7 +217,7 @@ function EmpleadosSection() {
           <form onSubmit={actForm.handleSubmit(onSubmitActividad)} className="p-5 space-y-4">
             <FormField label="Tipo" required><input {...actForm.register('tipo')} placeholder="Ej: Alimentación, Fumigación" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <FormField label="Fecha" required><input type="date" {...actForm.register('fecha')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
-            <FormField label="Costo" required><input type="number" min={0} {...actForm.register('costo', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
+            <FormField label="Costo" required><MoneyInput min={0} {...actForm.register('costo', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <Button type="submit" className="w-full" loading={registrarActividad.isPending}>Registrar</Button>
           </form>
         </div>
@@ -347,7 +348,7 @@ function CaniaSection() {
               <FormField label="Horas" required><input type="number" min={0} step={0.5} {...corteForm.register('horas', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
               <FormField label="Bolsas silo" required><input type="number" min={0} {...corteForm.register('bolsasSilo', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
               <FormField label="Melaza" required><input type="number" min={0} step={0.1} {...corteForm.register('melaza', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
-              <FormField label="Costo jornal" required><input type="number" min={0} {...corteForm.register('costoJornal', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
+              <FormField label="Costo jornal" required><MoneyInput min={0} {...corteForm.register('costoJornal', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             </div>
             <Button type="submit" className="w-full" loading={registrarCorte.isPending}>Registrar corte</Button>
           </form>
@@ -363,7 +364,7 @@ function CaniaSection() {
           <form onSubmit={siloForm.handleSubmit(onSubmitSilo)} className="p-5 space-y-4">
             <FormField label="Fecha producción" required><input type="date" {...siloForm.register('fechaProduccion')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <FormField label="Bolsas" required><input type="number" min={1} {...siloForm.register('bolsas', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
-            <FormField label="Costo unitario" required><input type="number" min={0} {...siloForm.register('costoUnitario', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
+            <FormField label="Costo unitario" required><MoneyInput min={0} {...siloForm.register('costoUnitario', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <FormField label="Observación"><input {...siloForm.register('observacion')} placeholder="Opcional" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <Button type="submit" className="w-full" loading={crearLoteSilo.isPending}>Crear lote</Button>
           </form>

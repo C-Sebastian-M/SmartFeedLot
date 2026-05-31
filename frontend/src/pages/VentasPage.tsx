@@ -10,6 +10,7 @@ import {
   Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert, Badge,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Venta, Comprador, AnimalResumen } from '@/types'
@@ -160,7 +161,7 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
                     className={errors.moneda ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Precio por kg ($)" hint="Base para cálculo automático">
-                  <input type="number" min={0} step={100} value={precioPorKg || ''}
+                  <MoneyInput min={0} value={precioPorKg || ''}
                     onChange={e => {
                       const valor = Number(e.target.value)
                       setPrecioPorKg(valor)
@@ -207,7 +208,7 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{row.codigo}{row.nombre ? ` — ${row.nombre}` : ''}</p>
                         </div>
-                        <input type="number" placeholder="$ venta" value={row.precioVenta || ''}
+                        <MoneyInput placeholder="$ venta" value={row.precioVenta || ''}
                           onChange={e => actualizarRow(row.animalId, 'precioVenta', Number(e.target.value))}
                           className="w-24 h-7 px-2 rounded border border-input bg-card text-xs text-right" min={0} step={1000} />
                         <input type="number" placeholder="kg" value={row.pesoVentaKg || ''}
@@ -301,10 +302,10 @@ export default function VentasPage() {
                   <tbody>
                     {ventasArray.map((v, i) => (
                       <tr key={v.id}
-                        className={`border-b border-border/40 hover:bg-secondary/30 transition-colors ${i === ventasArray.length - 1 ? 'border-b-0' : ''}`}
+                        className={`border-b border-border/40 hover:bg-muted/20 transition-colors ${i === ventasArray.length - 1 ? 'border-b-0' : ''}`}
                       >
                         <td className="px-4 py-3 text-muted-foreground tabular-nums">{fmt.fecha(v.fecha)}</td>
-                        <td className="px-4 py-3 font-medium">{v.nombreComprador}</td>
+                        <td className="px-4 py-2.5 font-medium">{v.nombreComprador}</td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">

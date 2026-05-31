@@ -16,6 +16,7 @@ import {
   PageHeader, Card, CardContent, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert, Badge,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { CategoriaGasto, Socio, MovimientoFinanciero } from '@/types'
@@ -137,7 +138,7 @@ function RegistrarMovimientoModal({ open, onClose }: { open: boolean; onClose: (
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Monto" error={errors.monto?.message} required>
-                  <Input {...register('monto')} type="number" min={1} step={100} placeholder="0" />
+                  <MoneyInput {...register('monto')} min={1} placeholder="0" />
                 </FormField>
                 <FormField label="Moneda" error={errors.moneda?.message} required>
                   <Input {...register('moneda')} placeholder="COP" />
@@ -509,7 +510,7 @@ function TabFlujoCaja({ anio, origen, onAnioChange, onOrigenChange }: {
                     const hasActivity = m.ingresos > 0 || m.egresos > 0
                     return (
                       <tr key={m.mes} className={`border-b border-border/40 transition-colors ${!hasActivity ? 'opacity-40' : 'hover:bg-secondary/30'} ${i === data.meses.length - 1 ? 'border-b-0' : ''}`}>
-                        <td className="px-4 py-3 font-medium">{m.nombreMes}</td>
+                        <td className="px-4 py-2.5 font-medium">{m.nombreMes}</td>
                         <td className="px-4 py-3 tabular-nums text-right text-emerald-400">{m.ingresos > 0 ? fmt.cop(m.ingresos) : '—'}</td>
                         <td className="px-4 py-3 tabular-nums text-right text-red-400">{m.egresos > 0 ? fmt.cop(m.egresos) : '—'}</td>
                         <td className={`px-4 py-3 tabular-nums text-right font-medium ${m.saldoNeto >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -627,10 +628,10 @@ function TabPresupuesto({ anio, mes, categorias, onAnioChange, onMesChange }: {
                   <tbody>
                     {data.lineas.map((l, i) => (
                       <tr key={l.categoriaId} className={`border-b border-border/40 hover:bg-secondary/30 ${i === data.lineas.length - 1 ? 'border-b-0' : ''}`}>
-                        <td className="px-4 py-3 font-medium">{l.categoriaNombre}</td>
+                        <td className="px-4 py-2.5 font-medium">{l.categoriaNombre}</td>
                         <td className="px-4 py-3"><Badge className="text-[9px] bg-primary/10 text-primary border-primary/20">{l.categoriaTipo}</Badge></td>
                         <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.presupuestado > 0 ? fmt.cop(l.presupuestado) : '—'}</td>
-                        <td className="px-4 py-3 tabular-nums">{l.real > 0 ? fmt.cop(l.real) : '—'}</td>
+                        <td className="px-4 py-2.5 tabular-nums">{l.real > 0 ? fmt.cop(l.real) : '—'}</td>
                         <td className={`px-4 py-3 tabular-nums ${l.desviacion > 0 ? 'text-red-400' : l.desviacion < 0 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
                           {l.desviacion !== 0 ? (l.desviacion > 0 ? '+' : '') + fmt.cop(l.desviacion) : '—'}
                         </td>
@@ -668,7 +669,7 @@ function TabPresupuesto({ anio, mes, categorias, onAnioChange, onMesChange }: {
             <DialogDescription>{mes && `${mesesOpts.find(m => m.value === mes)?.label} ${anio}`}</DialogDescription>
           </DialogHeader>
           <FormField label="Monto presupuestado (COP)">
-            <Input type="number" min={0} step={10000} value={monto}
+            <MoneyInput min={0} value={monto}
               onChange={e => setMonto(e.target.value)} placeholder="0" />
           </FormField>
           {errorGuardar && <Alert variant="destructive" className="mt-2">{errorGuardar}</Alert>}
@@ -819,12 +820,12 @@ export default function FinanzasPage() {
                       </thead>
                       <tbody>
                         {movsArray.map((m, i) => (
-                          <tr key={m.id} className={`border-b border-border/40 hover:bg-secondary/30 transition-colors ${i === movsArray.length - 1 ? 'border-b-0' : ''}`}>
+                          <tr key={m.id} className={`border-b border-border/40 hover:bg-muted/20 transition-colors ${i === movsArray.length - 1 ? 'border-b-0' : ''}`}>
                             <td className="px-4 py-3 text-muted-foreground tabular-nums">{fmt.fecha(m.fecha)}</td>
-                            <td className="px-4 py-3 font-medium">{m.descripcion}</td>
+                            <td className="px-4 py-2.5 font-medium">{m.descripcion}</td>
                             <td className="px-4 py-3"><Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">{m.categoriaGastoNombre}</Badge></td>
                             <td className="px-4 py-3"><Badge className={origenTagColor[m.origen] ?? ''}>{m.origen}</Badge></td>
-                            <td className="px-4 py-3 text-muted-foreground">{m.socioNombre ?? '—'}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{m.socioNombre ?? '—'}</td>
                             <td className="px-4 py-3 tabular-nums font-medium text-right">{fmt.cop(m.monto)}</td>
                           </tr>
                         ))}

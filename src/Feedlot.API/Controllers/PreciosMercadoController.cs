@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Feedlot.API.Controllers;
 
 [Authorize]
+[Route("api/precios-mercado")]
 public sealed class PreciosMercadoController : ApiControllerBase
 {
     private readonly ISender _sender;

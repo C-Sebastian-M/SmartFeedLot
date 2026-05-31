@@ -169,7 +169,7 @@ export default function LoteDetallePage() {
                 <tbody>
                   {animalesActivos.map(al => (
                     <tr key={al.animalId}
-                      className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => navigate(`/animales/${al.animalId}`)}>
                       <td className="py-2.5 font-mono font-semibold whitespace-nowrap">{al.codigoAnimal}</td>
                       <td className="py-2.5 text-muted-foreground whitespace-nowrap">{al.nombreAnimal || '-'}</td>
@@ -210,7 +210,7 @@ export default function LoteDetallePage() {
                 <tbody>
                   {animalesInactivos.map(al => (
                     <tr key={al.animalId}
-                      className="border-b border-border/40 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      className="border-b border-border/40 hover:bg-muted/20 transition-colors cursor-pointer"
                       onClick={() => navigate(`/animales/${al.animalId}`)}>
                       <td className="py-2.5 font-mono font-semibold whitespace-nowrap">{al.codigoAnimal}</td>
                       <td className="py-2.5 text-muted-foreground whitespace-nowrap">{al.nombreAnimal || '-'}</td>

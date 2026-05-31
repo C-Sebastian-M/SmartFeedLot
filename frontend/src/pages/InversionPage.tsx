@@ -9,6 +9,7 @@ import {
   Skeleton, EmptyState, StatCard, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Alert,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { EtapaInversion, ItemInversion } from '@/types'
@@ -31,7 +32,7 @@ type ItemForm = z.infer<typeof itemSchema>
 
 function ItemRow({ item, onEditar }: { item: ItemInversion; onEditar: (item: ItemInversion) => void }) {
   return (
-    <tr className="border-b border-border/30 hover:bg-secondary/30 transition-colors group">
+    <tr className="border-b border-border/30 hover:bg-muted/20 transition-colors group">
       <td className="px-4 py-2.5 text-xs text-muted-foreground w-8">{item.estado === 'OK' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Clock className="w-3.5 h-3.5 text-amber-400" />}</td>
       <td className="px-4 py-2.5 font-medium">{item.producto}</td>
       <td className="px-4 py-2.5 tabular-nums">{fmt.cop(item.monto)}</td>
@@ -297,7 +298,7 @@ export default function InversionPage() {
             </FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Costo" error={itemForm.formState.errors.monto?.message} required>
-                <input type="number" min={0} step={1000} {...itemForm.register('monto')}
+                <MoneyInput min={0} {...itemForm.register('monto')}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
               </FormField>
               <FormField label="Estado" error={itemForm.formState.errors.estado?.message} required>
@@ -342,7 +343,7 @@ export default function InversionPage() {
             </FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Costo" error={editarForm.formState.errors.monto?.message} required>
-                <input type="number" min={0} step={1000} {...editarForm.register('monto')}
+                <MoneyInput min={0} {...editarForm.register('monto')}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
               </FormField>
               <FormField label="Estado" error={editarForm.formState.errors.estado?.message} required>

@@ -6,6 +6,7 @@ import {
   PageHeader, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle,
   FormField,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { PrecioMercado } from '@/types'
@@ -103,7 +104,7 @@ export default function MercadoPage() {
               </FormField>
             </div>
             <FormField label="Precio por kg" required>
-              <input type="number" min={0} step={100} {...form.register('precioPorKg', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <MoneyInput min={0} {...form.register('precioPorKg', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </FormField>
             <FormField label="Fuente" required>
               <input {...form.register('fuente')} placeholder="Ej: SUBAGAN, Carnicería Local" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />

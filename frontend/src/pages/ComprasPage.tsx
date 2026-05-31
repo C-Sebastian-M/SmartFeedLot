@@ -10,6 +10,7 @@ import {
   Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert,
+  MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Compra, Proveedor, LoteResumen } from '@/types'
@@ -169,8 +170,8 @@ function CrearCompraModal({ open, onClose }: { open: boolean; onClose: () => voi
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Costo total" error={errors.costoTotal?.message} required>
-                  <Input {...register('costoTotal', { valueAsNumber: true })}
-                    type="number" min={1} step={100} placeholder="0"
+                  <MoneyInput {...register('costoTotal')}
+                    min={1} placeholder="0"
                     className={errors.costoTotal ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Moneda" error={errors.moneda?.message} required>
@@ -192,8 +193,8 @@ function CrearCompraModal({ open, onClose }: { open: boolean; onClose: () => voi
                         type="number" min={1} placeholder="0" />
                     </FormField>
                     <FormField label="$ / cabeza">
-                      <Input {...register('precioPorCabeza', { valueAsNumber: true })}
-                        type="number" min={0} step={100} placeholder="0" />
+                      <MoneyInput {...register('precioPorCabeza')}
+                        min={0} placeholder="0" />
                     </FormField>
                     <FormField label="Peso prom. (kg)">
                       <Input {...register('pesoPromedioKg', { valueAsNumber: true })}
@@ -293,10 +294,10 @@ export default function ComprasPage() {
                   <tbody>
                     {comprasArray.map((c, i) => (
                       <tr key={c.id}
-                        className={`border-b border-border/40 hover:bg-secondary/30 transition-colors ${i === comprasArray.length - 1 ? 'border-b-0' : ''}`}
+                        className={`border-b border-border/40 hover:bg-muted/20 transition-colors ${i === comprasArray.length - 1 ? 'border-b-0' : ''}`}
                       >
                         <td className="px-4 py-3 text-muted-foreground tabular-nums">{fmt.fecha(c.fecha)}</td>
-                        <td className="px-4 py-3 font-medium">{c.nombreProveedor}</td>
+                        <td className="px-4 py-2.5 font-medium">{c.nombreProveedor}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
                             c.tipoCompra === 'Ganado'

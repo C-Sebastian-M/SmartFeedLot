@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Feedlot.API.Controllers;
 
 [Authorize]
+[Route("api/lotes-cerdos")]
 public sealed class LotesCerdosController : ApiControllerBase
 {
     private readonly ISender _sender;
