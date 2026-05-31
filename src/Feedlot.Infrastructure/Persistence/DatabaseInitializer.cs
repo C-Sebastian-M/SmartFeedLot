@@ -34,6 +34,11 @@ public static class DatabaseInitializer
             await SembrarUsuarioAdminAsync(context, scope.ServiceProvider);
             await SembrarCategoriasYSociosAsync(context);
 
+            // Datos de demostración basados en el Excel (solo Development, o
+            // forzado con SEED_DEMO_DATA=true). Idempotente. Se ejecuta al final
+            // porque referencia las categorías sembradas arriba.
+            await SeedDataDemo.SeedAsync(context, logger);
+
             logger.LogInformation("Feedlot — Base de datos inicializada correctamente.");
         }
         catch (Exception ex)

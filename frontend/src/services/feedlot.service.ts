@@ -7,7 +7,7 @@ import type {
   CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
   EtapaInversion, AporteSocio,
   Potrero, Empleado, CultivoCania, LoteSilo,
-  EstadoResultados, FlujoCaja
+  EstadoResultados, FlujoCaja, ComparativoPresupuesto
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -324,6 +324,33 @@ export const finanzasService = {
     qs.set('anio', String(params.anio))
     if (params.origen) qs.set('origen', params.origen)
     return `${api.defaults.baseURL}/finanzas/flujo-caja/export?${qs}`
+  },
+
+  guardarPresupuesto: async (payload: {
+    periodoAnio: number
+    periodoMes: number
+    categoriaGastoId: string
+    monto: number
+    moneda: string
+    descripcion?: string
+  }): Promise<string> => {
+    const { data } = await api.post('/finanzas/presupuesto', payload)
+    return data
+  },
+
+  getComparativoPresupuesto: async (params: {
+    anio: number
+    mes?: number
+  }): Promise<ComparativoPresupuesto> => {
+    const { data } = await api.get('/finanzas/presupuesto/comparativo', { params })
+    return data
+  },
+
+  exportarComparativoPresupuesto: (params: { anio: number; mes?: number }) => {
+    const qs = new URLSearchParams()
+    qs.set('anio', String(params.anio))
+    if (params.mes) qs.set('mes', String(params.mes))
+    return `${api.defaults.baseURL}/finanzas/presupuesto/comparativo/export?${qs}`
   },
 }
 

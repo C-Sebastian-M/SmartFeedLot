@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { AlertTriangle, TrendingDown, Beef, ChevronDown, Syringe } from 'lucide-react'
-import { useLotes, useAnimalesIneficientes, useVacunasProximas } from '@/hooks/useFeedlot'
+import { AlertTriangle, TrendingDown, Beef, ChevronDown, Syringe, Landmark } from 'lucide-react'
+import { useLotes, useAnimalesIneficientes, useVacunasProximas, useEtapasInversion } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton, EmptyState,
 } from '@/components/ui'
 import { fmt } from '@/utils'
-import type { AnimalIneficiente, LoteResumen, VacunaProxima } from '@/types'
+import type { AnimalIneficiente, LoteResumen, VacunaProxima, EtapaInversion } from '@/types'
 
 export default function AlertasPage() {
   const hoy = format(new Date(), 'yyyy-MM-dd')
@@ -31,6 +31,9 @@ export default function AlertasPage() {
   })
 
   const { data: vacunasProximas, isLoading: loadingVacunas } = useVacunasProximas()
+  const { data: etapas } = useEtapasInversion()
+  const itemsPendientes = ((etapas as EtapaInversion[] | undefined) ?? [])
+    .flatMap(e => e.items.filter(i => i.estado === 'Pendiente').map(i => ({ ...i, etapaNombre: e.nombre, etapaNumero: e.numero })))
 
   const alertas = (ineficientes as AnimalIneficiente[] | undefined) ?? []
   const vacunas = (vacunasProximas as VacunaProxima[] | undefined) ?? []
@@ -189,6 +192,57 @@ export default function AlertasPage() {
             </p>
           </div>
         )}
+
+        {/* Ítems de inversión pendientes (RF-051) */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Landmark className="w-4 h-4 text-amber-400" />
+                <CardTitle>Ítems de inversión pendientes ({itemsPendientes.length})</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!itemsPendientes.length ? (
+              <EmptyState icon={<Landmark className="w-4 h-4" />} title="Sin ítems pendientes" description="Todos los ítems de inversión están completos." />
+            ) : (
+              <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {['Etapa', 'Producto', 'Costo', 'Avance'].map(h => (
+                        <th key={h} className="text-left px-3 py-2 text-muted-foreground font-medium uppercase tracking-wide text-[9px]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itemsPendientes.map(item => (
+                      <tr key={item.id} className="border-b border-border/30 hover:bg-secondary/20">
+                        <td className="px-3 py-2">
+                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[9px]">
+                            #{item.etapaNumero} {item.etapaNombre}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2 font-medium">{item.producto}</td>
+                        <td className="px-3 py-2 tabular-nums text-muted-foreground">{fmt.cop(item.monto)}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-1.5 rounded-full bg-secondary">
+                              <div className="h-full rounded-full bg-amber-400"
+                                style={{ width: `${item.porcentajeAvance}%` }} />
+                            </div>
+                            <span className="tabular-nums text-muted-foreground">{item.porcentajeAvance}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Vacunas próximas */}
         <Card>

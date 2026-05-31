@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X, CheckCircle2, DollarSign, Tag, Users, ChevronDown, BarChart2, TrendingUp, Download } from 'lucide-react'
+import { Plus, X, CheckCircle2, DollarSign, Tag, Users, ChevronDown, BarChart2, TrendingUp, Download, Target } from 'lucide-react'
 import {
   useCategoriasGasto, useCrearCategoriaGasto,
   useSocios, useCrearSocio,
   useMovimientosFinancieros, useRegistrarMovimiento,
   useEstadoResultados, useFlujoCaja,
+  useComparativoPresupuesto, useGuardarPresupuesto,
 } from '@/hooks/useFeedlot'
 import { finanzasService } from '@/services/feedlot.service'
 import { useAuthStore } from '@/stores/auth.store'
@@ -19,7 +20,7 @@ import {
 import { fmt } from '@/utils'
 import type { CategoriaGasto, Socio, MovimientoFinanciero } from '@/types'
 
-type Tab = 'movimientos' | 'categorias' | 'socios' | 'pyg' | 'flujo'
+type Tab = 'movimientos' | 'categorias' | 'socios' | 'pyg' | 'flujo' | 'presupuesto'
 const hoy = new Date().toISOString().slice(0, 10)
 
 const movimientoSchema = z.object({
@@ -541,6 +542,146 @@ function TabFlujoCaja({ anio, origen, onAnioChange, onOrigenChange }: {
   )
 }
 
+
+// ── Tab: Presupuesto ──────────────────────────────────────────────────────────
+
+function TabPresupuesto({ anio, mes, categorias, onAnioChange, onMesChange }: {
+  anio: number; mes?: number
+  categorias: CategoriaGasto[]
+  onAnioChange: (v: number) => void
+  onMesChange: (v?: number) => void
+}) {
+  const { data, isLoading } = useComparativoPresupuesto({ anio, mes })
+  const guardar = useGuardarPresupuesto()
+  const [editando, setEditando] = useState<{ catId: string; catNombre: string; actual: number } | null>(null)
+  const [monto, setMonto] = useState('')
+  const [errorGuardar, setErrorGuardar] = useState<string>()
+
+  const abrirEditar = (catId: string, catNombre: string, actual: number) => {
+    setEditando({ catId, catNombre, actual })
+    setMonto(actual > 0 ? String(actual) : '')
+    setErrorGuardar(undefined)
+  }
+
+  const onGuardar = async () => {
+    if (!editando || !mes) return
+    setErrorGuardar(undefined)
+    try {
+      await guardar.mutateAsync({
+        periodoAnio: anio, periodoMes: mes,
+        categoriaGastoId: editando.catId,
+        monto: parseFloat(monto) || 0, moneda: 'COP',
+      })
+      setEditando(null)
+    } catch (err: any) {
+      setErrorGuardar(err?.response?.data?.detail ?? 'Error al guardar')
+    }
+  }
+
+  const semaforoClass = (s: string) => ({
+    verde: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    amarillo: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    rojo: 'bg-red-500/10 text-red-400 border-red-500/20',
+  }[s] ?? '')
+
+  return (
+    <div>
+      <FiltrosPeriodo anio={anio} mes={mes} onAnio={onAnioChange} onMes={onMesChange} onOrigen={() => {}} />
+
+      {!mes && (
+        <div className="mb-4 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-sm text-amber-400">
+          Selecciona un mes para editar líneas de presupuesto y ver el comparativo mensual.
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
+      ) : !data || data.lineas.length === 0 ? (
+        <EmptyState icon={<Target className="w-5 h-5" />} title="Sin datos de presupuesto"
+          description={mes ? "No hay movimientos ni presupuesto para este período." : "Selecciona un mes para ver el comparativo."} />
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Presupuestado', value: fmt.cop(data.totalPresupuestado), color: 'text-foreground' },
+              { label: 'Ejecutado', value: fmt.cop(data.totalReal), color: 'text-foreground' },
+              { label: 'Desviación', value: (data.totalDesviacion >= 0 ? '+' : '') + fmt.cop(data.totalDesviacion), color: data.totalDesviacion > 0 ? 'text-red-400' : 'text-emerald-400' },
+            ].map(s => (
+              <Card key={s.label} className="p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
+                <p className={`text-sm font-semibold tabular-nums ${s.color}`}>{s.value}</p>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {['Categoría', 'Tipo', 'Presupuestado', 'Real', 'Desviación', '% Ejec.', ''].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.lineas.map((l, i) => (
+                      <tr key={l.categoriaId} className={`border-b border-border/40 hover:bg-secondary/30 ${i === data.lineas.length - 1 ? 'border-b-0' : ''}`}>
+                        <td className="px-4 py-3 font-medium">{l.categoriaNombre}</td>
+                        <td className="px-4 py-3"><Badge className="text-[9px] bg-primary/10 text-primary border-primary/20">{l.categoriaTipo}</Badge></td>
+                        <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.presupuestado > 0 ? fmt.cop(l.presupuestado) : '—'}</td>
+                        <td className="px-4 py-3 tabular-nums">{l.real > 0 ? fmt.cop(l.real) : '—'}</td>
+                        <td className={`px-4 py-3 tabular-nums ${l.desviacion > 0 ? 'text-red-400' : l.desviacion < 0 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                          {l.desviacion !== 0 ? (l.desviacion > 0 ? '+' : '') + fmt.cop(l.desviacion) : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(l.presupuestado > 0 || l.real > 0) && (
+                            <Badge className={`text-[9px] ${semaforoClass(l.semaforo)}`}>{l.porcentajeEjecucion}%</Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {mes && (
+                            <button onClick={() => abrirEditar(l.categoriaId, l.categoriaNombre, l.presupuestado)}
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors">Editar</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+          {mes && categorias.filter(c => !data.lineas.find(l => l.categoriaId === c.id)).map(c => (
+            <button key={c.id} onClick={() => abrirEditar(c.id, c.nombre, 0)}
+              className="mt-1 text-xs text-muted-foreground hover:text-primary transition-colors block">
+              + Presupuestar "{c.nombre}"
+            </button>
+          ))}
+        </>
+      )}
+
+      <Dialog open={!!editando} onClose={() => setEditando(null)}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[400px] mx-4 p-5">
+          <DialogHeader className="mb-4">
+            <DialogTitle>Presupuesto — {editando?.catNombre}</DialogTitle>
+            <DialogDescription>{mes && `${mesesOpts.find(m => m.value === mes)?.label} ${anio}`}</DialogDescription>
+          </DialogHeader>
+          <FormField label="Monto presupuestado (COP)">
+            <Input type="number" min={0} step={10000} value={monto}
+              onChange={e => setMonto(e.target.value)} placeholder="0" />
+          </FormField>
+          {errorGuardar && <Alert variant="destructive" className="mt-2">{errorGuardar}</Alert>}
+          <div className="flex gap-2 mt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setEditando(null)}>Cancelar</Button>
+            <Button className="flex-1" loading={guardar.isPending} onClick={onGuardar} disabled={!mes}>Guardar</Button>
+          </div>
+        </div>
+      </Dialog>
+    </div>
+  )
+}
+
 export default function FinanzasPage() {
   const [tab, setTab] = useState<Tab>('movimientos')
   const [modalMovimiento, setModalMovimiento] = useState(false)
@@ -561,6 +702,7 @@ export default function FinanzasPage() {
     { key: 'movimientos', icon: DollarSign, label: 'Movimientos' },
     { key: 'pyg', icon: BarChart2, label: 'P&L' },
     { key: 'flujo', icon: TrendingUp, label: 'Flujo de Caja' },
+    { key: 'presupuesto', icon: Target, label: 'Presupuesto' },
     { key: 'categorias', icon: Tag, label: 'Categorías' },
     { key: 'socios', icon: Users, label: 'Socios' },
   ]
@@ -608,6 +750,11 @@ export default function FinanzasPage() {
             </a>
           ) : tab === 'flujo' ? (
             <a href={finanzasService.exportarFlujoCaja({ anio: filtroAnio, origen: filtroOrigen })}
+               download className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Exportar Excel
+            </a>
+          ) : tab === 'presupuesto' ? (
+            <a href={finanzasService.exportarComparativoPresupuesto({ anio: filtroAnio, mes: filtroMes })}
                download className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               <Download className="w-3.5 h-3.5" /> Exportar Excel
             </a>
@@ -697,6 +844,10 @@ export default function FinanzasPage() {
         {/* ── Tab: Flujo de Caja ── */}
         {tab === 'flujo' && <TabFlujoCaja anio={filtroAnio} origen={filtroOrigen}
           onAnioChange={setFiltroAnio} onOrigenChange={setFiltroOrigen} />}
+
+        {/* ── Tab: Presupuesto ── */}
+        {tab === 'presupuesto' && <TabPresupuesto anio={filtroAnio} mes={filtroMes}
+          categorias={categoriasArray} onAnioChange={setFiltroAnio} onMesChange={setFiltroMes} />}
 
         {/* ── Tab: Categorías ── */}
         {tab === 'categorias' && (

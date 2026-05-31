@@ -49,6 +49,7 @@ export const queryKeys = {
     movimientos: (params?: object) => ['finanzas', 'movimientos', params] as const,
     estadoResultados: (params: object) => ['finanzas', 'estadoResultados', params] as const,
     flujoCaja: (params: object) => ['finanzas', 'flujoCaja', params] as const,
+    presupuesto: (params: object) => ['finanzas', 'presupuesto', 'comparativo', params] as const,
   },
     prestamos: {
       all: ['prestamos'] as const,
@@ -391,6 +392,24 @@ export function useFlujoCaja(params: { anio: number; origen?: string }) {
     queryKey: queryKeys.finanzas.flujoCaja(params),
     queryFn: () => finanzasService.getFlujoCaja(params),
     staleTime: 60_000,
+  })
+}
+
+export function useComparativoPresupuesto(params: { anio: number; mes?: number }) {
+  return useQuery({
+    queryKey: ['finanzas', 'presupuesto', 'comparativo', params],
+    queryFn: () => finanzasService.getComparativoPresupuesto(params),
+    staleTime: 30_000,
+  })
+}
+
+export function useGuardarPresupuesto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: finanzasService.guardarPresupuesto,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['finanzas', 'presupuesto'] })
+    },
   })
 }
 

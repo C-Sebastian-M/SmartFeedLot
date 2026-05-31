@@ -486,3 +486,25 @@ export interface LoteSilo {
   costoTotal: number
   observacion: string | null
 }
+
+// ─── Presupuesto ──────────────────────────────────────────────────────────────
+export interface LineaComparativa {
+  categoriaId: string
+  categoriaNombre: string
+  categoriaTipo: string
+  presupuestado: number
+  real: number
+  desviacion: number
+  porcentajeEjecucion: number
+  semaforo: 'verde' | 'amarillo' | 'rojo'
+}
+
+export interface ComparativoPresupuesto {
+  anio: number
+  mes?: number
+  lineas: LineaComparativa[]
+  totalPresupuestado: number
+  totalReal: number
+  totalDesviacion: number
+  porcentajeEjecucion: number
+}

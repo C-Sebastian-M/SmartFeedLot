@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Feedlot.Application.Features.Finanzas.Queries.ObtenerComparativoPresupuesto;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerEstadoResultados;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerFlujoCaja;
 
@@ -222,6 +223,86 @@ public static class ExcelExportService
 
     private static void FormatearMoneda(IXLCell cell)
         => cell.Style.NumberFormat.Format = "#,##0.00";
+
+    // ── Comparativo Presupuesto ───────────────────────────────────────────────
+
+    public static byte[] GenerarComparativoPresupuesto(ComparativoPresupuestoDto dto)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.Worksheets.Add("Presupuesto vs Real");
+
+        var periodo = dto.Mes.HasValue ? $"{NombreMes(dto.Mes.Value)} {dto.Anio}" : $"Año {dto.Anio}";
+        ws.Cell("A1").Value = "SmartFeedLot — Presupuesto vs Real";
+        ws.Cell("A2").Value = $"Período: {periodo}  |  Ejecución global: {dto.PorcentajeEjecucion}%";
+        ws.Cell("A3").Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
+        ws.Range("A1:F1").Merge().Style.Font.Bold = true;
+        ws.Range("A1:F1").Style.Font.FontSize = 14;
+
+        int row = 5;
+        string[] headers = ["Categoría", "Tipo", "Presupuestado", "Real", "Desviación", "% Ejecución"];
+        for (int c = 0; c < headers.Length; c++)
+        {
+            ws.Cell(row, c + 1).Value = headers[c];
+        }
+        var headerRange = ws.Range(row, 1, row, 6);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1a7a4a");
+        headerRange.Style.Font.FontColor = XLColor.White;
+        row++;
+
+        foreach (var l in dto.Lineas)
+        {
+            ws.Cell(row, 1).Value = l.CategoriaNombre;
+            ws.Cell(row, 2).Value = l.CategoriaTipo;
+            ws.Cell(row, 3).Value = l.Presupuestado;
+            ws.Cell(row, 4).Value = l.Real;
+            ws.Cell(row, 5).Value = l.Desviacion;
+            ws.Cell(row, 6).Value = $"{l.PorcentajeEjecucion}%";
+
+            FormatearMoneda(ws.Cell(row, 3));
+            FormatearMoneda(ws.Cell(row, 4));
+            FormatearMoneda(ws.Cell(row, 5));
+
+            var semaforoColor = l.Semaforo switch
+            {
+                "verde" => XLColor.FromHtml("#d4edda"),
+                "amarillo" => XLColor.FromHtml("#fff3cd"),
+                _ => XLColor.FromHtml("#f8d7da")
+            };
+            ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = semaforoColor;
+
+            if (l.Desviacion > 0)
+                ws.Cell(row, 5).Style.Font.FontColor = XLColor.Red;
+            else if (l.Desviacion < 0)
+                ws.Cell(row, 5).Style.Font.FontColor = XLColor.FromHtml("#155724");
+
+            row++;
+        }
+
+        // Totales
+        ws.Cell(row, 1).Value = "TOTAL";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 3).Value = dto.TotalPresupuestado;
+        ws.Cell(row, 4).Value = dto.TotalReal;
+        ws.Cell(row, 5).Value = dto.TotalDesviacion;
+        ws.Cell(row, 6).Value = $"{dto.PorcentajeEjecucion}%";
+        FormatearMoneda(ws.Cell(row, 3));
+        FormatearMoneda(ws.Cell(row, 4));
+        FormatearMoneda(ws.Cell(row, 5));
+        ws.Range(row, 1, row, 6).Style.Font.Bold = true;
+        ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#e6f4ed");
+
+        ws.Column(1).Width = 32;
+        ws.Column(2).Width = 14;
+        ws.Column(3).Width = 20;
+        ws.Column(4).Width = 20;
+        ws.Column(5).Width = 20;
+        ws.Column(6).Width = 14;
+
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
 
     private static string NombreMes(int mes) => mes switch
     {

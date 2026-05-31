@@ -2,8 +2,10 @@ using Feedlot.API.Services;
 using Feedlot.Application.Features.Costos.Queries.ObtenerCostosTotalesLote;
 using Feedlot.Application.Features.Finanzas.Commands.CrearCategoriaGasto;
 using Feedlot.Application.Features.Finanzas.Commands.CrearSocio;
+using Feedlot.Application.Features.Finanzas.Commands.GuardarPresupuesto;
 using Feedlot.Application.Features.Finanzas.Commands.RegistrarMovimiento;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerCategoriasGasto;
+using Feedlot.Application.Features.Finanzas.Queries.ObtenerComparativoPresupuesto;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerEstadoResultados;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerFlujoCaja;
 using Feedlot.Application.Features.Finanzas.Queries.ObtenerMovimientosFinancieros;
@@ -209,5 +211,58 @@ public sealed class FinanzasController : ApiControllerBase
         return File(bytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"FlujoCaja_{anio}.xlsx");
+    }
+
+    // ── Presupuesto ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Crea o actualiza (upsert) el presupuesto de una categoría para un período.
+    /// </summary>
+    [HttpPost("presupuesto")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> GuardarPresupuesto(
+        [FromBody] GuardarPresupuestoCommand command,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Comparativo real vs presupuesto por categoría para un año/mes.
+    /// </summary>
+    [HttpGet("presupuesto/comparativo")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerComparativo(
+        [FromQuery] int anio,
+        [FromQuery] int? mes,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerComparativoPresupuestoQuery(anio, mes);
+        var result = await _sender.Send(query, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Comparativo exportado a Excel (.xlsx).
+    /// </summary>
+    [HttpGet("presupuesto/comparativo/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportarComparativo(
+        [FromQuery] int anio,
+        [FromQuery] int? mes,
+        CancellationToken ct = default)
+    {
+        var query = new ObtenerComparativoPresupuestoQuery(anio, mes);
+        var result = await _sender.Send(query, ct);
+        if (result.IsFailure) return FromResult(result);
+
+        var bytes = ExcelExportService.GenerarComparativoPresupuesto(result.Value!);
+        var periodoStr = mes.HasValue ? $"{mes:D2}-{anio}" : $"{anio}";
+        return File(bytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Presupuesto_{periodoStr}.xlsx");
     }
 }
