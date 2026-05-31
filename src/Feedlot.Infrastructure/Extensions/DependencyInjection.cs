@@ -77,7 +77,9 @@ public static class DependencyInjection
         services.AddScoped<ICultivoCaniaRepository, CultivoCaniaRepository>();
         services.AddScoped<ILoteSiloRepository, LoteSiloRepository>();
         services.AddScoped<IPresupuestoRepository, PresupuestoRepository>();
-
+        services.AddScoped<IMarranaRepository, MarranaRepository>();
+        services.AddScoped<ILoteCerdosRepository, LoteCerdosRepository>();
+        services.AddScoped<IPrecioMercadoRepository, PrecioMercadoRepository>();
 
         // Identity.
         services.AddScoped<JwtTokenService>();

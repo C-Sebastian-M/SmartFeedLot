@@ -1,4 +1,5 @@
 using Feedlot.Domain.Entities;
+using Feedlot.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,6 +18,26 @@ public sealed class VentaConfiguration : IEntityTypeConfiguration<Venta>
         builder.Property(v => v.Fecha).HasColumnName("fecha").IsRequired();
         builder.Property(v => v.Moneda).HasColumnName("moneda").HasMaxLength(5).IsRequired();
         builder.Property(v => v.Descripcion).HasColumnName("descripcion").HasMaxLength(500);
+
+        builder.Property(v => v.Canal)
+            .HasColumnName("canal")
+            .HasMaxLength(20)
+            .IsRequired()
+            .HasConversion<string>();
+
+        builder.Property(v => v.ComisionPct)
+            .HasColumnName("comision_pct")
+            .HasPrecision(5, 2);
+
+        builder.Property(v => v.CostoTransporte)
+            .HasColumnName("costo_transporte")
+            .HasPrecision(18, 2)
+            .HasConversion(d => d != null ? d.Monto : (decimal?)null,
+                m => m.HasValue ? Dinero.Crear(m.Value, "COP") : null);
+
+        builder.Property<string?>("transporte_moneda")
+            .HasColumnName("transporte_moneda")
+            .HasMaxLength(3);
 
         builder.Ignore(v => v.MontoTotal);
 

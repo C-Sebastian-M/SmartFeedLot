@@ -7,7 +7,10 @@ import type {
   CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
   EtapaInversion, AporteSocio,
   Potrero, Empleado, CultivoCania, LoteSilo,
-  EstadoResultados, FlujoCaja, ComparativoPresupuesto
+  EstadoResultados, FlujoCaja, ComparativoPresupuesto,
+  Marrana, CreateMarranaPayload, RegistrarCamadaPayload,
+  LoteCerdos, CreateLoteCerdosPayload, RegistrarVentaLoteCerdosPayload,
+  PrecioMercado, CreatePrecioMercadoPayload
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -558,6 +561,44 @@ export const caniaService = {
     moneda: string; observacion?: string; corteCaniaId?: string
   }): Promise<string> => {
     const { data } = await api.post('/cania/lotes-silo', payload)
+    return data
+  },
+}
+
+// ─── Porcino ──────────────────────────────────────────────────────────────────
+export const porcinoService = {
+  getMarranas: async (): Promise<Marrana[]> => {
+    const { data } = await api.get('/marranas')
+    return data.value ?? data
+  },
+  createMarrana: async (payload: CreateMarranaPayload): Promise<{ id: string }> => {
+    const { data } = await api.post('/marranas', payload)
+    return data
+  },
+  registrarCamada: async (marranaId: string, payload: RegistrarCamadaPayload): Promise<{ id: string }> => {
+    const { data } = await api.post(`/marranas/${marranaId}/camadas`, payload)
+    return data
+  },
+  getLotesCerdos: async (): Promise<LoteCerdos[]> => {
+    const { data } = await api.get('/lotes-cerdos')
+    return data.value ?? data
+  },
+  createLoteCerdos: async (payload: CreateLoteCerdosPayload): Promise<{ id: string }> => {
+    const { data } = await api.post('/lotes-cerdos', payload)
+    return data
+  },
+  registrarVenta: async (loteId: string, payload: RegistrarVentaLoteCerdosPayload): Promise<void> => {
+    await api.post(`/lotes-cerdos/${loteId}/vender`, payload)
+  },
+}
+
+export const mercadoService = {
+  getAll: async (): Promise<PrecioMercado[]> => {
+    const { data } = await api.get('/precios-mercado')
+    return data.value ?? data
+  },
+  create: async (payload: CreatePrecioMercadoPayload): Promise<{ id: string }> => {
+    const { data } = await api.post('/precios-mercado', payload)
     return data
   },
 }

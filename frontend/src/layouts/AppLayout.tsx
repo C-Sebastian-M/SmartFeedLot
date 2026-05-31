@@ -6,23 +6,61 @@ import {
   BarChart3, Beef, Home, AlertTriangle, Package,
   LogOut, User, Activity, DollarSign, Menu,
   Building2, ShoppingCart, HandCoins, UserPlus, Landmark, ClipboardList,
+  PiggyBank, TrendingUp, Trees,
 } from 'lucide-react'
 
-const navItems = [
-  { to: '/', icon: Home, label: 'Dashboard', end: true },
-  { to: '/animales', icon: Beef, label: 'Animales' },
-  { to: '/lotes', icon: Package, label: 'Lotes' },
-  { to: '/costos', icon: DollarSign, label: 'Costos' },
-  { to: '/finanzas', icon: DollarSign, label: 'Finanzas' },
-  { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
-  { to: '/inversion', icon: ClipboardList, label: 'Inversión' },
-  { to: '/operacion', icon: ClipboardList, label: 'Operación' },
-  { to: '/analitica', icon: BarChart3, label: 'Analítica' },
-  { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
-  { to: '/proveedores', icon: Building2, label: 'Proveedores' },
-  { to: '/compras', icon: ShoppingCart, label: 'Compras' },
-  { to: '/ventas', icon: HandCoins, label: 'Ventas' },
-  { to: '/compradores', icon: UserPlus, label: 'Compradores' },
+interface NavGroup {
+  label: string
+  items: { to: string; icon: typeof Home; label: string; end?: boolean }[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'General',
+    items: [
+      { to: '/', icon: Home, label: 'Dashboard', end: true },
+    ],
+  },
+  {
+    label: 'Ganado',
+    items: [
+      { to: '/animales', icon: Beef, label: 'Animales' },
+      { to: '/lotes', icon: Package, label: 'Lotes' },
+      { to: '/porcino', icon: PiggyBank, label: 'Porcino' },
+    ],
+  },
+  {
+    label: 'Operación',
+    items: [
+      { to: '/operacion', icon: Trees, label: 'Campo' },
+    ],
+  },
+  {
+    label: 'Financiera',
+    items: [
+      { to: '/finanzas', icon: DollarSign, label: 'Movimientos' },
+      { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
+      { to: '/inversion', icon: ClipboardList, label: 'Inversión' },
+      { to: '/costos', icon: Activity, label: 'Costeo' },
+      { to: '/ventas', icon: HandCoins, label: 'Ventas' },
+      { to: '/compras', icon: ShoppingCart, label: 'Compras' },
+      { to: '/proveedores', icon: Building2, label: 'Proveedores' },
+      { to: '/compradores', icon: UserPlus, label: 'Compradores' },
+    ],
+  },
+  {
+    label: 'Mercado',
+    items: [
+      { to: '/precios-mercado', icon: TrendingUp, label: 'Precios' },
+    ],
+  },
+  {
+    label: 'Reportes',
+    items: [
+      { to: '/analitica', icon: BarChart3, label: 'Analítica' },
+      { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
+    ],
+  },
 ]
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
@@ -42,25 +80,34 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </div>
         <span className="font-semibold text-sm tracking-tight">SmartFeedLot</span>
       </div>
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            onClick={onNavClick}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              )
-            }
-          >
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
-          </NavLink>
+      <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        {navGroups.map(group => (
+          <div key={group.label} className="mb-3">
+            <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(({ to, icon: Icon, label, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  onClick={onNavClick}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-2.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                    )
+                  }
+                >
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
       <div className="p-2 border-t border-border">

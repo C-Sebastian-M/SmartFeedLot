@@ -299,6 +299,10 @@ export interface Venta {
   descripcion?: string
   totalAnimales: number
   items: VentaItem[]
+  canal: string
+  comisionPct: number | null
+  costoTransporteMonto: number | null
+  costoTransporteMoneda: string | null
 }
 
 // ─── API Error ────────────────────────────────────────────────────────────────
@@ -507,4 +511,81 @@ export interface ComparativoPresupuesto {
   totalReal: number
   totalDesviacion: number
   porcentajeEjecucion: number
+}
+
+// ─── Porcino ──────────────────────────────────────────────────────────────────
+export interface Marrana {
+  id: string
+  identificacion: string
+  fechaCompra: string
+  costoMonto: number
+  costoMoneda: string
+  camadas: Camada[]
+}
+
+export interface Camada {
+  id: string
+  marranaId: string
+  fechaNacimiento: string
+  nLechones: number
+  estado: string
+}
+
+export interface CreateMarranaPayload {
+  identificacion: string
+  fechaCompra: string
+  costo: number
+  moneda: string
+}
+
+export interface RegistrarCamadaPayload {
+  fechaNacimiento: string
+  nLechones: number
+}
+
+export interface LoteCerdos {
+  id: string
+  codigo: string
+  fechaInicio: string
+  nAnimales: number
+  pesoPromedioKg: number
+  ciclo: string
+  camadaId?: string
+  precioVentaKgMonto?: number
+  precioVentaKgMoneda?: string
+  fechaVenta?: string
+  vendido: boolean
+}
+
+export interface CreateLoteCerdosPayload {
+  codigo: string
+  fechaInicio: string
+  nAnimales: number
+  pesoPromedioKg: number
+  ciclo: string
+  camadaId?: string
+  precioVentaKg?: number
+  moneda?: string
+}
+
+export interface RegistrarVentaLoteCerdosPayload {
+  fechaVenta: string
+  precioVentaKg: number
+}
+
+export interface PrecioMercado {
+  id: string
+  fecha: string
+  especie: string
+  tipo: string
+  precioPorKg: number
+  fuente: string
+}
+
+export interface CreatePrecioMercadoPayload {
+  fecha: string
+  especie: string
+  tipo: string
+  precioPorKg: number
+  fuente: string
 }

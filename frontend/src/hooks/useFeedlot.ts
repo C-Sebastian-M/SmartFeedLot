@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService, porcinoService, mercadoService } from '@/services/feedlot.service'
+import type { RegistrarCamadaPayload, RegistrarVentaLoteCerdosPayload } from '@/types'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 export const queryKeys = {
@@ -64,6 +65,9 @@ export const queryKeys = {
       cultivos: ['operacion', 'cultivos'] as const,
       lotesSilo: ['operacion', 'lotes-silo'] as const,
     },
+    porcino: ['porcino', 'marranas'] as const,
+    lotesCerdos: ['porcino', 'lotes-cerdos'] as const,
+    preciosMercado: ['mercado', 'precios'] as const,
 }
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -676,5 +680,70 @@ export function useCrearLoteSilo() {
   return useMutation({
     mutationFn: caniaService.crearLoteSilo,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.lotesSilo }),
+  })
+}
+
+// ─── Porcino ──────────────────────────────────────────────────────────────────
+export function useMarranas() {
+  return useQuery({
+    queryKey: queryKeys.porcino,
+    queryFn: () => porcinoService.getMarranas(),
+  })
+}
+
+export function useCrearMarrana() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: porcinoService.createMarrana,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.porcino }),
+  })
+}
+
+export function useRegistrarCamada() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ marranaId, ...payload }: { marranaId: string } & RegistrarCamadaPayload) =>
+      porcinoService.registrarCamada(marranaId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.porcino }),
+  })
+}
+
+export function useLotesCerdos() {
+  return useQuery({
+    queryKey: queryKeys.lotesCerdos,
+    queryFn: () => porcinoService.getLotesCerdos(),
+  })
+}
+
+export function useCrearLoteCerdos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: porcinoService.createLoteCerdos,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.lotesCerdos }),
+  })
+}
+
+export function useRegistrarVentaLoteCerdos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ loteId, ...payload }: { loteId: string } & RegistrarVentaLoteCerdosPayload) =>
+      porcinoService.registrarVenta(loteId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.lotesCerdos }),
+  })
+}
+
+// ─── Mercado ──────────────────────────────────────────────────────────────────
+export function usePreciosMercado() {
+  return useQuery({
+    queryKey: queryKeys.preciosMercado,
+    queryFn: () => mercadoService.getAll(),
+  })
+}
+
+export function useCrearPrecioMercado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: mercadoService.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
   })
 }

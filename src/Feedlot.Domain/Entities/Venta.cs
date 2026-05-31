@@ -1,5 +1,7 @@
 using Feedlot.Domain.Common;
+using Feedlot.Domain.Enums;
 using Feedlot.Domain.Exceptions;
+using Feedlot.Domain.ValueObjects;
 
 namespace Feedlot.Domain.Entities;
 
@@ -9,13 +11,17 @@ public sealed class Venta : AggregateRoot<Guid>
 
     private Venta() { }
 
-    private Venta(Guid id, Guid compradorId, DateOnly fecha, string moneda, string? descripcion)
+    private Venta(Guid id, Guid compradorId, DateOnly fecha, string moneda, string? descripcion,
+        CanalVenta canal, decimal? comisionPct, Dinero? costoTransporte)
         : base(id)
     {
         CompradorId = compradorId;
         Fecha = fecha;
         Moneda = moneda;
         Descripcion = descripcion;
+        Canal = canal;
+        ComisionPct = comisionPct;
+        CostoTransporte = costoTransporte;
     }
 
     public Guid CompradorId { get; private set; }
@@ -23,14 +29,19 @@ public sealed class Venta : AggregateRoot<Guid>
     public decimal MontoTotal => _items.Sum(i => i.PrecioVenta);
     public string Moneda { get; private set; } = null!;
     public string? Descripcion { get; private set; }
+    public CanalVenta Canal { get; private set; }
+    public decimal? ComisionPct { get; private set; }
+    public Dinero? CostoTransporte { get; private set; }
     public IReadOnlyCollection<VentaItem> Items => _items.AsReadOnly();
 
-    public static Venta Crear(Guid compradorId, DateOnly fecha, string moneda, string? descripcion)
+    public static Venta Crear(Guid compradorId, DateOnly fecha, string moneda, string? descripcion,
+        CanalVenta canal = CanalVenta.Directa, decimal? comisionPct = null, Dinero? costoTransporte = null)
     {
         if (string.IsNullOrWhiteSpace(moneda))
             throw new DomainException("La moneda es requerida.");
 
-        return new Venta(Guid.NewGuid(), compradorId, fecha, moneda.Trim(), descripcion?.Trim());
+        return new Venta(Guid.NewGuid(), compradorId, fecha, moneda.Trim(), descripcion?.Trim(),
+            canal, comisionPct, costoTransporte);
     }
 
     public VentaItem AgregarItem(Guid animalId, decimal precioVenta, decimal pesoVentaKg)
