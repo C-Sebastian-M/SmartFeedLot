@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, X, PiggyBank, ChevronDown, ChevronRight, Trash2, TrendingUp, ArrowRight } from 'lucide-react'
+import { Plus, X, PiggyBank, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
 import {
-  useMarranas, useCrearMarrana, useRegistrarCamada, useEliminarMarrana, useAvanzarEstadoCamada,
+  useMarranas, useCrearMarrana, useRegistrarCamada,
   useLotesCerdos, useCrearLoteCerdos, useRegistrarVentaLoteCerdos,
 } from '@/hooks/useFeedlot'
 import {
@@ -40,8 +40,6 @@ function MarranasSection() {
   const arr = (marranas as Marrana[] | undefined) ?? []
   const crearMarrana = useCrearMarrana()
   const registrarCamada = useRegistrarCamada()
-  const eliminar = useEliminarMarrana()
-  const avanzar = useAvanzarEstadoCamada()
   const [modal, setModal] = useState<ModalState>({ type: null })
   const [expanded, setExpanded] = useState<string | null>(null)
   const [errorApi, setErrorApi] = useState<string>()
@@ -91,10 +89,6 @@ function MarranasSection() {
                     <Button size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setModal({ type: 'camada', marranaId: m.id }) }}>
                       <Plus className="w-3 h-3" /> Camada
                     </Button>
-                    <button onClick={e => { e.stopPropagation(); setModal({ type: 'confirmarEliminar', marranaId: m.id, nombre: m.identificacion }) }}
-                      className="p-1 text-muted-foreground hover:text-red-400 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                     {expanded === m.id ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                   </div>
                 </div>
@@ -121,20 +115,7 @@ function MarranasSection() {
                             <td className="px-4 py-2 text-center">
                               <Badge className={`text-[9px] ${estadoColor[c.estado] ?? ''}`}>{c.estado}</Badge>
                             </td>
-                            <td className="px-4 py-2 text-right">
-                              {c.estado === 'Preceba' && (
-                                <button onClick={() => avanzar.mutate({ marranaId: m.id, camadaId: c.id, accionEstado: 'AvanzarCeba' })}
-                                  className="inline-flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors">
-                                  <ArrowRight className="w-3 h-3" /> Ceba
-                                </button>
-                              )}
-                              {c.estado === 'Ceba' && (
-                                <button onClick={() => avanzar.mutate({ marranaId: m.id, camadaId: c.id, accionEstado: 'MarcarVendida' })}
-                                  className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors">
-                                  <ArrowRight className="w-3 h-3" /> Vendida
-                                </button>
-                              )}
-                            </td>
+                            <td className="px-4 py-2 text-right"></td>
                           </tr>
                         ))}
                       </tbody>
@@ -203,25 +184,6 @@ function MarranasSection() {
         </div>
       </Dialog>
 
-      {/* Modal confirmar eliminar */}
-      <Dialog open={modal.type === 'confirmarEliminar'} onClose={() => setModal({ type: null })}>
-        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4 p-5">
-          <DialogHeader className="mb-4"><DialogTitle>Eliminar marrana</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground mb-4">
-            ¿Confirmas eliminar <strong>{modal.type === 'confirmarEliminar' ? modal.nombre : ''}</strong> y todas sus camadas? Esta acción no se puede deshacer.
-          </p>
-          {errorApi && <Alert variant="destructive" className="mb-3">{errorApi}</Alert>}
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
-            <Button variant="destructive" className="flex-1" loading={eliminar.isPending}
-              onClick={async () => {
-                if (modal.type !== 'confirmarEliminar') return
-                try { await eliminar.mutateAsync(modal.marranaId); setModal({ type: null }) }
-                catch (e: any) { setErrorApi(e?.response?.data?.detail ?? 'Error') }
-              }}>Eliminar</Button>
-          </div>
-        </div>
-      </Dialog>
     </>
   )
 }

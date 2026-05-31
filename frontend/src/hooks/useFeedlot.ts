@@ -521,6 +521,24 @@ export function useCrearPrestamo() {
   })
 }
 
+export function useRegistrarPagoCuota() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ prestamoId, cuotaId, fechaPago }: { prestamoId: string; cuotaId: string; fechaPago: string }) =>
+      prestamosService.registrarPago(prestamoId, cuotaId, fechaPago),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.prestamos.all }),
+  })
+}
+
+export function useAnularPagoCuota() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ prestamoId, cuotaId }: { prestamoId: string; cuotaId: string }) =>
+      prestamosService.anularPago(prestamoId, cuotaId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.prestamos.all }),
+  })
+}
+
 // ─── Inversión / Planeación ───────────────────────────────────────────────────
 export function useEtapasInversion() {
   return useQuery({
@@ -732,24 +750,6 @@ export function useRegistrarVentaLoteCerdos() {
   })
 }
 
-export function useEliminarMarrana() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (marranaId: string) => porcinoService.eliminarMarrana(marranaId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
-  })
-}
-
-export function useAvanzarEstadoCamada() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ marranaId, camadaId, accionEstado }: { marranaId: string; camadaId: string; accionEstado: string }) =>
-      porcinoService.avanzarEstadoCamada(marranaId, camadaId, accionEstado),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
-  })
-}
-
-// ─── Mercado ──────────────────────────────────────────────────────────────────
 export function usePreciosMercado() {
   return useQuery({
     queryKey: queryKeys.preciosMercado,

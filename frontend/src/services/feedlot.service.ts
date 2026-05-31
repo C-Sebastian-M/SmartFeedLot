@@ -375,6 +375,14 @@ export const prestamosService = {
     const { data } = await api.post('/prestamos', payload)
     return data
   },
+
+  registrarPago: async (prestamoId: string, cuotaId: string, fechaPago: string): Promise<void> => {
+    await api.patch(`/prestamos/${prestamoId}/cuotas/${cuotaId}/pagar`, { fechaPago })
+  },
+
+  anularPago: async (prestamoId: string, cuotaId: string): Promise<void> => {
+    await api.patch(`/prestamos/${prestamoId}/cuotas/${cuotaId}/anular`)
+  },
 }
 
 // ─── Proveedores ──────────────────────────────────────────────────────────────
