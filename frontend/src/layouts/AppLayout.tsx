@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
+import { useAlertCounts } from '@/hooks/useAlertCounts'
 import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
@@ -9,6 +10,8 @@ import {
   Building2, ShoppingCart, HandCoins, UserPlus, Landmark, ClipboardList,
   PiggyBank, TrendingUp, Trees, ChevronRight, Moon, Sun,
 } from 'lucide-react'
+
+// ─── Nav structure ────────────────────────────────────────────────────────────
 
 interface NavItem {
   to: string
@@ -65,10 +68,40 @@ const navGroups: NavGroup[] = [
   },
 ]
 
+// ─── Badge component ──────────────────────────────────────────────────────────
+
+function NavBadge({ count, variant = 'red' }: { count: number; variant?: 'red' | 'amber' }) {
+  if (count === 0) return null
+  const label = count > 99 ? '99+' : String(count)
+  return (
+    <span
+      className={cn(
+        'ml-auto flex-shrink-0 h-4 min-w-[1rem] px-1 rounded-full',
+        'text-[9px] font-bold leading-4 text-center tabular-nums',
+        variant === 'red'
+          ? 'bg-rose-500/20 text-rose-400'
+          : 'bg-amber-500/20 text-amber-400'
+      )}
+    >
+      {label}
+    </span>
+  )
+}
+
+// ─── Sidebar content ──────────────────────────────────────────────────────────
+
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const { theme, toggle: toggleTheme } = useThemeStore()
+  const counts = useAlertCounts()
+
+  // Map de ruta → configuración de badge
+  const badges: Record<string, { count: number; variant: 'red' | 'amber' }> = {
+    '/alertas': { count: counts.total, variant: 'red' },
+    '/prestamos': { count: counts.cuotasVencidas, variant: 'red' },
+    '/inversion': { count: counts.itemsPendientes, variant: 'amber' },
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -78,6 +111,10 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           <Activity className="w-3.5 h-3.5 text-primary-foreground" />
         </div>
         <span className="font-semibold text-sm tracking-tight">SmartFeedLot</span>
+        {/* Dot indicator global si hay alertas */}
+        {counts.total > 0 && (
+          <span className="ml-auto w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" />
+        )}
       </div>
 
       {/* Nav */}
@@ -90,30 +127,46 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               </p>
             )}
             <div className="space-y-0.5">
-              {group.items.map(({ to, icon: Icon, label, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  onClick={onNavClick}
-                  className={({ isActive }) =>
-                    cn(
-                      'group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-foreground font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 font-normal'
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon className={cn('w-3.5 h-3.5 flex-shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground')} />
-                      <span className="truncate">{label}</span>
-                      {isActive && <ChevronRight className="w-3 h-3 ml-auto text-primary/50" />}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              {group.items.map(({ to, icon: Icon, label, end }) => {
+                const badge = badges[to]
+                return (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    onClick={onNavClick}
+                    className={({ isActive }) =>
+                      cn(
+                        'group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors',
+                        isActive
+                          ? 'bg-primary/10 text-foreground font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 font-normal'
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <Icon
+                          className={cn(
+                            'w-3.5 h-3.5 flex-shrink-0 transition-colors',
+                            isActive
+                              ? 'text-primary'
+                              : 'text-muted-foreground/60 group-hover:text-muted-foreground'
+                          )}
+                        />
+                        <span className="truncate">{label}</span>
+
+                        {/* Badge de alerta (tiene prioridad sobre el chevron) */}
+                        {badge && badge.count > 0 ? (
+                          <NavBadge count={badge.count} variant={badge.variant} />
+                        ) : isActive ? (
+                          <ChevronRight className="w-3 h-3 ml-auto text-primary/50 flex-shrink-0" />
+                        ) : null}
+                      </>
+                    )}
+                  </NavLink>
+                )
+              })}
             </div>
           </div>
         ))}
@@ -121,16 +174,18 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* User */}
       <div className="p-2 border-t border-border/50 space-y-1">
-        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
         >
-          {theme === 'dark' ? <Sun className="w-3.5 h-3.5 flex-shrink-0" /> : <Moon className="w-3.5 h-3.5 flex-shrink-0" />}
+          {theme === 'dark'
+            ? <Sun className="w-3.5 h-3.5 flex-shrink-0" />
+            : <Moon className="w-3.5 h-3.5 flex-shrink-0" />
+          }
           <span>{theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}</span>
         </button>
-        {/* User row */}
+
         <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted/50 cursor-pointer group transition-colors">
           <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-muted-foreground">
             {(user?.nombre ?? 'U').charAt(0).toUpperCase()}
@@ -152,17 +207,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   )
 }
 
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
 export default function AppLayout() {
   const [open, setOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Overlay mobile */}
       {open && (
-        <div className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm" onClick={() => setOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        />
       )}
 
-      {/* Sidebar */}
       <aside className={cn(
         'fixed md:static inset-y-0 left-0 z-50 w-56 flex-shrink-0',
         'border-r border-border/50 bg-card',
@@ -172,14 +230,17 @@ export default function AppLayout() {
         <SidebarContent onNavClick={() => setOpen(false)} />
       </aside>
 
-      {/* Main */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Mobile top bar */}
         <div className="md:hidden flex items-center justify-between h-12 px-4 border-b border-border/50 bg-card">
-          <button onClick={() => setOpen(true)} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+          <button
+            onClick={() => setOpen(true)}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
             {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
-          <span className="text-sm font-semibold tracking-tight">SmartFeedLot</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold tracking-tight">SmartFeedLot</span>
+          </div>
           <div className="w-7" />
         </div>
 

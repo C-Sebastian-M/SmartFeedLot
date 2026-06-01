@@ -1,11 +1,16 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Package, Users } from 'lucide-react'
-import { useLote } from '@/hooks/useFeedlot'
+import { useForm } from 'react-hook-form'
+import { ArrowLeft, Package, Users, ArrowRightLeft, X } from 'lucide-react'
+import { useLote, useLotes, useMoverAnimal } from '@/hooks/useFeedlot'
 import {
   Button, Card, CardHeader, CardTitle, Badge,
   Skeleton, EmptyState,
+  Dialog, DialogHeader, DialogTitle,
+  FormField, Alert,
 } from '@/components/ui'
 import { fmt } from '@/utils'
+import type { LoteResumen } from '@/types'
 
 const estadoStyle: Record<string, string> = {
   Activo: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -28,10 +33,35 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+const MOTIVOS = ['IngresoInicial', 'Reclasificacion', 'Sanitario', 'Capacidad', 'Venta', 'Muerte', 'Otro'] as const
+
 export default function LoteDetallePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: lote, isLoading } = useLote(id!)
+  const { data: todosLotes } = useLotes()
+  const moverAnimal = useMoverAnimal()
+
+  const [moverModal, setMoverModal] = useState<{ open: false } | { open: true; animalId: string; codigoAnimal: string }>({ open: false })
+  const [errorApi, setErrorApi] = useState<string>()
+
+  const moverForm = useForm<{ loteDestinoId: string; fechaMovimiento: string; motivo: string }>({
+    defaultValues: { loteDestinoId: '', fechaMovimiento: new Date().toISOString().split('T')[0], motivo: 'Reclasificacion' },
+  })
+
+  const lotesDestino = ((todosLotes as LoteResumen[] | undefined) ?? []).filter(l => l.id !== id && l.estado === 'Activo')
+
+  const onSubmitMover = async (data: { loteDestinoId: string; fechaMovimiento: string; motivo: string }) => {
+    if (!moverModal.open) return
+    setErrorApi(undefined)
+    try {
+      await moverAnimal.mutateAsync({ loteId: data.loteDestinoId, animalId: moverModal.animalId, fechaMovimiento: data.fechaMovimiento, motivo: data.motivo })
+      setMoverModal({ open: false })
+      moverForm.reset()
+    } catch (e: any) {
+      setErrorApi(e?.response?.data?.detail ?? 'Error al mover el animal.')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -164,6 +194,7 @@ export default function LoteDetallePage() {
                     <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Días</th>
                     <th className="text-left pb-2 text-muted-foreground font-medium whitespace-nowrap">Motivo</th>
                     <th className="text-right pb-2 text-muted-foreground font-medium whitespace-nowrap">Estado</th>
+                    <th className="pb-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -178,6 +209,12 @@ export default function LoteDetallePage() {
                       <td className="py-2.5 text-muted-foreground capitalize whitespace-nowrap">{al.motivoIngreso}</td>
                       <td className="py-2.5 text-right whitespace-nowrap">
                         <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Activo</Badge>
+                      </td>
+                      <td className="py-2.5 text-right whitespace-nowrap">
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1"
+                          onClick={e => { e.stopPropagation(); setMoverModal({ open: true, animalId: al.animalId, codigoAnimal: al.codigoAnimal }) }}>
+                          <ArrowRightLeft className="w-3 h-3" /> Mover
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -228,6 +265,48 @@ export default function LoteDetallePage() {
           </Card>
         )}
       </div>
+
+      {/* Modal mover animal */}
+      <Dialog open={moverModal.open} onClose={() => { setMoverModal({ open: false }); moverForm.reset(); setErrorApi(undefined) }}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[420px] mx-4">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <DialogHeader className="mb-0">
+              <DialogTitle>Mover animal</DialogTitle>
+              {moverModal.open && <p className="text-xs text-muted-foreground mt-0.5">Animal: <span className="font-mono font-semibold">{moverModal.codigoAnimal}</span></p>}
+            </DialogHeader>
+            <button onClick={() => setMoverModal({ open: false })} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <form onSubmit={moverForm.handleSubmit(onSubmitMover)} className="p-5 space-y-4">
+            <FormField label="Lote destino" required>
+              <select {...moverForm.register('loteDestinoId')} className="flex h-9 w-full rounded-md border border-input bg-card text-sm px-3 [&>option]:bg-card">
+                <option value="">— Selecciona un lote —</option>
+                {lotesDestino.map(l => (
+                  <option key={l.id} value={l.id}>{l.codigo} — {l.nombre} ({l.animalesActuales}/{l.capacidadMaxima})</option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Fecha movimiento" required>
+              <input type="date" max={new Date().toISOString().split('T')[0]}
+                {...moverForm.register('fechaMovimiento')}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </FormField>
+            <FormField label="Motivo" required>
+              <select {...moverForm.register('motivo')} className="flex h-9 w-full rounded-md border border-input bg-card text-sm px-3 [&>option]:bg-card">
+                {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </FormField>
+            {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setMoverModal({ open: false })}>Cancelar</Button>
+              <Button type="submit" className="flex-1" loading={moverAnimal.isPending}>
+                <ArrowRightLeft className="w-3.5 h-3.5" /> Mover
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Dialog>
     </div>
   )
 }

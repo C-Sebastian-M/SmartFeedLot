@@ -8,14 +8,28 @@ public sealed class RetirarAnimalPotreroCommandHandler : IRequestHandler<Retirar
 {
     private readonly IPotreroRepository _repo;
     private readonly IUnitOfWork _uow;
-    public RetirarAnimalPotreroCommandHandler(IPotreroRepository repo, IUnitOfWork uow) { _repo = repo; _uow = uow; }
+
+    public RetirarAnimalPotreroCommandHandler(IPotreroRepository repo, IUnitOfWork uow)
+    {
+        _repo = repo;
+        _uow = uow;
+    }
 
     public async Task<Result> Handle(RetirarAnimalPotreroCommand request, CancellationToken ct)
     {
         var potrero = await _repo.ObtenerPorIdAsync(request.PotreroId, ct);
-        if (potrero is null) return Result.Failure("Potrero no encontrado.");
+        if (potrero is null)
+            return Result.NotFound($"No se encontró el potrero {request.PotreroId}.");
 
-        potrero.RetirarAnimal(request.EstanciaId, request.FechaSalida);
+        try
+        {
+            potrero.RetirarAnimal(request.EstanciaId, request.FechaSalida);
+        }
+        catch (Domain.Exceptions.DomainException ex)
+        {
+            return Result.Failure(ex.Message);
+        }
+
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }

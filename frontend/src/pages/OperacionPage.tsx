@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Plus, X, Trees, Users, Sprout, ChevronDown, ChevronRight, Wheat } from 'lucide-react'
-import { usePotreros, useCrearPotrero, useIngresarAnimalPotrero,
+import { usePotreros, useCrearPotrero, useIngresarAnimalPotrero, useRetirarAnimalPotrero,
   useEmpleados, useCrearEmpleado, useRegistrarActividadManoObra,
   useCultivosCania, useCrearCultivoCania, useRegistrarCorteCania,
   useLotesSilo, useCrearLoteSilo } from '@/hooks/useFeedlot'
@@ -33,6 +33,7 @@ type ModalState =
   | { type: 'cultivo' }
   | { type: 'corte'; cultivoId: string }
   | { type: 'silo' }
+  | { type: 'retirar'; potreroId: string; estanciaId: string }
 
 // ─── Potrero section ────────────────────────────────────────────────────────
 function PotrerosSection() {
@@ -40,6 +41,7 @@ function PotrerosSection() {
   const arr = (potreros as Potrero[] | undefined) ?? []
   const crearPotrero = useCrearPotrero()
   const ingresarAnimal = useIngresarAnimalPotrero()
+  const retirarAnimal = useRetirarAnimalPotrero()
   const [modal, setModal] = useState<ModalState>({ type: null })
 
   const potreroForm = useForm<{ nombre: string; capacidad: number }>({
@@ -48,6 +50,10 @@ function PotrerosSection() {
 
   const ingresarForm = useForm<{ animalId: string; fechaEntrada: string }>({
     defaultValues: { animalId: '', fechaEntrada: new Date().toISOString().split('T')[0] },
+  })
+
+  const retirarForm = useForm<{ fechaSalida: string }>({
+    defaultValues: { fechaSalida: new Date().toISOString().split('T')[0] },
   })
 
   const onSubmitPotrero = async (data: { nombre: string; capacidad: number }) => {
@@ -61,6 +67,13 @@ function PotrerosSection() {
     await ingresarAnimal.mutateAsync({ potreroId: modal.potreroId, ...data })
     setModal({ type: null })
     ingresarForm.reset()
+  }
+
+  const onSubmitRetirar = async (data: { fechaSalida: string }) => {
+    if (modal.type !== 'retirar') return
+    await retirarAnimal.mutateAsync({ potreroId: modal.potreroId, estanciaId: modal.estanciaId, ...data })
+    setModal({ type: null })
+    retirarForm.reset()
   }
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-20 rounded-lg" /><Skeleton className="h-20 rounded-lg" /></div>
@@ -90,9 +103,18 @@ function PotrerosSection() {
               {p.estancias.filter(e => !e.salida).length > 0 && (
                 <CardContent className="p-0 border-t border-border">
                   <table className="w-full text-xs">
-                    <thead><tr className="border-b bg-secondary/20"><th className="text-left px-4 py-2 text-muted-foreground">Animal ID</th><th className="text-left px-4 py-2 text-muted-foreground">Ingreso</th></tr></thead>
+                    <thead><tr className="border-b bg-secondary/20"><th className="text-left px-4 py-2 text-muted-foreground">Animal ID</th><th className="text-left px-4 py-2 text-muted-foreground">Ingreso</th><th className="px-4 py-2" /></tr></thead>
                     <tbody>{p.estancias.filter(e => !e.salida).map(e => (
-                      <tr key={e.id} className="border-b border-border/30"><td className="px-4 py-2">{e.animalId.slice(0, 8)}</td><td className="px-4 py-2">{fmt.fecha(e.fechaEntrada)}</td></tr>
+                      <tr key={e.id} className="border-b border-border/30">
+                        <td className="px-4 py-2 font-mono">{e.animalId.slice(0, 8)}…</td>
+                        <td className="px-4 py-2">{fmt.fecha(e.fechaEntrada)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Button size="sm" variant="ghost" className="text-rose-400 hover:text-rose-300 h-6 px-2 text-[10px]"
+                            onClick={() => setModal({ type: 'retirar', potreroId: p.id, estanciaId: e.id })}>
+                            Retirar
+                          </Button>
+                        </td>
+                      </tr>
                     ))}</tbody>
                   </table>
                 </CardContent>
@@ -126,6 +148,26 @@ function PotrerosSection() {
             <FormField label="Animal ID" required><input {...ingresarForm.register('animalId')} placeholder="GUID del animal" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <FormField label="Fecha entrada" required><input type="date" {...ingresarForm.register('fechaEntrada')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" /></FormField>
             <Button type="submit" className="w-full" loading={ingresarAnimal.isPending}>Ingresar</Button>
+          </form>
+        </div>
+      </Dialog>
+
+      <Dialog open={modal.type === 'retirar'} onClose={() => { setModal({ type: null }); retirarForm.reset() }}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <DialogHeader className="mb-0"><DialogTitle>Retirar animal del potrero</DialogTitle></DialogHeader>
+            <button onClick={() => setModal({ type: null })} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+          </div>
+          <form onSubmit={retirarForm.handleSubmit(onSubmitRetirar)} className="p-5 space-y-4">
+            <FormField label="Fecha de salida" required>
+              <input type="date" max={new Date().toISOString().split('T')[0]}
+                {...retirarForm.register('fechaSalida')}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </FormField>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+              <Button type="submit" variant="destructive" className="flex-1" loading={retirarAnimal.isPending}>Retirar</Button>
+            </div>
           </form>
         </div>
       </Dialog>

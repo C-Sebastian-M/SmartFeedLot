@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, X, PiggyBank, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react'
+import { Plus, X, PiggyBank, ChevronDown, ChevronRight, TrendingUp, Trash2, ArrowRight } from 'lucide-react'
 import {
   useMarranas, useCrearMarrana, useRegistrarCamada,
   useLotesCerdos, useCrearLoteCerdos, useRegistrarVentaLoteCerdos,
+  useEliminarMarrana, useAvanzarEstadoCamada,
 } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
@@ -27,6 +28,7 @@ type ModalState =
   | { type: 'lote' }
   | { type: 'venta'; loteId: string }
   | { type: 'confirmarEliminar'; marranaId: string; nombre: string }
+  | { type: 'avanzarEstado'; marranaId: string; camadaId: string; estadoActual: string }
 
 const estadoColor: Record<string, string> = {
   Preceba: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -40,6 +42,8 @@ function MarranasSection() {
   const arr = (marranas as Marrana[] | undefined) ?? []
   const crearMarrana = useCrearMarrana()
   const registrarCamada = useRegistrarCamada()
+  const eliminarMarrana = useEliminarMarrana()
+  const avanzarEstadoCamada = useAvanzarEstadoCamada()
   const [modal, setModal] = useState<ModalState>({ type: null })
   const [expanded, setExpanded] = useState<string | null>(null)
   const [errorApi, setErrorApi] = useState<string>()
@@ -89,6 +93,9 @@ function MarranasSection() {
                     <Button size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setModal({ type: 'camada', marranaId: m.id }) }}>
                       <Plus className="w-3 h-3" /> Camada
                     </Button>
+                    <Button size="sm" variant="ghost" className="text-rose-400 hover:text-rose-300" onClick={e => { e.stopPropagation(); setModal({ type: 'confirmarEliminar', marranaId: m.id, nombre: m.identificacion }) }}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                     {expanded === m.id ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                   </div>
                 </div>
@@ -115,7 +122,15 @@ function MarranasSection() {
                             <td className="px-4 py-2 text-center">
                               <Badge className={`text-[9px] ${estadoColor[c.estado] ?? ''}`}>{c.estado}</Badge>
                             </td>
-                            <td className="px-4 py-2 text-right"></td>
+                            <td className="px-4 py-2 text-right">
+                              {c.estado !== 'Vendida' && (
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1"
+                                  onClick={() => setModal({ type: 'avanzarEstado', marranaId: m.id, camadaId: c.id, estadoActual: c.estado })}>
+                                  <ArrowRight className="w-3 h-3" />
+                                  {c.estado === 'Preceba' ? 'Pasar a Ceba' : 'Marcar vendida'}
+                                </Button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -154,6 +169,58 @@ function MarranasSection() {
             {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
             <Button type="submit" className="w-full" loading={crearMarrana.isPending}>Crear marrana</Button>
           </form>
+        </div>
+      </Dialog>
+
+      {/* Modal confirmar eliminar marrana */}
+      <Dialog open={modal.type === 'confirmarEliminar'} onClose={() => setModal({ type: null })}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4 p-5 space-y-4">
+          <DialogHeader className="mb-0">
+            <DialogTitle>Eliminar marrana</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              ¿Confirmas eliminar <strong>{modal.type === 'confirmarEliminar' ? modal.nombre : ''}</strong>?
+              Esta acción no se puede deshacer.
+            </p>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+            <Button variant="destructive" className="flex-1" loading={eliminarMarrana.isPending}
+              onClick={async () => {
+                if (modal.type !== 'confirmarEliminar') return
+                await eliminarMarrana.mutateAsync(modal.marranaId)
+                setModal({ type: null })
+              }}>
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Modal avanzar estado camada */}
+      <Dialog open={modal.type === 'avanzarEstado'} onClose={() => setModal({ type: null })}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4 p-5 space-y-4">
+          <DialogHeader className="mb-0">
+            <DialogTitle>
+              {modal.type === 'avanzarEstado' && modal.estadoActual === 'Preceba' ? 'Pasar a Ceba' : 'Marcar como vendida'}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              {modal.type === 'avanzarEstado' && modal.estadoActual === 'Preceba'
+                ? 'La camada pasará del estado Preceba a Ceba.'
+                : 'La camada quedará marcada como vendida y no podrá avanzar más.'}
+            </p>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+            <Button className="flex-1" loading={avanzarEstadoCamada.isPending}
+              onClick={async () => {
+                if (modal.type !== 'avanzarEstado') return
+                const accion = modal.estadoActual === 'Preceba' ? 'AvanzarCeba' : 'MarcarVendida'
+                await avanzarEstadoCamada.mutateAsync({ marranaId: modal.marranaId, camadaId: modal.camadaId, accionEstado: accion })
+                setModal({ type: null })
+              }}>
+              Confirmar
+            </Button>
+          </div>
         </div>
       </Dialog>
 
