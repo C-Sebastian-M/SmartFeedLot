@@ -56,24 +56,40 @@ public sealed class SubaganHttpService : ISubaganHttpService
 
             if (string.IsNullOrEmpty(csrfToken))
             {
-                _logger.LogWarning("SUBAGAN — No se encontró CSRF token.");
+                var snippet = loginPage.Length > 600 ? loginPage[..600] : loginPage;
+                _logger.LogWarning(
+                    "SUBAGAN — No se encontró CSRF token. Longitud de la respuesta: {Len}. Inicio del HTML: {Snippet}",
+                    loginPage.Length, snippet);
                 return false;
             }
 
-            // 2. POST credenciales
-            var form = new FormUrlEncodedContent(new Dictionary<string, string>
+            // 2. POST credenciales.
+            // El formulario real (id="loginForm") postea a /subagan/users/authenticate
+            // con enctype="multipart/form-data", y el token va en el campo "csrfToken".
+            var form = new MultipartFormDataContent
             {
-                ["login"]     = _usuario,
-                ["password"]  = _password,
-                ["csrfToken"] = csrfToken
-            });
+                { new StringContent(csrfToken), "csrfToken" },
+                { new StringContent(_usuario),  "login" },
+                { new StringContent(_password), "password" }
+            };
 
-            var response = await _client.PostAsync("/subagan/users/login", form, ct);
+            var response = await _client.PostAsync("/subagan/users/authenticate", form, ct);
             var finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? "";
-            _authenticated = !finalUrl.Contains("/login");
+            // Login OK si ya no estamos en login ni en la acción authenticate (redirige al panel).
+            _authenticated = !finalUrl.Contains("/login") && !finalUrl.Contains("/authenticate");
 
-            _logger.LogInformation("SUBAGAN — Login {Result}. URL final: {Url}",
-                _authenticated ? "exitoso" : "fallido", finalUrl);
+            if (_authenticated)
+            {
+                _logger.LogInformation("SUBAGAN — Login exitoso. URL final: {Url}", finalUrl);
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync(ct);
+                var snippet = ExtractMensajeError(body);
+                _logger.LogWarning(
+                    "SUBAGAN — Login fallido. Status: {Status}. URL final: {Url}. Mensaje del sitio: {Msg}",
+                    (int)response.StatusCode, finalUrl, snippet);
+            }
 
             return _authenticated;
         }
@@ -184,8 +200,54 @@ public sealed class SubaganHttpService : ISubaganHttpService
 
     private static string ExtractCsrfToken(string html)
     {
-        var m = Regex.Match(html, @"<meta name=""csrf-token"" content=""([^""]+)""");
-        return m.Success ? m.Groups[1].Value : string.Empty;
+        // SUBAGAN puede emitir el token de varias formas. Probamos en orden,
+        // tolerando cualquier orden de atributos y comillas simples o dobles.
+
+        // 1. <meta name="csrf-token" content="TOKEN">
+        var m = Regex.Match(html,
+            @"<meta\b[^>]*\bname\s*=\s*[""']csrf-token[""'][^>]*\bcontent\s*=\s*[""']([^""']+)[""']",
+            RegexOptions.IgnoreCase);
+        if (m.Success) return m.Groups[1].Value;
+
+        // 2. <meta content="TOKEN" name="csrf-token">  (atributos en orden inverso)
+        m = Regex.Match(html,
+            @"<meta\b[^>]*\bcontent\s*=\s*[""']([^""']+)[""'][^>]*\bname\s*=\s*[""']csrf-token[""']",
+            RegexOptions.IgnoreCase);
+        if (m.Success) return m.Groups[1].Value;
+
+        // 3. <input ... name="_csrfToken|csrfToken|_token" value="TOKEN"> (campo oculto del form)
+        m = Regex.Match(html,
+            @"<input\b[^>]*\bname\s*=\s*[""'](?:_csrfToken|csrfToken|_csrf|_token)[""'][^>]*\bvalue\s*=\s*[""']([^""']+)[""']",
+            RegexOptions.IgnoreCase);
+        if (m.Success) return m.Groups[1].Value;
+
+        // 4. input con value antes que name
+        m = Regex.Match(html,
+            @"<input\b[^>]*\bvalue\s*=\s*[""']([^""']+)[""'][^>]*\bname\s*=\s*[""'](?:_csrfToken|csrfToken|_csrf|_token)[""']",
+            RegexOptions.IgnoreCase);
+        if (m.Success) return m.Groups[1].Value;
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Intenta extraer el mensaje de error/flash que muestra el sitio tras un login fallido,
+    /// para distinguir entre credenciales inválidas, token rechazado, captcha, etc.
+    /// </summary>
+    private static string ExtractMensajeError(string html)
+    {
+        // CakePHP renderiza los flash messages en <div class="message ...">TEXTO</div>
+        var m = Regex.Match(html,
+            @"<div[^>]*class\s*=\s*[""'][^""']*\b(?:message|alert|error|flash)\b[^""']*[""'][^>]*>(.*?)</div>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        if (m.Success)
+        {
+            var texto = Regex.Replace(m.Groups[1].Value, "<[^>]+>", " ").Trim();
+            texto = Regex.Replace(texto, @"\s+", " ");
+            if (!string.IsNullOrWhiteSpace(texto))
+                return texto.Length > 200 ? texto[..200] : texto;
+        }
+        return "(sin mensaje detectable; longitud respuesta: " + html.Length + ")";
     }
 
     private static decimal ParsePeso(string value)
