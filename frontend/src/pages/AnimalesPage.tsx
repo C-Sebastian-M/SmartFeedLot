@@ -9,7 +9,7 @@ import {
   PageHeader, Button, Card, CardContent, Badge, Skeleton, EmptyState,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert,
-  MoneyInput,
+  MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt, estadoProductivoColor, estadoSanitarioColor } from '@/utils'
 import type { AnimalResumen } from '@/types'
@@ -27,22 +27,7 @@ const schema = z.object({
 })
 type RegistrarAnimalForm = z.infer<typeof schema>
 
-function Select({ options, placeholder, value, onChange, error, disabled }: {
-  options: { value: string; label: string }[]
-  placeholder?: string; value?: string
-  onChange: (v: string) => void; error?: boolean; disabled?: boolean
-}) {
-  return (
-    <select value={value ?? ''} onChange={e => onChange(e.target.value)} disabled={disabled}
-      className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors
-        focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
-        disabled:cursor-not-allowed disabled:opacity-50
-        ${error ? 'border-destructive' : 'border-input'} [&>option]:bg-card`}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  )
-}
+
 
 function formatPrecio(value: number) {
   return Math.floor(value).toLocaleString('es-CO')
@@ -121,7 +106,7 @@ function RegistrarAnimalModal({ open, onClose }: { open: boolean; onClose: () =>
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Características</p>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField label="Sexo" error={errors.sexo?.message} required>
-                    <Select placeholder="Seleccionar..."
+                    <CustomSelect placeholder="Seleccionar..."
                       options={[{ value: 'Macho', label: 'Macho' }, { value: 'Hembra', label: 'Hembra' }]}
                       value={watch('sexo')}
                       onChange={v => setValue('sexo', v as 'Macho' | 'Hembra', { shouldValidate: true })}
@@ -164,14 +149,14 @@ function RegistrarAnimalModal({ open, onClose }: { open: boolean; onClose: () =>
                     />
                   </FormField>
                   <FormField label="Moneda">
-                    <Select options={[
+                    <CustomSelect options={[
                       { value: 'COP', label: 'COP — Peso' },
                       { value: 'USD', label: 'USD — Dólar' },
                       { value: 'EUR', label: 'EUR — Euro' },
                     ]} value={watch('moneda')} onChange={v => setValue('moneda', v as any)} />
                   </FormField>
                   <FormField label="Lote inicial" hint="Opcional — asignar al registrar">
-                    <Select placeholder="Sin lote"
+                    <CustomSelect placeholder="Sin lote"
                       options={lotesArray.map((l: any) => ({ value: l.id, label: `${l.codigo} — ${l.nombre}` }))}
                       value={watch('loteInicialId')}
                       onChange={v => setValue('loteInicialId', v || undefined)}

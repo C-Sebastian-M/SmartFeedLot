@@ -10,7 +10,7 @@ import {
   Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert, Badge,
-  MoneyInput,
+  MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Venta, Comprador, AnimalResumen } from '@/types'
@@ -140,14 +140,12 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Comprador" error={errors.compradorId?.message} required>
-                  <div className="relative">
-                    <select value={watch('compradorId')} onChange={e => setValue('compradorId', e.target.value)}
-                      className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm w-full appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&>option]:bg-card">
-                      <option value="">Seleccionar...</option>
-                      {compradores.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  </div>
+                  <CustomSelect
+                    value={watch('compradorId') ?? ''}
+                    onChange={v => setValue('compradorId', v)}
+                    options={compradores.map(c => ({ value: c.id, label: c.label }))}
+                    placeholder="Seleccionar..."
+                  />
                 </FormField>
                 <FormField label="Fecha" error={errors.fecha?.message} required>
                   <Input {...register('fecha')} type="date" max={hoy}
@@ -182,16 +180,13 @@ function CrearVentaModal({ open, onClose }: { open: boolean; onClose: () => void
                     Animales a vender ({animalesRows.length})
                   </p>
                   {animalesDisponibles.length > 0 && (
-                    <div className="relative">
-                      <select onChange={e => { if (e.target.value) { agregarAnimal(e.target.value); e.target.value = '' } }}
-                        className="h-7 pl-2 pr-6 rounded-md border border-input bg-card text-xs appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&>option]:bg-card">
-                        <option value="">+ Agregar animal</option>
-                        {animalesDisponibles.map(a => (
-                          <option key={a.id} value={a.id}>{a.codigoIdentificacion}{a.nombre ? ` — ${a.nombre}` : ''} ({fmt.kg(a.pesoActualKg)})</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-                    </div>
+                    <CustomSelect
+                      value=""
+                      onChange={v => { if (v) agregarAnimal(v) }}
+                      options={animalesDisponibles.map(a => ({ value: a.id, label: `${a.codigoIdentificacion}${a.nombre ? ` — ${a.nombre}` : ''} (${fmt.kg(a.pesoActualKg)})` }))}
+                      placeholder="+ Agregar animal"
+                      className="h-7 text-xs"
+                    />
                   )}
                 </div>
 

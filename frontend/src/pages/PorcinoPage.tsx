@@ -10,7 +10,7 @@ import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
   Skeleton, EmptyState, StatCard, Button,
   Dialog, DialogHeader, DialogTitle,
-  FormField, MoneyInput, Alert, Badge,
+  FormField, MoneyInput, Alert, Badge, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Marrana, LoteCerdos } from '@/types'
@@ -388,10 +388,12 @@ function LotesSection() {
               </FormField>
             </div>
             <FormField label="Camada origen" hint="Opcional">
-              <select {...lForm.register('camadaId')} className="flex h-9 w-full rounded-md border border-input bg-card text-sm px-3 [&>option]:bg-card">
-                <option value="">— Sin camada —</option>
-                {todasCamadas.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
+                <CustomSelect
+                  value={lForm.watch('camadaId') ?? ''}
+                  onChange={v => lForm.setValue('camadaId', v as any, { shouldValidate: true })}
+                  options={todasCamadas.map(c => ({ value: c.id, label: c.label }))}
+                  placeholder="— Sin camada —"
+                />
             </FormField>
             {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
             <Button type="submit" className="w-full" loading={crearLote.isPending}>Crear lote</Button>

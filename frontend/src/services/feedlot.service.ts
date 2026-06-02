@@ -585,6 +585,18 @@ export const caniaService = {
     const { data } = await api.post('/cania/lotes-silo', payload)
     return data
   },
+  modificarCultivo: async (cultivoId: string, payload: { cultivoCaniaId: string; nombre: string; callesTotales: number }): Promise<void> => {
+    await api.put(`/cania/cultivos/${cultivoId}`, payload)
+  },
+  eliminarCorte: async (cultivoId: string, corteId: string): Promise<void> => {
+    await api.delete(`/cania/cultivos/${cultivoId}/cortes/${corteId}`)
+  },
+  eliminarCultivo: async (cultivoId: string): Promise<void> => {
+    await api.delete(`/cania/cultivos/${cultivoId}`)
+  },
+  eliminarLoteSilo: async (loteSiloId: string): Promise<void> => {
+    await api.delete(`/cania/lotes-silo/${loteSiloId}`)
+  },
 }
 
 // ─── Porcino ──────────────────────────────────────────────────────────────────

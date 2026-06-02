@@ -11,7 +11,7 @@ import { useAnimal, useRegistrarPesaje, useRegistrarEventoSanitario, useActualiz
 import {
   Button, Card, CardHeader, CardTitle, CardContent, Badge,
   Skeleton, EmptyState, Dialog, DialogHeader, DialogTitle,
-  DialogDescription, FormField, Input, Alert,
+  DialogDescription, FormField, Input, Alert, CustomSelect,
 } from '@/components/ui'
 import {
   fmt, estadoProductivoColor, estadoSanitarioColor, severidadColor,
@@ -43,29 +43,7 @@ const eventoSchema = z.object({
 })
 type EventoForm = z.infer<typeof eventoSchema>
 
-// ─── Select simple ────────────────────────────────────────────────────────────
-function Select({
-  options, value, onChange, placeholder, error,
-}: {
-  options: { value: string; label: string }[]
-  value?: string
-  onChange: (v: string) => void
-  placeholder?: string
-  error?: boolean
-}) {
-  return (
-    <select
-      value={value ?? ''}
-      onChange={e => onChange(e.target.value)}
-      className={`flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors
-        focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
-        ${error ? 'border-destructive' : 'border-input'} [&>option]:bg-card`}
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  )
-}
+
 
 // ─── Modal registrar pesaje ───────────────────────────────────────────────────
 function RegistrarPesajeModal({ animalId, open, onClose }: {
@@ -212,7 +190,7 @@ function RegistrarEventoModal({ animalId, open, onClose }: {
                     className={errors.fechaEvento ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Severidad" error={errors.severidad?.message} required>
-                  <Select
+                  <CustomSelect
                     placeholder="Seleccionar..."
                     options={[
                       { value: 'Leve', label: 'Leve' },
@@ -239,7 +217,7 @@ function RegistrarEventoModal({ animalId, open, onClose }: {
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Tipo de evento" error={errors.tipoEvento?.message}>
-                  <Select
+                  <CustomSelect
                     placeholder="Seleccionar..."
                     options={[
                       { value: 'Tratamiento', label: 'Tratamiento' },
@@ -318,7 +296,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
   const mutation = useActualizarAnimal()
   const { data: lotesActivos } = useLotes(true)
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } =
     useForm<ModificarForm>({
       resolver: zodResolver(modificarSchema),
       values: {
@@ -393,11 +371,11 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                     className={errors.numeroArete ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Sexo" error={errors.sexo?.message} required>
-                  <select {...register('sexo')}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
-                    <option value="Macho">Macho</option>
-                    <option value="Hembra">Hembra</option>
-                  </select>
+                  <CustomSelect
+                    value={watch('sexo') ?? ''}
+                    onChange={v => setValue('sexo', v as any, { shouldValidate: true })}
+                    options={[{ value: 'Macho', label: 'Macho' }, { value: 'Hembra', label: 'Hembra' }]}
+                  />
                 </FormField>
                 <FormField label="Raza" error={errors.raza?.message}>
                   <Input {...register('raza')} placeholder="Brahman"
@@ -405,13 +383,12 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                 </FormField>
                 <div className="col-span-2">
                   <FormField label="Cambiar de lote" hint="Opcional — dejar vacío para mantener el actual">
-                    <select {...register('nuevoLoteId')}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
-                      <option value="">— Sin cambios —</option>
-                      {lotesActivos?.map(l => (
-                        <option key={l.id} value={l.id}>{l.codigo} — {l.nombre}</option>
-                      ))}
-                    </select>
+                    <CustomSelect
+                      value={watch('nuevoLoteId') ?? ''}
+                      onChange={v => setValue('nuevoLoteId', v as any, { shouldValidate: true })}
+                      options={lotesActivos?.map(l => ({ value: l.id, label: `${l.codigo} — ${l.nombre}` })) ?? []}
+                      placeholder="— Sin cambios —"
+                    />
                   </FormField>
                 </div>
                 <FormField label="Fecha de nacimiento" error={errors.fechaNacimiento?.message} hint="Opcional">

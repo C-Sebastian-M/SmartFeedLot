@@ -1,4 +1,8 @@
 using Feedlot.Application.Features.Operacion.Commands.CrearCultivoCania;
+using Feedlot.Application.Features.Operacion.Commands.EliminarCorteCania;
+using Feedlot.Application.Features.Operacion.Commands.EliminarCultivoCania;
+using Feedlot.Application.Features.Operacion.Commands.EliminarLoteSilo;
+using Feedlot.Application.Features.Operacion.Commands.ModificarCultivoCania;
 using Feedlot.Application.Features.Operacion.Commands.RegistrarCorteCania;
 using Feedlot.Application.Features.Operacion.Commands.CrearLoteSilo;
 using Feedlot.Application.Features.Operacion.Queries.ObtenerCultivosCania;
@@ -52,6 +56,35 @@ public sealed class CaniaController : ApiControllerBase
         var result = await _sender.Send(command, ct);
         if (result.IsSuccess)
             return CreatedAtAction(nameof(ObtenerLotesSilo), new { id = result.Value }, new { id = result.Value });
+        return FromResult(result);
+    }
+
+    [HttpPut("cultivos/{cultivoId:guid}")]
+    public async Task<IActionResult> ModificarCultivo(Guid cultivoId, [FromBody] ModificarCultivoCaniaCommand command, CancellationToken ct = default)
+    {
+        if (cultivoId != command.CultivoCaniaId) return BadRequest("ID del cultivo no coincide.");
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    [HttpDelete("cultivos/{cultivoId:guid}/cortes/{corteId:guid}")]
+    public async Task<IActionResult> EliminarCorte(Guid cultivoId, Guid corteId, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new EliminarCorteCaniaCommand(corteId), ct);
+        return FromResult(result);
+    }
+
+    [HttpDelete("cultivos/{cultivoId:guid}")]
+    public async Task<IActionResult> EliminarCultivo(Guid cultivoId, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new EliminarCultivoCaniaCommand(cultivoId), ct);
+        return FromResult(result);
+    }
+
+    [HttpDelete("lotes-silo/{loteSiloId:guid}")]
+    public async Task<IActionResult> EliminarLoteSilo(Guid loteSiloId, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new EliminarLoteSiloCommand(loteSiloId), ct);
         return FromResult(result);
     }
 }

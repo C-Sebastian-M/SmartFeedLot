@@ -24,17 +24,17 @@ public sealed class AgregarItemInversionCommandHandler
         AgregarItemInversionCommand request,
         CancellationToken ct)
     {
-        var etapa = await _etapaRepo.ObtenerPorIdAsync(request.EtapaId, ct);
+        var etapa = await _etapaRepo.ObtenerPorIdSinTrackingAsync(request.EtapaId, ct);
         if (etapa is null)
-            return Result<Guid>.Failure("Etapa de inversión no encontrada.");
+            return Result<Guid>.NotFound("Etapa de inversión no encontrada.");
 
         if (!Enum.TryParse<EstadoItemInversion>(request.Estado, ignoreCase: true, out var estado))
             return Result<Guid>.Failure("Estado de ítem inválido. Use 'OK' o 'Pendiente'.");
 
         var costo = Dinero.Crear(request.Monto, request.Moneda);
-
         var item = etapa.AgregarItem(request.Producto, costo, request.Observacion, estado, request.PorcentajeAvance);
 
+        _etapaRepo.AgregarItem(item);
         await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(item.Id);

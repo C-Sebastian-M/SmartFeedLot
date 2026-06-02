@@ -7,7 +7,7 @@ import {
   Button, Card, CardHeader, CardTitle, Badge,
   Skeleton, EmptyState,
   Dialog, DialogHeader, DialogTitle,
-  FormField, Alert,
+  FormField, Alert, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { LoteResumen } from '@/types'
@@ -280,12 +280,12 @@ export default function LoteDetallePage() {
           </div>
           <form onSubmit={moverForm.handleSubmit(onSubmitMover)} className="p-5 space-y-4">
             <FormField label="Lote destino" required>
-              <select {...moverForm.register('loteDestinoId')} className="flex h-9 w-full rounded-md border border-input bg-card text-sm px-3 [&>option]:bg-card">
-                <option value="">— Selecciona un lote —</option>
-                {lotesDestino.map(l => (
-                  <option key={l.id} value={l.id}>{l.codigo} — {l.nombre} ({l.animalesActuales}/{l.capacidadMaxima})</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={moverForm.watch('loteDestinoId') ?? ''}
+                onChange={v => moverForm.setValue('loteDestinoId', v as any, { shouldValidate: true })}
+                options={lotesDestino.map(l => ({ value: l.id, label: `${l.codigo} — ${l.nombre} (${l.animalesActuales}/${l.capacidadMaxima})` }))}
+                placeholder="— Selecciona un lote —"
+              />
             </FormField>
             <FormField label="Fecha movimiento" required>
               <input type="date" max={new Date().toISOString().split('T')[0]}
@@ -293,9 +293,11 @@ export default function LoteDetallePage() {
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </FormField>
             <FormField label="Motivo" required>
-              <select {...moverForm.register('motivo')} className="flex h-9 w-full rounded-md border border-input bg-card text-sm px-3 [&>option]:bg-card">
-                {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+              <CustomSelect
+                value={moverForm.watch('motivo') ?? ''}
+                onChange={v => moverForm.setValue('motivo', v as any, { shouldValidate: true })}
+                options={MOTIVOS.map(m => ({ value: m, label: m }))}
+              />
             </FormField>
             {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
             <div className="flex gap-2">

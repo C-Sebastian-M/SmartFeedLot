@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form'
 import { Plus, X, Trees, Users, Sprout, ChevronDown, ChevronRight, Wheat } from 'lucide-react'
 import { usePotreros, useCrearPotrero, useIngresarAnimalPotrero, useRetirarAnimalPotrero, useEliminarPotrero,
   useEmpleados, useCrearEmpleado, useModificarEmpleado, useEliminarEmpleado, useModificarActividad, useRegistrarActividadManoObra,
-  useCultivosCania, useCrearCultivoCania, useRegistrarCorteCania,
-  useLotesSilo, useCrearLoteSilo, useAnimals } from '@/hooks/useFeedlot'
+  useCultivosCania, useCrearCultivoCania, useModificarCultivoCania, useRegistrarCorteCania,
+  useEliminarCultivoCania, useEliminarCorteCania,
+  useLotesSilo, useCrearLoteSilo, useEliminarLoteSilo, useAnimals } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
   Skeleton, EmptyState, Button,
@@ -36,6 +37,10 @@ type ModalState =
   | { type: 'cultivo' }
   | { type: 'corte'; cultivoId: string }
   | { type: 'silo' }
+  | { type: 'editarCultivo'; cultivoId: string; nombre: string; callesTotales: number }
+  | { type: 'eliminarCultivo'; cultivoId: string; nombre: string; totalCortes: number }
+  | { type: 'eliminarCorte'; cultivoId: string; corteId: string; fecha: string }
+  | { type: 'eliminarSilo'; loteSiloId: string; fecha: string; bolsas: number }
   | { type: 'retirar'; potreroId: string; estanciaId: string }
   | { type: 'eliminar'; potreroId: string; nombre: string; animalesActuales: number }
 
@@ -581,12 +586,17 @@ function CaniaSection() {
   const arr = (cultivos as CultivoCania[] | undefined) ?? []
   const siloArr = (lotesSilo as any[] | undefined) ?? []
   const crearCultivo = useCrearCultivoCania()
+  const modificarCultivo = useModificarCultivoCania()
+  const eliminarCultivo = useEliminarCultivoCania()
+  const eliminarCorte = useEliminarCorteCania()
   const registrarCorte = useRegistrarCorteCania()
   const crearLoteSilo = useCrearLoteSilo()
+  const eliminarLoteSilo = useEliminarLoteSilo()
   const [modal, setModal] = useState<ModalState>({ type: null })
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const cultivoForm = useForm<{ nombre: string; callesTotales: number }>({ defaultValues: { nombre: '', callesTotales: 0 } })
+  const cultivoEditForm = useForm<{ nombre: string; callesTotales: number }>({ defaultValues: { nombre: '', callesTotales: 0 } })
   const corteForm = useForm<{ fecha: string; nCalles: number; horas: number; bolsasSilo: number; melaza: number; costoJornal: string }>({
     defaultValues: { fecha: new Date().toISOString().split('T')[0], nCalles: 0, horas: 0, bolsasSilo: 0, melaza: 0, costoJornal: '' },
   })
@@ -638,6 +648,8 @@ function CaniaSection() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="ghost" onClick={(ev) => { ev.stopPropagation(); setModal({ type: 'corte', cultivoId: c.id }) }}>+ Corte</Button>
+                    <Button size="sm" variant="ghost" onClick={(ev) => { ev.stopPropagation(); cultivoEditForm.reset({ nombre: c.nombre, callesTotales: c.callesTotales }); setModal({ type: 'editarCultivo', cultivoId: c.id, nombre: c.nombre, callesTotales: c.callesTotales }) }}>Editar</Button>
+                    <Button size="sm" variant="ghost" className="text-rose-400 hover:text-rose-300" onClick={(ev) => { ev.stopPropagation(); setModal({ type: 'eliminarCultivo', cultivoId: c.id, nombre: c.nombre, totalCortes: c.totalCortes }) }}>Eliminar</Button>
                     {expanded === c.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </div>
                 </div>
@@ -653,6 +665,7 @@ function CaniaSection() {
                         <th className="text-center px-4 py-2 text-muted-foreground">Bolsas silo</th>
                         <th className="text-center px-4 py-2 text-muted-foreground">Melaza (kg)</th>
                         <th className="text-right px-4 py-2 text-muted-foreground">Costo jornal</th>
+                        <th className="px-4 py-2" />
                       </tr>
                     </thead>
                     <tbody>{c.cortes.map(cc => (
@@ -663,6 +676,12 @@ function CaniaSection() {
                         <td className="px-4 py-2 text-center tabular-nums">{cc.bolsasSilo}</td>
                         <td className="px-4 py-2 text-center tabular-nums">{cc.melaza}</td>
                         <td className="px-4 py-2 text-right tabular-nums">{fmt.cop(cc.costoJornalMonto)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Button size="sm" variant="ghost" className="text-rose-400 hover:text-rose-300 h-6 px-2 text-[10px]"
+                            onClick={() => setModal({ type: 'eliminarCorte', cultivoId: c.id, corteId: cc.id, fecha: cc.fecha })}>
+                            Eliminar
+                          </Button>
+                        </td>
                       </tr>
                     ))}</tbody>
                   </table>
@@ -684,6 +703,7 @@ function CaniaSection() {
                 <th className="text-center px-4 py-2 text-muted-foreground">Bolsas</th>
                 <th className="text-right px-4 py-2 text-muted-foreground">Costo unitario</th>
                 <th className="text-right px-4 py-2 text-muted-foreground">Total</th>
+                <th className="px-4 py-2" />
               </tr>
             </thead>
             <tbody>{siloArr.map((l: any) => (
@@ -692,6 +712,12 @@ function CaniaSection() {
                 <td className="px-4 py-2 text-center tabular-nums">{l.bolsas}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmt.cop(l.costoUnitarioMonto)}</td>
                 <td className="px-4 py-2 text-right tabular-nums font-medium">{fmt.cop(l.costoTotal)}</td>
+                <td className="px-4 py-2 text-right">
+                  <Button size="sm" variant="ghost" className="text-rose-400 hover:text-rose-300 h-6 px-2 text-[10px]"
+                    onClick={() => setModal({ type: 'eliminarSilo', loteSiloId: l.id, fecha: l.fechaProduccion, bolsas: l.bolsas })}>
+                    Eliminar
+                  </Button>
+                </td>
               </tr>
             ))}</tbody>
           </table>
@@ -699,6 +725,118 @@ function CaniaSection() {
       )}
 
       {/* Modales */}
+      {/* Modal editar cultivo */}
+      <Dialog open={modal.type === 'editarCultivo'} onClose={() => { setModal({ type: null }); cultivoEditForm.reset() }}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[400px] mx-4">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <DialogHeader className="mb-0"><DialogTitle>Editar cultivo</DialogTitle></DialogHeader>
+            <button onClick={() => { setModal({ type: null }); cultivoEditForm.reset() }} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+          </div>
+          <form onSubmit={cultivoEditForm.handleSubmit(async data => {
+            if (modal.type !== 'editarCultivo') return
+            await modificarCultivo.mutateAsync({ cultivoId: modal.cultivoId, ...data })
+            setModal({ type: null }); cultivoEditForm.reset()
+          })} className="p-5 space-y-4">
+            <FormField label="Nombre" required>
+              <input {...cultivoEditForm.register('nombre')} placeholder="Ej: Caña panelera" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </FormField>
+            <FormField label="Calles totales" required>
+              <input type="number" min={1} {...cultivoEditForm.register('callesTotales', { valueAsNumber: true })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </FormField>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setModal({ type: null }); cultivoEditForm.reset() }}>Cancelar</Button>
+              <Button type="submit" className="flex-1" loading={modificarCultivo.isPending}>Guardar</Button>
+            </div>
+          </form>
+        </div>
+      </Dialog>
+
+      {/* Confirmar eliminar corte */}
+      <Dialog open={modal.type === 'eliminarCorte'} onClose={() => setModal({ type: null })}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4 p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold">Eliminar corte</h3>
+            {modal.type === 'eliminarCorte' && (
+              <p className="text-xs text-muted-foreground mt-2">
+                ¿Confirmas eliminar el corte del <strong className="text-foreground">{fmt.fecha(modal.fecha)}</strong>?
+                Esta acción no se puede deshacer.
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+            <Button variant="destructive" className="flex-1" loading={eliminarCorte.isPending}
+              onClick={async () => {
+                if (modal.type !== 'eliminarCorte') return
+                await eliminarCorte.mutateAsync({ cultivoId: modal.cultivoId, corteId: modal.corteId })
+                setModal({ type: null })
+              }}>
+              Sí, eliminar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Confirmar eliminar cultivo */}
+      <Dialog open={modal.type === 'eliminarCultivo'} onClose={() => setModal({ type: null })}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[400px] mx-4 p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold">Eliminar cultivo</h3>
+            {modal.type === 'eliminarCultivo' && (
+              <div className="mt-2 space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  ¿Confirmas eliminar <strong className="text-foreground">{modal.nombre}</strong>?
+                </p>
+                {modal.totalCortes > 0 && (
+                  <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                    <span className="font-semibold flex-shrink-0">⚠</span>
+                    <span>Este cultivo tiene <strong>{modal.totalCortes} corte{modal.totalCortes > 1 ? 's' : ''}</strong> registrado{modal.totalCortes > 1 ? 's' : ''} que también se eliminarán.</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Esta acción no se puede deshacer.</p>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+            <Button variant="destructive" className="flex-1" loading={eliminarCultivo.isPending}
+              onClick={async () => {
+                if (modal.type !== 'eliminarCultivo') return
+                await eliminarCultivo.mutateAsync(modal.cultivoId)
+                setModal({ type: null })
+              }}>
+              Sí, eliminar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Confirmar eliminar lote de silo */}
+      <Dialog open={modal.type === 'eliminarSilo'} onClose={() => setModal({ type: null })}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[380px] mx-4 p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold">Eliminar lote de silo</h3>
+            {modal.type === 'eliminarSilo' && (
+              <p className="text-xs text-muted-foreground mt-2">
+                ¿Confirmas eliminar el lote del <strong className="text-foreground">{fmt.fecha(modal.fecha)}</strong> ({modal.bolsas} bolsas)?
+                Esta acción no se puede deshacer.
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setModal({ type: null })}>Cancelar</Button>
+            <Button variant="destructive" className="flex-1" loading={eliminarLoteSilo.isPending}
+              onClick={async () => {
+                if (modal.type !== 'eliminarSilo') return
+                await eliminarLoteSilo.mutateAsync(modal.loteSiloId)
+                setModal({ type: null })
+              }}>
+              Sí, eliminar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
       <Dialog open={modal.type === 'cultivo'} onClose={() => setModal({ type: null })}>
         <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-[400px] mx-4">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">

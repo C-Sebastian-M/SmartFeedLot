@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { format, subDays } from 'date-fns'
 import {
   BarChart3, TrendingUp, Package, DollarSign,
-  AlertTriangle, Beef, ChevronDown
+  AlertTriangle, Beef
 } from 'lucide-react'
 import { useLotes, useResumenLote } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardHeader, CardTitle, CardContent,
-  Badge, Skeleton, EmptyState, StatCard,
+  Badge, Skeleton, EmptyState, StatCard, CustomSelect,
 } from '@/components/ui'
 import { fmt, gmdBadgeColor, CHART_COLORS } from '@/utils'
 import type { LoteResumen, IndicadorProductivo } from '@/types'
@@ -26,23 +26,12 @@ function SelectorLote({
   onChange: (id: string) => void
 }) {
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm
-          focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
-          appearance-none cursor-pointer [&>option]:bg-card"
-      >
-        <option value="">Seleccionar lote...</option>
-        {lotes.map(l => (
-          <option key={l.id} value={l.id}>
-            {l.codigo} — {l.nombre} ({l.animalesActuales} animales)
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-    </div>
+    <CustomSelect
+      value={value}
+      onChange={onChange}
+      placeholder="Seleccionar lote..."
+      options={lotes.map(l => ({ value: l.id, label: `${l.codigo} — ${l.nombre} (${l.animalesActuales} animales)` }))}
+    />
   )
 }
 

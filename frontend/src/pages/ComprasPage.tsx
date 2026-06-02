@@ -10,7 +10,7 @@ import {
   Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert,
-  MoneyInput,
+  MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { Compra, Proveedor, LoteResumen } from '@/types'
@@ -34,32 +34,7 @@ const compraSchema = z.object({
 })
 type CompraForm = z.infer<typeof compraSchema>
 
-function SelectorCustom<T extends { id: string; label: string }>({
-  items, value, onChange, placeholder,
-}: {
-  items: T[]
-  value: string
-  onChange: (id: string) => void
-  placeholder: string
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm
-          focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
-          appearance-none cursor-pointer [&>option]:bg-card w-full"
-      >
-        <option value="">{placeholder}</option>
-        {items.map(item => (
-          <option key={item.id} value={item.id}>{item.label}</option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-    </div>
-  )
-}
+
 
 function CrearCompraModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [exito, setExito] = useState(false)
@@ -138,8 +113,12 @@ function CrearCompraModal({ open, onClose }: { open: boolean; onClose: () => voi
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <FormField label="Proveedor" error={errors.proveedorId?.message} required>
-                <SelectorCustom items={proveedoresList} value={watch('proveedorId')}
-                  onChange={v => setValue('proveedorId', v)} placeholder="Seleccionar proveedor..." />
+                <CustomSelect
+                  value={watch('proveedorId') ?? ''}
+                  onChange={v => setValue('proveedorId', v)}
+                  options={proveedoresList.map(p => ({ value: p.id, label: p.label }))}
+                  placeholder="Seleccionar proveedor..."
+                />
               </FormField>
 
               <div className="grid grid-cols-2 gap-3">
@@ -202,8 +181,12 @@ function CrearCompraModal({ open, onClose }: { open: boolean; onClose: () => voi
                     </FormField>
                   </div>
                   <FormField label="Lote destino">
-                    <SelectorCustom items={lotesList} value={watch('loteId') ?? ''}
-                      onChange={v => setValue('loteId', v)} placeholder="Seleccionar lote..." />
+                    <CustomSelect
+                      value={watch('loteId') ?? ''}
+                      onChange={v => setValue('loteId', v)}
+                      options={lotesList.map(l => ({ value: l.id, label: l.label }))}
+                      placeholder="Seleccionar lote..."
+                    />
                   </FormField>
                 </>
               )}

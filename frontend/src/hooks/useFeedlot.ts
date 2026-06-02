@@ -736,6 +736,40 @@ export function useCrearLoteSilo() {
   })
 }
 
+export function useModificarCultivoCania() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ cultivoId, ...payload }: { cultivoId: string; nombre: string; callesTotales: number }) =>
+      caniaService.modificarCultivo(cultivoId, { cultivoCaniaId: cultivoId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.cultivos }),
+  })
+}
+
+export function useEliminarCorteCania() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ cultivoId, corteId }: { cultivoId: string; corteId: string }) =>
+      caniaService.eliminarCorte(cultivoId, corteId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.cultivos }),
+  })
+}
+
+export function useEliminarCultivoCania() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (cultivoId: string) => caniaService.eliminarCultivo(cultivoId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.cultivos }),
+  })
+}
+
+export function useEliminarLoteSilo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (loteSiloId: string) => caniaService.eliminarLoteSilo(loteSiloId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.lotesSilo }),
+  })
+}
+
 // ─── Porcino ──────────────────────────────────────────────────────────────────
 export function useMarranas() {
   return useQuery({

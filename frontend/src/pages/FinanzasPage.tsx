@@ -16,7 +16,7 @@ import {
   PageHeader, Card, CardContent, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert, Badge,
-  MoneyInput,
+  MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { CategoriaGasto, Socio, MovimientoFinanciero } from '@/types'
@@ -51,7 +51,7 @@ function RegistrarMovimientoModal({ open, onClose }: { open: boolean; onClose: (
   const { data: socios } = useSocios()
   const currentUser = useAuthStore(s => s.user)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } =
     useForm<MovimientoForm>({
       resolver: zodResolver(movimientoSchema),
       defaultValues: { moneda: 'COP', fecha: hoy, periodoAnio: new Date().getFullYear(), periodoMes: new Date().getMonth() + 1, origen: 'General' },
@@ -107,10 +107,11 @@ function RegistrarMovimientoModal({ open, onClose }: { open: boolean; onClose: (
                   <Input {...register('fecha')} type="date" className={errors.fecha ? 'border-destructive' : ''} />
                 </FormField>
                 <FormField label="Origen" error={errors.origen?.message} required>
-                  <select {...register('origen')}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
-                    {tiposOrigen.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  <CustomSelect
+                    value={watch('origen') ?? ''}
+                    onChange={v => setValue('origen', v as any, { shouldValidate: true })}
+                    options={tiposOrigen.map(o => ({ value: o, label: o }))}
+                  />
                 </FormField>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -122,16 +123,12 @@ function RegistrarMovimientoModal({ open, onClose }: { open: boolean; onClose: (
                 </FormField>
               </div>
               <FormField label="Categoría de gasto" error={errors.categoriaGastoId?.message} required>
-                <div className="relative">
-                  <select {...register('categoriaGastoId')}
-                    className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm w-full appearance-none cursor-pointer [&>option]:bg-card">
-                    <option value="">Seleccionar...</option>
-                    {(categorias as CategoriaGasto[] | undefined)?.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre} ({c.tipo})</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                </div>
+                <CustomSelect
+                  value={watch('categoriaGastoId') ?? ''}
+                  onChange={v => setValue('categoriaGastoId', v as any, { shouldValidate: true })}
+                  options={(categorias as CategoriaGasto[] | undefined)?.map(c => ({ value: c.id, label: `${c.nombre} (${c.tipo})` })) ?? []}
+                  placeholder="Seleccionar..."
+                />
               </FormField>
               <FormField label="Descripción" error={errors.descripcion?.message} required>
                 <Input {...register('descripcion')} placeholder="Ej: Suministrar alimentación" />
@@ -145,16 +142,12 @@ function RegistrarMovimientoModal({ open, onClose }: { open: boolean; onClose: (
                 </FormField>
               </div>
               <FormField label="Socio (opcional)" error={errors.socioId?.message} hint="Asignar a un socio">
-                <div className="relative">
-                  <select {...register('socioId')}
-                    className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm w-full appearance-none cursor-pointer [&>option]:bg-card">
-                    <option value="">— Sin asignar —</option>
-                    {(socios as Socio[] | undefined)?.map(s => (
-                      <option key={s.id} value={s.id}>{s.nombre} ({s.participacion}%)</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                </div>
+                <CustomSelect
+                  value={watch('socioId') ?? ''}
+                  onChange={v => setValue('socioId', v as any, { shouldValidate: true })}
+                  options={(socios as Socio[] | undefined)?.map(s => ({ value: s.id, label: `${s.nombre} (${s.participacion}%)` })) ?? []}
+                  placeholder="— Sin asignar —"
+                />
               </FormField>
               {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
               <div className="flex gap-2 pt-1">
@@ -173,7 +166,7 @@ function CrearCategoriaModal({ open, onClose }: { open: boolean; onClose: () => 
   const [exito, setExito] = useState(false)
   const [errorApi, setErrorApi] = useState<string>()
   const mutation = useCrearCategoriaGasto()
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, watch: watchCat, setValue: setValueCat, formState: { errors, isSubmitting } } =
     useForm<CategoriaForm>({ resolver: zodResolver(categoriaSchema) })
   const handleClose = () => { reset(); setExito(false); setErrorApi(undefined); onClose() }
   const onSubmit = async (data: CategoriaForm) => {
@@ -206,13 +199,16 @@ function CrearCategoriaModal({ open, onClose }: { open: boolean; onClose: () => 
                 <Input {...register('nombre')} placeholder="Ej: Alimentación" />
               </FormField>
               <FormField label="Tipo" error={errors.tipo?.message} required>
-                <select {...register('tipo')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm [&>option]:bg-card">
-                  <option value="Directo">Directo</option>
-                  <option value="Indirecto">Indirecto</option>
-                  <option value="Operativo">Operativo</option>
-                  <option value="Inversion">Inversión</option>
-                </select>
+                <CustomSelect
+                  value={watchCat('tipo') ?? ''}
+                  onChange={v => setValueCat('tipo', v as any, { shouldValidate: true })}
+                  options={[
+                    { value: 'Directo', label: 'Directo' },
+                    { value: 'Indirecto', label: 'Indirecto' },
+                    { value: 'Operativo', label: 'Operativo' },
+                    { value: 'Inversion', label: 'Inversión' },
+                  ]}
+                />
               </FormField>
               {errorApi && <Alert variant="destructive">{errorApi}</Alert>}
               <div className="flex gap-2 pt-1">
@@ -343,25 +339,30 @@ function FiltrosPeriodo({
 }) {
   return (
     <div className="flex items-center gap-3 flex-wrap mb-4">
-      <select value={anio} onChange={e => onAnio(Number(e.target.value))}
-        className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-        {[2024, 2025, 2026, 2027].map(a => <option key={a} value={a}>{a}</option>)}
-      </select>
+      <CustomSelect
+        value={String(anio)}
+        onChange={v => onAnio(Number(v))}
+        options={[2024, 2025, 2026, 2027].map(a => ({ value: String(a), label: String(a) }))}
+      />
       {!sinMes && onMes && (
-        <select value={mes ?? ''} onChange={e => onMes(e.target.value ? Number(e.target.value) : undefined)}
-          className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-          <option value="">Año completo</option>
-          {mesesOpts.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </select>
+        <CustomSelect
+          value={mes != null ? String(mes) : ''}
+          onChange={v => onMes(v ? Number(v) : undefined)}
+          options={mesesOpts.map(m => ({ value: String(m.value), label: m.label }))}
+          placeholder="Año completo"
+        />
       )}
-      <select value={origen ?? ''} onChange={e => onOrigen(e.target.value || undefined)}
-        className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-        <option value="">Todos los orígenes</option>
-        <option value="Bovino">Bovino</option>
-        <option value="Porcino">Porcino</option>
-        <option value="Agricola">Agrícola</option>
-        <option value="General">General</option>
-      </select>
+      <CustomSelect
+        value={origen ?? ''}
+        onChange={v => onOrigen(v || undefined)}
+        options={[
+          { value: 'Bovino', label: 'Bovino' },
+          { value: 'Porcino', label: 'Porcino' },
+          { value: 'Agricola', label: 'Agrícola' },
+          { value: 'General', label: 'General' },
+        ]}
+        placeholder="Todos los orígenes"
+      />
     </div>
   )
 }
@@ -781,23 +782,28 @@ export default function FinanzasPage() {
         {tab === 'movimientos' && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <select value={filtroAnio} onChange={e => setFiltroAnio(Number(e.target.value))}
-                className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-                {[2024, 2025, 2026, 2027].map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-              <select value={filtroMes ?? ''} onChange={e => setFiltroMes(e.target.value ? Number(e.target.value) : undefined)}
-                className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-                <option value="">Todos los meses</option>
-                {meses.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-              <select value={filtroOrigen ?? ''} onChange={e => setFiltroOrigen(e.target.value || undefined)}
-                className="h-9 px-3 rounded-md border border-input bg-card text-sm [&>option]:bg-card">
-                <option value="">Todos los orígenes</option>
-                <option value="Bovino">Bovino</option>
-                <option value="Porcino">Porcino</option>
-                <option value="Agricola">Agrícola</option>
-                <option value="General">General</option>
-              </select>
+              <CustomSelect
+                value={String(filtroAnio)}
+                onChange={v => setFiltroAnio(Number(v))}
+                options={[2024, 2025, 2026, 2027].map(a => ({ value: String(a), label: String(a) }))}
+              />
+              <CustomSelect
+                value={filtroMes != null ? String(filtroMes) : ''}
+                onChange={v => setFiltroMes(v ? Number(v) : undefined)}
+                options={meses.map(m => ({ value: String(m.value), label: m.label }))}
+                placeholder="Todos los meses"
+              />
+              <CustomSelect
+                value={filtroOrigen ?? ''}
+                onChange={v => setFiltroOrigen(v || undefined)}
+                options={[
+                  { value: 'Bovino', label: 'Bovino' },
+                  { value: 'Porcino', label: 'Porcino' },
+                  { value: 'Agricola', label: 'Agrícola' },
+                  { value: 'General', label: 'General' },
+                ]}
+                placeholder="Todos los orígenes"
+              />
             </div>
 
             {isLoading ? (

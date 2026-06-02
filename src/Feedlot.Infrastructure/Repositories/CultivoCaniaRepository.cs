@@ -22,7 +22,11 @@ public sealed class CultivoCaniaRepository : ICultivoCaniaRepository
     public async Task AgregarAsync(CultivoCania cultivo, CancellationToken ct = default)
         => await _context.Set<CultivoCania>().AddAsync(cultivo, ct);
 
-    public void AgregarCorte(CorteCania corte) => _context.Set<CorteCania>().Add(corte);
+    public async Task<CorteCania?> ObtenerCortePorIdAsync(Guid corteId, CancellationToken ct = default)
+        => await _context.Set<CorteCania>().FirstOrDefaultAsync(c => c.Id == corteId, ct);
 
+    public void AgregarCorte(CorteCania corte) => _context.Set<CorteCania>().Add(corte);
+    public void EliminarCorte(CorteCania corte) => _context.Set<CorteCania>().Remove(corte);
+    public void Actualizar(CultivoCania cultivo) => _context.Set<CultivoCania>().Update(cultivo);
     public void Eliminar(CultivoCania cultivo) => _context.Set<CultivoCania>().Remove(cultivo);
 }

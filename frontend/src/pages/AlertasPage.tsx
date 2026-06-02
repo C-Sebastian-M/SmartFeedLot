@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { AlertTriangle, TrendingDown, Beef, ChevronDown, Syringe, Landmark } from 'lucide-react'
+import { AlertTriangle, TrendingDown, Beef, Syringe, Landmark } from 'lucide-react'
 import { useLotes, useAnimalesIneficientes, useVacunasProximas, useEtapasInversion } from '@/hooks/useFeedlot'
 import {
-  PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton, EmptyState,
+  PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton, EmptyState, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { AnimalIneficiente, LoteResumen, VacunaProxima, EtapaInversion } from '@/types'
@@ -54,21 +54,12 @@ export default function AlertasPage() {
       {/* Filtros */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-border flex-wrap">
         {/* Selector lote */}
-        <div className="relative">
-          <select
-            value={loteId}
-            onChange={e => setLoteId(e.target.value)}
-            className="h-9 pl-3 pr-8 rounded-md border border-input bg-card text-sm
-              focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
-              appearance-none [&>option]:bg-card"
-          >
-            <option value="">Todos los lotes</option>
-            {lotesArray.map(l => (
-              <option key={l.id} value={l.id}>{l.codigo} — {l.nombre}</option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        </div>
+        <CustomSelect
+          value={loteId}
+          onChange={setLoteId}
+          placeholder="Todos los lotes"
+          options={[{ value: '', label: 'Todos los lotes' }, ...lotesArray.map(l => ({ value: l.id, label: `${l.codigo} — ${l.nombre}` }))]}
+        />
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Desde</span>

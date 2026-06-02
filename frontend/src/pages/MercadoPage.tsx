@@ -6,7 +6,7 @@ import {
   PageHeader, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle,
   FormField,
-  MoneyInput,
+  MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
 import type { PrecioMercado } from '@/types'
@@ -94,14 +94,18 @@ export default function MercadoPage() {
             </FormField>
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Especie" required>
-                <select {...form.register('especie')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
-                  {especies.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.watch('especie') ?? ''}
+                  onChange={v => form.setValue('especie', v as any, { shouldValidate: true })}
+                  options={especies.map(e => ({ value: e, label: e }))}
+                />
               </FormField>
               <FormField label="Tipo" required>
-                <select {...form.register('tipo')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
-                  {tipos.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <CustomSelect
+                  value={form.watch('tipo') ?? ''}
+                  onChange={v => form.setValue('tipo', v as any, { shouldValidate: true })}
+                  options={tipos.map(t => ({ value: t, label: t }))}
+                />
               </FormField>
             </div>
             <FormField label="Precio por kg" required>
