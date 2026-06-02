@@ -9,4 +9,5 @@ public interface ISubaganEventoRepository
     Task<SubaganEvento?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<SubaganLote>> ObtenerLotesPorEventoAsync(Guid eventoId, CancellationToken ct = default);
     Task AgregarAsync(SubaganEvento evento, CancellationToken ct = default);
+    void Eliminar(SubaganEvento evento);
 }

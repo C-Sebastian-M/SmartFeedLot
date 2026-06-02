@@ -20,7 +20,7 @@ public sealed class SubaganEventoRepository : ISubaganEventoRepository
 
     public async Task<SubaganEvento?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Set<SubaganEvento>()
-            .Include("_lotes")
+            .Include(e => e.Lotes)
             .FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public async Task<IReadOnlyList<SubaganLote>> ObtenerLotesPorEventoAsync(Guid eventoId, CancellationToken ct = default)
@@ -31,4 +31,7 @@ public sealed class SubaganEventoRepository : ISubaganEventoRepository
 
     public async Task AgregarAsync(SubaganEvento evento, CancellationToken ct = default)
         => await _context.Set<SubaganEvento>().AddAsync(evento, ct);
+
+    public void Eliminar(SubaganEvento evento)
+        => _context.Set<SubaganEvento>().Remove(evento);
 }

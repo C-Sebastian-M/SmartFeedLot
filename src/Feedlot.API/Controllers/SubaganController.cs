@@ -1,3 +1,4 @@
+using Feedlot.Application.Features.Mercado.Commands.EliminarSubaganEvento;
 using Feedlot.Application.Features.Mercado.Commands.ImportarSubasta;
 using Feedlot.Application.Features.Mercado.Queries.ObtenerSubaganEventos;
 using Feedlot.Application.Features.Mercado.Queries.ObtenerSubaganLotes;
@@ -45,6 +46,19 @@ public sealed class SubaganController : ApiControllerBase
     public async Task<IActionResult> Importar([FromBody] ImportarSubastaCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Elimina un evento de SUBAGAN importado (y sus lotes en cascada).
+    /// El eventoId es el identificador interno (Guid), no el ID de SUBAGAN.
+    /// </summary>
+    [HttpDelete("eventos/{eventoId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EliminarEvento(Guid eventoId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new EliminarSubaganEventoCommand(eventoId), ct);
         return FromResult(result);
     }
 }

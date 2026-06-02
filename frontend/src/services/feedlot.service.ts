@@ -664,4 +664,7 @@ export const subaganService = {
     const { data } = await api.post('/subagan/importar', payload)
     return data
   },
+  delete: async (eventoId: string): Promise<void> => {
+    await api.delete(`/subagan/eventos/${eventoId}`)
+  },
 }

@@ -892,3 +892,11 @@ export function useImportarSubasta() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subaganEventos }),
   })
 }
+
+export function useEliminarSubaganEvento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: subaganService.delete,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subaganEventos }),
+  })
+}

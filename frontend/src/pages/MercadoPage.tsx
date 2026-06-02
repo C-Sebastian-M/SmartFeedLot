@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Plus, X, TrendingUp, Pencil, Trash2, Download, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import {
   usePreciosMercado, useCrearPrecioMercado, useActualizarPrecioMercado, useEliminarPrecioMercado,
-  useSubaganEventos, useSubaganLotes, useImportarSubasta,
+  useSubaganEventos, useSubaganLotes, useImportarSubasta, useEliminarSubaganEvento,
 } from '@/hooks/useFeedlot'
 import {
   PageHeader, Skeleton, EmptyState, Button, Card, CardContent,
@@ -23,7 +23,7 @@ const defaultValues: PrecioForm = {
 }
 
 // ── Componente fila de evento SUBAGAN ─────────────────────────────────────────
-function SubaganEventoRow({ evento }: { evento: SubaganEvento }) {
+function SubaganEventoRow({ evento, onEliminar }: { evento: SubaganEvento; onEliminar: (e: SubaganEvento) => void }) {
   const [expanded, setExpanded] = useState(false)
 
   const tipoColors: Record<string, string> = {
@@ -39,11 +39,11 @@ function SubaganEventoRow({ evento }: { evento: SubaganEvento }) {
 
   return (
     <div className="border border-border/40 rounded-lg overflow-hidden">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors text-left"
-      >
-        <div className="flex items-center gap-4">
+      <div className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-4 text-left flex-1 min-w-0"
+        >
           <div>
             <span className="font-medium text-sm">
               {evento.numeroSubasta ? `Subasta #${evento.numeroSubasta}` : `Evento ${evento.subaganEventoId}`}
@@ -52,14 +52,27 @@ function SubaganEventoRow({ evento }: { evento: SubaganEvento }) {
           </div>
           <span className="text-xs text-muted-foreground">{evento.totalLotes} lotes</span>
           <span className="text-xs text-muted-foreground hidden sm:block">{evento.sede}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground hidden md:block">
             Importado {new Date(evento.importadoEn).toLocaleDateString('es-CO')}
           </span>
-          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          <button
+            onClick={() => onEliminar(evento)}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Eliminar evento"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+            title={expanded ? 'Contraer' : 'Expandir'}
+          >
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <SubaganLotesTable eventoId={evento.id} tipoColors={tipoColors} />
@@ -126,6 +139,8 @@ export default function MercadoPage() {
 
   const { data: subaganEventos, isLoading: loadingEventos } = useSubaganEventos()
   const importarSubasta = useImportarSubasta()
+  const eliminarEvento = useEliminarSubaganEvento()
+  const [confirmarEliminarEvento, setConfirmarEliminarEvento] = useState<SubaganEvento | undefined>(undefined)
   const [importando, setImportando] = useState(false)
   const [importEventId, setImportEventId] = useState('')
   const [importNumero, setImportNumero] = useState('')
@@ -157,6 +172,11 @@ export default function MercadoPage() {
   const handleEliminar = async (p: PrecioMercado) => {
     try { await eliminarPrecio.mutateAsync(p.id) } catch { }
     setConfirmarEliminar(undefined)
+  }
+
+  const handleEliminarEvento = async (e: SubaganEvento) => {
+    try { await eliminarEvento.mutateAsync(e.id) } catch { }
+    setConfirmarEliminarEvento(undefined)
   }
 
   const handleImportar = async () => {
@@ -278,7 +298,7 @@ export default function MercadoPage() {
               />
             ) : (
               <div className="space-y-2">
-                {eventos.map(e => <SubaganEventoRow key={e.id} evento={e} />)}
+                {eventos.map(e => <SubaganEventoRow key={e.id} evento={e} onEliminar={setConfirmarEliminarEvento} />)}
               </div>
             )}
           </>
@@ -388,6 +408,30 @@ export default function MercadoPage() {
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setConfirmarEliminar(undefined)}>Cancelar</Button>
             <Button variant="destructive" className="flex-1" loading={eliminarPrecio.isPending} onClick={() => confirmarEliminar && handleEliminar(confirmarEliminar)}>
+              <Trash2 className="w-3.5 h-3.5" />Eliminar
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Confirmar eliminación de evento SUBAGAN */}
+      <Dialog open={!!confirmarEliminarEvento} onClose={() => setConfirmarEliminarEvento(undefined)}>
+        <div className="rounded-xl border border-border bg-card shadow-xl w-full max-w-sm mx-4 p-5">
+          <DialogHeader className="mb-4">
+            <DialogTitle>¿Eliminar evento?</DialogTitle>
+            <DialogDescription>
+              El evento{' '}
+              <span className="font-medium text-foreground">
+                {confirmarEliminarEvento?.numeroSubasta
+                  ? `Subasta #${confirmarEliminarEvento.numeroSubasta}`
+                  : `Evento ${confirmarEliminarEvento?.subaganEventoId}`}
+              </span>{' '}
+              y sus {confirmarEliminarEvento?.totalLotes ?? 0} lotes se eliminarán permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setConfirmarEliminarEvento(undefined)}>Cancelar</Button>
+            <Button variant="destructive" className="flex-1" loading={eliminarEvento.isPending} onClick={() => confirmarEliminarEvento && handleEliminarEvento(confirmarEliminarEvento)}>
               <Trash2 className="w-3.5 h-3.5" />Eliminar
             </Button>
           </div>
