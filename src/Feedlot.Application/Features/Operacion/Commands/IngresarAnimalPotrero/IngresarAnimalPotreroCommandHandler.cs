@@ -12,10 +12,14 @@ public sealed class IngresarAnimalPotreroCommandHandler : IRequestHandler<Ingres
 
     public async Task<Result<Guid>> Handle(IngresarAnimalPotreroCommand request, CancellationToken ct)
     {
-        var potrero = await _repo.ObtenerPorIdAsync(request.PotreroId, ct);
-        if (potrero is null) return Result<Guid>.Failure("Potrero no encontrado.");
+        // AsNoTracking: el Potrero se carga solo para validar (capacidad, duplicados).
+        // Así el nuevo EstanciaAnimal que devuelve IngresarAnimal() no forma parte
+        // del grafo tracked y Add() lo registra limpio como EntityState.Added → INSERT.
+        var potrero = await _repo.ObtenerPorIdSinTrackingAsync(request.PotreroId, ct);
+        if (potrero is null) return Result<Guid>.NotFound($"Potrero {request.PotreroId} no encontrado.");
 
         var estancia = potrero.IngresarAnimal(request.AnimalId, request.FechaEntrada);
+        _repo.AgregarEstancia(estancia);
         await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(estancia.Id);
     }

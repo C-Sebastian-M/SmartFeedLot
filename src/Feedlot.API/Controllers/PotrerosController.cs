@@ -1,4 +1,5 @@
 using Feedlot.Application.Features.Operacion.Commands.CrearPotrero;
+using Feedlot.Application.Features.Operacion.Commands.EliminarPotrero;
 using Feedlot.Application.Features.Operacion.Commands.IngresarAnimalPotrero;
 using Feedlot.Application.Features.Operacion.Commands.RetirarAnimalPotrero;
 using Feedlot.Application.Features.Operacion.Queries.ObtenerPotreros;
@@ -43,6 +44,13 @@ public sealed class PotrerosController : ApiControllerBase
     {
         if (potreroId != command.PotreroId) return BadRequest("ID del potrero no coincide.");
         var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    [HttpDelete("{potreroId:guid}")]
+    public async Task<IActionResult> EliminarPotrero(Guid potreroId, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new EliminarPotreroCommand(potreroId), ct);
         return FromResult(result);
     }
 }

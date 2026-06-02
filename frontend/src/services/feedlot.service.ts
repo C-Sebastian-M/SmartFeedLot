@@ -489,7 +489,7 @@ export const inversionService = {
     porcentajeAvance: number
   }): Promise<void> => {
     const { itemId, ...body } = payload
-    await api.patch(`/inversion/items/${itemId}`, body)
+    await api.patch(`/inversion/items/${itemId}`, { ...body, itemId })
   },
 
   getAportes: async (params?: { socioId?: string; itemInversionId?: string }): Promise<AporteSocio[]> => {
@@ -525,6 +525,9 @@ export const potrerosService = {
   retirarAnimal: async (potreroId: string, payload: { potreroId: string; estanciaId: string; fechaSalida: string }): Promise<void> => {
     await api.post(`/potreros/${potreroId}/retirar`, payload)
   },
+  eliminar: async (potreroId: string): Promise<void> => {
+    await api.delete(`/potreros/${potreroId}`)
+  },
 }
 
 export const empleadosService = {
@@ -535,6 +538,17 @@ export const empleadosService = {
   create: async (payload: { nombre: string; pagoMensual: number; moneda: string }): Promise<string> => {
     const { data } = await api.post('/empleados', payload)
     return data
+  },
+  actualizar: async (empleadoId: string, payload: { empleadoId: string; nombre: string; pagoMensual: number; moneda: string }): Promise<void> => {
+    await api.put(`/empleados/${empleadoId}`, payload)
+  },
+  eliminar: async (empleadoId: string): Promise<void> => {
+    await api.delete(`/empleados/${empleadoId}`)
+  },
+  modificarActividad: async (empleadoId: string, actividadId: string, payload: {
+    actividadId: string; tipo: string; fecha: string; costo: number; moneda: string
+  }): Promise<void> => {
+    await api.patch(`/empleados/${empleadoId}/actividades/${actividadId}`, payload)
   },
   registrarActividad: async (empleadoId: string, payload: {
     empleadoId: string; tipo: string; fecha: string; costo: number; moneda: string
@@ -584,7 +598,7 @@ export const porcinoService = {
     return data
   },
   registrarCamada: async (marranaId: string, payload: RegistrarCamadaPayload): Promise<{ id: string }> => {
-    const { data } = await api.post(`/marranas/${marranaId}/camadas`, payload)
+    const { data } = await api.post(`/marranas/${marranaId}/camadas`, { ...payload, marranaId })
     return data
   },
   getLotesCerdos: async (): Promise<LoteCerdos[]> => {
@@ -596,7 +610,7 @@ export const porcinoService = {
     return data
   },
   registrarVenta: async (loteId: string, payload: RegistrarVentaLoteCerdosPayload): Promise<void> => {
-    await api.post(`/lotes-cerdos/${loteId}/vender`, payload)
+    await api.post(`/lotes-cerdos/${loteId}/vender`, { ...payload, loteId, moneda: 'COP' })
   },
   eliminarMarrana: async (marranaId: string): Promise<void> => {
     await api.delete(`/marranas/${marranaId}`)

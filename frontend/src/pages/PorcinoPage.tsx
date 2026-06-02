@@ -306,9 +306,14 @@ function LotesSection() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      {['Código', 'Inicio', 'Animales', 'Peso prom.', 'Ciclo', 'Estado', 'Ingreso estimado', ''].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">{h}</th>
-                      ))}
+                      <th className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Código</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Inicio</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Animales</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Peso prom.</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Ciclo</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Estado</th>
+                      <th className="text-center px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">Ingreso estimado</th>
+                      <th className="px-4 py-3" />
                     </tr>
                   </thead>
                   <tbody>
@@ -317,19 +322,19 @@ function LotesSection() {
                       return (
                         <tr key={l.id} className={`border-b border-border/40 hover:bg-secondary/30 ${i === arr.length - 1 ? 'border-b-0' : ''}`}>
                           <td className="px-4 py-2.5 font-medium">{l.codigo}</td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{fmt.fecha(l.fechaInicio)}</td>
-                          <td className="px-4 py-3 tabular-nums text-right">{l.nAnimales}</td>
-                          <td className="px-4 py-3 tabular-nums text-right">{fmt.kg(l.pesoPromedioKg)}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground">{l.ciclo}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-muted-foreground text-xs text-center">{fmt.fecha(l.fechaInicio)}</td>
+                          <td className="px-4 py-3 tabular-nums text-center">{l.nAnimales}</td>
+                          <td className="px-4 py-3 tabular-nums text-center">{fmt.kg(l.pesoPromedioKg)}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground text-center">{l.ciclo}</td>
+                          <td className="px-4 py-3 text-center">
                             <Badge className={`text-[9px] ${l.vendido ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
                               {l.vendido ? 'Vendido' : 'Activo'}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 tabular-nums text-right">
+                          <td className="px-4 py-3 tabular-nums text-center">
                             {ingreso !== null ? <span className="text-emerald-400">{fmt.cop(ingreso)}</span> : <span className="text-muted-foreground">—</span>}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-right">
                             {!l.vendido && (
                               <Button size="sm" variant="ghost" onClick={() => {
                                 setModal({ type: 'venta', loteId: l.id })

@@ -13,11 +13,16 @@ public sealed class CultivoCaniaRepository : ICultivoCaniaRepository
     public async Task<CultivoCania?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Set<CultivoCania>().Include(c => c.Cortes).FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public async Task<CultivoCania?> ObtenerPorIdSinTrackingAsync(Guid id, CancellationToken ct = default)
+        => await _context.Set<CultivoCania>().AsNoTracking().Include(c => c.Cortes).FirstOrDefaultAsync(c => c.Id == id, ct);
+
     public async Task<IReadOnlyList<CultivoCania>> ObtenerTodosAsync(CancellationToken ct = default)
         => await _context.Set<CultivoCania>().Include(c => c.Cortes).OrderBy(c => c.Nombre).ToListAsync(ct);
 
     public async Task AgregarAsync(CultivoCania cultivo, CancellationToken ct = default)
         => await _context.Set<CultivoCania>().AddAsync(cultivo, ct);
+
+    public void AgregarCorte(CorteCania corte) => _context.Set<CorteCania>().Add(corte);
 
     public void Eliminar(CultivoCania cultivo) => _context.Set<CultivoCania>().Remove(cultivo);
 }

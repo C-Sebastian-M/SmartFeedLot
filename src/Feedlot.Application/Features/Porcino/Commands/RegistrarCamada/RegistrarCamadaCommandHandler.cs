@@ -12,11 +12,12 @@ public sealed class RegistrarCamadaCommandHandler : IRequestHandler<RegistrarCam
 
     public async Task<Result<Guid>> Handle(RegistrarCamadaCommand request, CancellationToken ct)
     {
-        var marrana = await _repo.ObtenerPorIdAsync(request.MarranaId, ct);
+        var marrana = await _repo.ObtenerPorIdSinTrackingAsync(request.MarranaId, ct);
         if (marrana is null)
             return Result<Guid>.NotFound($"Marrana con Id {request.MarranaId} no encontrada.");
 
         var camada = marrana.RegistrarCamada(request.FechaNacimiento, request.NLechones);
+        _repo.AgregarCamada(camada);
         await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(camada.Id);
     }

@@ -632,6 +632,14 @@ export function useRetirarAnimalPotrero() {
   })
 }
 
+export function useEliminarPotrero() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (potreroId: string) => potrerosService.eliminar(potreroId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.potreros }),
+  })
+}
+
 export function useEmpleados() {
   return useQuery({
     queryKey: queryKeys.operacion.empleados,
@@ -654,6 +662,33 @@ export function useRegistrarActividadManoObra() {
     mutationFn: ({ empleadoId, ...payload }: {
       empleadoId: string; tipo: string; fecha: string; costo: number; moneda: string
     }) => empleadosService.registrarActividad(empleadoId, { empleadoId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
+  })
+}
+
+export function useModificarActividad() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ empleadoId, actividadId, ...payload }: {
+      empleadoId: string; actividadId: string; tipo: string; fecha: string; costo: number; moneda: string
+    }) => empleadosService.modificarActividad(empleadoId, actividadId, { actividadId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
+  })
+}
+
+export function useModificarEmpleado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ empleadoId, ...payload }: { empleadoId: string; nombre: string; pagoMensual: number; moneda: string }) =>
+      empleadosService.actualizar(empleadoId, { empleadoId, ...payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
+  })
+}
+
+export function useEliminarEmpleado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (empleadoId: string) => empleadosService.eliminar(empleadoId),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.operacion.empleados }),
   })
 }

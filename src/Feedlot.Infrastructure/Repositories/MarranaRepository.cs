@@ -13,11 +13,16 @@ public sealed class MarranaRepository : IMarranaRepository
     public async Task<Marrana?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Set<Marrana>().Include(m => m.Camadas).FirstOrDefaultAsync(m => m.Id == id, ct);
 
+    public async Task<Marrana?> ObtenerPorIdSinTrackingAsync(Guid id, CancellationToken ct = default)
+        => await _context.Set<Marrana>().AsNoTracking().Include(m => m.Camadas).FirstOrDefaultAsync(m => m.Id == id, ct);
+
     public async Task<IReadOnlyList<Marrana>> ObtenerTodosAsync(CancellationToken ct = default)
         => await _context.Set<Marrana>().Include(m => m.Camadas).OrderBy(m => m.Identificacion).ToListAsync(ct);
 
     public async Task AgregarAsync(Marrana marrana, CancellationToken ct = default)
         => await _context.Set<Marrana>().AddAsync(marrana, ct);
+
+    public void AgregarCamada(Camada camada) => _context.Set<Camada>().Add(camada);
 
     public void Eliminar(Marrana marrana) => _context.Set<Marrana>().Remove(marrana);
 }

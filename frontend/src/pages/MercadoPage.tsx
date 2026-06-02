@@ -20,12 +20,13 @@ export default function MercadoPage() {
   const crearPrecio = useCrearPrecioMercado()
   const [modalOpen, setModalOpen] = useState(false)
 
-  const form = useForm<{ fecha: string; especie: string; tipo: string; precioPorKg: number; fuente: string }>({
-    defaultValues: { fecha: new Date().toISOString().split('T')[0], especie: 'Bovino', tipo: 'Novillo', precioPorKg: 0, fuente: '' },
+  const form = useForm<{ fecha: string; especie: string; tipo: string; precioPorKg: string; fuente: string }>({
+    defaultValues: { fecha: new Date().toISOString().split('T')[0], especie: 'Bovino', tipo: 'Novillo', precioPorKg: '', fuente: '' },
   })
 
-  const onSubmit = async (data: { fecha: string; especie: string; tipo: string; precioPorKg: number; fuente: string }) => {
-    await crearPrecio.mutateAsync(data)
+  const onSubmit = async (data: { fecha: string; especie: string; tipo: string; precioPorKg: string; fuente: string }) => {
+    const precioPorKg = parseFloat(data.precioPorKg.replace(/[^0-9]/g, '')) || 0
+    await crearPrecio.mutateAsync({ ...data, precioPorKg })
     setModalOpen(false)
     form.reset()
   }
@@ -104,7 +105,7 @@ export default function MercadoPage() {
               </FormField>
             </div>
             <FormField label="Precio por kg" required>
-              <MoneyInput min={0} {...form.register('precioPorKg', { })} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <MoneyInput min={0} {...form.register('precioPorKg')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </FormField>
             <FormField label="Fuente" required>
               <input {...form.register('fuente')} placeholder="Ej: SUBAGAN, Carnicería Local" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />

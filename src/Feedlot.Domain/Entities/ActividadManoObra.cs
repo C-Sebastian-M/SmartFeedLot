@@ -1,4 +1,5 @@
 using Feedlot.Domain.Common;
+using Feedlot.Domain.Exceptions;
 using Feedlot.Domain.ValueObjects;
 
 namespace Feedlot.Domain.Entities;
@@ -20,4 +21,13 @@ public sealed class ActividadManoObra : Entity<Guid>
     public string Tipo { get; private set; } = null!;
     public DateOnly Fecha { get; private set; }
     public Dinero Costo { get; private set; } = null!;
+
+    public void Modificar(string tipo, DateOnly fecha, Dinero costo)
+    {
+        if (string.IsNullOrWhiteSpace(tipo))
+            throw new DomainException("El tipo de actividad no puede estar vacío.");
+        Tipo = tipo.Trim();
+        Fecha = fecha;
+        Costo = costo;
+    }
 }

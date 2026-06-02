@@ -12,11 +12,12 @@ public sealed class RegistrarCorteCaniaCommandHandler : IRequestHandler<Registra
 
     public async Task<Result<Guid>> Handle(RegistrarCorteCaniaCommand request, CancellationToken ct)
     {
-        var cultivo = await _repo.ObtenerPorIdAsync(request.CultivoCaniaId, ct);
-        if (cultivo is null) return Result<Guid>.Failure("Cultivo de caña no encontrado.");
+        var cultivo = await _repo.ObtenerPorIdSinTrackingAsync(request.CultivoCaniaId, ct);
+        if (cultivo is null) return Result<Guid>.NotFound($"Cultivo de caña {request.CultivoCaniaId} no encontrado.");
 
         var corte = cultivo.RegistrarCorte(request.Fecha, request.NCalles, request.Horas,
             request.BolsasSilo, request.Melaza, request.CostoJornal, request.Moneda);
+        _repo.AgregarCorte(corte);
         await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(corte.Id);
     }

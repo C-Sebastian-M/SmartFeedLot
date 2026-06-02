@@ -5,7 +5,9 @@ namespace Feedlot.Domain.Interfaces;
 public interface IMarranaRepository
 {
     Task<Marrana?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default);
+    Task<Marrana?> ObtenerPorIdSinTrackingAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Marrana>> ObtenerTodosAsync(CancellationToken ct = default);
     Task AgregarAsync(Marrana marrana, CancellationToken ct = default);
+    void AgregarCamada(Camada camada);
     void Eliminar(Marrana marrana);
 }

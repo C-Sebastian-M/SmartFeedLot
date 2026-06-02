@@ -19,5 +19,14 @@ public sealed class EmpleadoRepository : IEmpleadoRepository
     public async Task AgregarAsync(Empleado empleado, CancellationToken ct = default)
         => await _context.Set<Empleado>().AddAsync(empleado, ct);
 
+    public async Task<Empleado?> ObtenerPorIdSinTrackingAsync(Guid id, CancellationToken ct = default)
+        => await _context.Set<Empleado>().AsNoTracking().Include(e => e.Actividades).FirstOrDefaultAsync(e => e.Id == id, ct);
+
+    public async Task<ActividadManoObra?> ObtenerActividadPorIdAsync(Guid actividadId, CancellationToken ct = default)
+        => await _context.Set<ActividadManoObra>().FirstOrDefaultAsync(a => a.Id == actividadId, ct);
+
+    public void AgregarActividad(ActividadManoObra actividad) => _context.Set<ActividadManoObra>().Add(actividad);
+
+    public void Actualizar(Empleado empleado) => _context.Set<Empleado>().Update(empleado);
     public void Eliminar(Empleado empleado) => _context.Set<Empleado>().Remove(empleado);
 }

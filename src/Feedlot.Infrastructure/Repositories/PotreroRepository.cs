@@ -13,11 +13,16 @@ public sealed class PotreroRepository : IPotreroRepository
     public async Task<Potrero?> ObtenerPorIdAsync(Guid id, CancellationToken ct = default)
         => await _context.Set<Potrero>().Include(p => p.Estancias).FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public async Task<Potrero?> ObtenerPorIdSinTrackingAsync(Guid id, CancellationToken ct = default)
+        => await _context.Set<Potrero>().AsNoTracking().Include(p => p.Estancias).FirstOrDefaultAsync(p => p.Id == id, ct);
+
     public async Task<IReadOnlyList<Potrero>> ObtenerTodosAsync(CancellationToken ct = default)
         => await _context.Set<Potrero>().Include(p => p.Estancias).OrderBy(p => p.Nombre).ToListAsync(ct);
 
     public async Task AgregarAsync(Potrero potrero, CancellationToken ct = default)
         => await _context.Set<Potrero>().AddAsync(potrero, ct);
+
+    public void AgregarEstancia(EstanciaAnimal estancia) => _context.Set<EstanciaAnimal>().Add(estancia);
 
     public void Eliminar(Potrero potrero) => _context.Set<Potrero>().Remove(potrero);
 }
