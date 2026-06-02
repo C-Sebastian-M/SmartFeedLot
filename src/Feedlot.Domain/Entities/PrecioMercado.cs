@@ -3,6 +3,18 @@ using Feedlot.Domain.Exceptions;
 
 namespace Feedlot.Domain.Entities;
 
+/// <summary>
+/// Registro de precio de referencia por kg para una especie/tipo en una fecha y fuente dadas.
+///
+/// Decisión de diseño — sin Domain Events:
+///   PrecioMercado es un aggregate de referencia (datos de mercado externos).
+///   No existe ningún proceso de negocio que deba reaccionar a su creación o
+///   modificación (no dispara notificaciones, no actualiza otros aggregates, no
+///   genera movimientos financieros). Si en el futuro se requiere, por ejemplo,
+///   alertar cuando el precio supere un umbral o actualizar proyecciones de
+///   rentabilidad automáticamente, se deberá agregar un PrecioMercadoRegistradoEvent
+///   o PrecioMercadoActualizadoEvent con su handler correspondiente.
+/// </summary>
 public sealed class PrecioMercado : AggregateRoot<Guid>
 {
     private PrecioMercado() { }

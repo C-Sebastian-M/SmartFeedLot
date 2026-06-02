@@ -1,4 +1,6 @@
 using Feedlot.Domain.Interfaces;
+using Feedlot.Application.Services;
+using Feedlot.Infrastructure.Services;
 using Feedlot.Infrastructure.Identity;
 using Feedlot.Infrastructure.Persistence;
 using Feedlot.Infrastructure.Persistence.Interceptors;
@@ -80,6 +82,8 @@ public static class DependencyInjection
         services.AddScoped<IMarranaRepository, MarranaRepository>();
         services.AddScoped<ILoteCerdosRepository, LoteCerdosRepository>();
         services.AddScoped<IPrecioMercadoRepository, PrecioMercadoRepository>();
+        services.AddScoped<ISubaganEventoRepository, SubaganEventoRepository>();
+        services.AddScoped<ISubaganHttpService, SubaganHttpService>();
 
         // Identity.
         services.AddScoped<JwtTokenService>();

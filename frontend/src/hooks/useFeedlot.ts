@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService, porcinoService, mercadoService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService, porcinoService, mercadoService, subaganService } from '@/services/feedlot.service'
 import type { RegistrarCamadaPayload, RegistrarVentaLoteCerdosPayload } from '@/types'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -68,6 +68,8 @@ export const queryKeys = {
     porcino: ['porcino', 'marranas'] as const,
     lotesCerdos: ['porcino', 'lotes-cerdos'] as const,
     preciosMercado: ['mercado', 'precios'] as const,
+    subaganEventos: ['subagan', 'eventos'] as const,
+    subaganLotes: (eventoId: string) => ['subagan', 'lotes', eventoId] as const,
 }
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -850,7 +852,6 @@ export function useCrearPrecioMercado() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
   })
 }
-
 export function useActualizarPrecioMercado() {
   const qc = useQueryClient()
   return useMutation({
@@ -864,5 +865,30 @@ export function useEliminarPrecioMercado() {
   return useMutation({
     mutationFn: mercadoService.delete,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
+  })
+}
+
+// ─── SUBAGAN ──────────────────────────────────────────────────────────────────
+
+export function useSubaganEventos() {
+  return useQuery({
+    queryKey: queryKeys.subaganEventos,
+    queryFn: () => subaganService.getEventos(),
+  })
+}
+
+export function useSubaganLotes(eventoId: string) {
+  return useQuery({
+    queryKey: queryKeys.subaganLotes(eventoId),
+    queryFn: () => subaganService.getLotes(eventoId),
+    enabled: Boolean(eventoId),
+  })
+}
+
+export function useImportarSubasta() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: subaganService.importar,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subaganEventos }),
   })
 }

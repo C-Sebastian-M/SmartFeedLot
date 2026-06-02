@@ -598,3 +598,42 @@ export interface UpdatePrecioMercadoPayload {
   precioPorKg: number
   fuente: string
 }
+
+// ── SUBAGAN ──────────────────────────────────────────────────────────────────
+
+export interface SubaganEvento {
+  id: string
+  subaganEventoId: number
+  numeroSubasta: number | null
+  fecha: string
+  sede: string
+  totalLotes: number
+  importadoEn: string
+}
+
+export interface SubaganLote {
+  id: string
+  loteId: number
+  numeroLote: number
+  codigoTipo: string
+  descripcionTipo: string
+  cantidad: number
+  pesoTotal: number
+  pesoProm: number
+  precioPorKg: number
+  procedencia: string
+  observaciones: string | null
+  fecha: string
+}
+
+export interface ImportarSubastaPayload {
+  eventId: number
+  numeroSubasta?: number | null
+}
+
+export interface ImportarSubastaResult {
+  eventoId: string
+  totalLotes: number
+  fecha: string
+  yaExistia: boolean
+}

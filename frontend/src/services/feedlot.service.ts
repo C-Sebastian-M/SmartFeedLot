@@ -10,7 +10,8 @@ import type {
   EstadoResultados, FlujoCaja, ComparativoPresupuesto,
   Marrana, CreateMarranaPayload, RegistrarCamadaPayload,
   LoteCerdos, CreateLoteCerdosPayload, RegistrarVentaLoteCerdosPayload,
-  PrecioMercado, CreatePrecioMercadoPayload, UpdatePrecioMercadoPayload
+  PrecioMercado, CreatePrecioMercadoPayload, UpdatePrecioMercadoPayload,
+  SubaganEvento, SubaganLote, ImportarSubastaPayload, ImportarSubastaResult
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -646,5 +647,21 @@ export const mercadoService = {
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`/precios-mercado/${id}`)
+  },
+}
+
+// ─── SUBAGAN ──────────────────────────────────────────────────────────────────
+export const subaganService = {
+  getEventos: async (): Promise<SubaganEvento[]> => {
+    const { data } = await api.get('/subagan/eventos')
+    return data.value ?? data
+  },
+  getLotes: async (eventoId: string): Promise<SubaganLote[]> => {
+    const { data } = await api.get(`/subagan/eventos/${eventoId}/lotes`)
+    return data.value ?? data
+  },
+  importar: async (payload: ImportarSubastaPayload): Promise<ImportarSubastaResult> => {
+    const { data } = await api.post('/subagan/importar', payload)
+    return data
   },
 }
