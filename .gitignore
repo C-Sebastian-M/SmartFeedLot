@@ -14,9 +14,11 @@ api.log
 api.err
 
 ## Secrets
+# Los appsettings reales contienen credenciales y NO se versionan.
+# Solo se sube la plantilla appsettings.example.json (sin secretos).
+appsettings.json
 appsettings.*.json
-!appsettings.json
-!appsettings.Development.json
+!appsettings.example.json
 secrets.json
 
 ## Docker
