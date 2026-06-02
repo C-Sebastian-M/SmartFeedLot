@@ -42,4 +42,25 @@ public sealed class PrecioMercado : AggregateRoot<Guid>
         return new PrecioMercado(Guid.NewGuid(), fecha, especie.Trim(), tipo.Trim(),
             precioPorKg, fuente.Trim());
     }
+
+    public void Modificar(DateOnly fecha, string especie, string tipo, decimal precioPorKg, string fuente)
+    {
+        if (string.IsNullOrWhiteSpace(especie))
+            throw new DomainException("La especie es requerida.");
+
+        if (string.IsNullOrWhiteSpace(tipo))
+            throw new DomainException("El tipo es requerido.");
+
+        if (precioPorKg <= 0)
+            throw new DomainException("El precio por kg debe ser mayor a cero.");
+
+        if (string.IsNullOrWhiteSpace(fuente))
+            throw new DomainException("La fuente es requerida.");
+
+        Fecha = fecha;
+        Especie = especie.Trim();
+        Tipo = tipo.Trim();
+        PrecioPorKg = precioPorKg;
+        Fuente = fuente.Trim();
+    }
 }

@@ -10,7 +10,7 @@ import type {
   EstadoResultados, FlujoCaja, ComparativoPresupuesto,
   Marrana, CreateMarranaPayload, RegistrarCamadaPayload,
   LoteCerdos, CreateLoteCerdosPayload, RegistrarVentaLoteCerdosPayload,
-  PrecioMercado, CreatePrecioMercadoPayload
+  PrecioMercado, CreatePrecioMercadoPayload, UpdatePrecioMercadoPayload
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -640,5 +640,11 @@ export const mercadoService = {
   create: async (payload: CreatePrecioMercadoPayload): Promise<{ id: string }> => {
     const { data } = await api.post('/precios-mercado', payload)
     return data
+  },
+  update: async (payload: UpdatePrecioMercadoPayload): Promise<void> => {
+    await api.put(`/precios-mercado/${payload.id}`, payload)
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/precios-mercado/${id}`)
   },
 }

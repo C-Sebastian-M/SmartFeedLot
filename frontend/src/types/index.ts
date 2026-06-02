@@ -589,3 +589,12 @@ export interface CreatePrecioMercadoPayload {
   precioPorKg: number
   fuente: string
 }
+
+export interface UpdatePrecioMercadoPayload {
+  id: string
+  fecha: string
+  especie: string
+  tipo: string
+  precioPorKg: number
+  fuente: string
+}

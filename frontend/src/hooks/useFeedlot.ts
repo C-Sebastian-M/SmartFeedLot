@@ -850,3 +850,19 @@ export function useCrearPrecioMercado() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
   })
 }
+
+export function useActualizarPrecioMercado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: mercadoService.update,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
+  })
+}
+
+export function useEliminarPrecioMercado() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: mercadoService.delete,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.preciosMercado }),
+  })
+}

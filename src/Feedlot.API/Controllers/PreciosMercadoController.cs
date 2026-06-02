@@ -1,4 +1,6 @@
+using Feedlot.Application.Features.Mercado.Commands.ActualizarPrecioMercado;
 using Feedlot.Application.Features.Mercado.Commands.CrearPrecioMercado;
+using Feedlot.Application.Features.Mercado.Commands.EliminarPrecioMercado;
 using Feedlot.Application.Features.Mercado.Queries.ObtenerPreciosMercado;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -32,6 +34,28 @@ public sealed class PreciosMercadoController : ApiControllerBase
     public async Task<IActionResult> Crear([FromBody] CrearPrecioMercadoCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
-        return CreatedFromResult(result, nameof(ObtenerTodos), new { id = result.Value });
+        if (!result.IsSuccess) return FromResult(result);
+        return Created($"/api/precios-mercado/{result.Value}", new { id = result.Value });
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Actualizar(Guid id, [FromBody] ActualizarPrecioMercadoCommand command, CancellationToken ct)
+    {
+        if (id != command.Id) return BadRequest("El ID no coincide.");
+        var result = await _sender.Send(command, ct);
+        return FromResult(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Eliminar(Guid id, CancellationToken ct)
+    {
+        var result = await _sender.Send(new EliminarPrecioMercadoCommand(id), ct);
+        return FromResult(result);
     }
 }

@@ -19,5 +19,7 @@ public sealed class PrecioMercadoRepository : IPrecioMercadoRepository
     public async Task AgregarAsync(PrecioMercado precio, CancellationToken ct = default)
         => await _context.Set<PrecioMercado>().AddAsync(precio, ct);
 
+    public void Actualizar(PrecioMercado precio) => _context.Set<PrecioMercado>().Update(precio);
+
     public void Eliminar(PrecioMercado precio) => _context.Set<PrecioMercado>().Remove(precio);
 }

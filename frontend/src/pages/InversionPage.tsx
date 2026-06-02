@@ -303,7 +303,7 @@ export default function InversionPage() {
               </FormField>
               <FormField label="Estado" error={itemForm.formState.errors.estado?.message} required>
                 <select {...itemForm.register('estado')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
+                  className="flex h-9 w-full rounded-md border border-input bg-card text-foreground px-3 py-1 text-sm dark:[color-scheme:dark]">
                   <option value="Pendiente">Pendiente</option>
                   <option value="OK">OK</option>
                 </select>
