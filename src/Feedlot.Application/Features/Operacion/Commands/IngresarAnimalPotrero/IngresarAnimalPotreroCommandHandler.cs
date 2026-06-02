@@ -7,8 +7,7 @@ namespace Feedlot.Application.Features.Operacion.Commands.IngresarAnimalPotrero;
 public sealed class IngresarAnimalPotreroCommandHandler : IRequestHandler<IngresarAnimalPotreroCommand, Result<Guid>>
 {
     private readonly IPotreroRepository _repo;
-    private readonly IUnitOfWork _uow;
-    public IngresarAnimalPotreroCommandHandler(IPotreroRepository repo, IUnitOfWork uow) { _repo = repo; _uow = uow; }
+    public IngresarAnimalPotreroCommandHandler(IPotreroRepository repo) { _repo = repo; }
 
     public async Task<Result<Guid>> Handle(IngresarAnimalPotreroCommand request, CancellationToken ct)
     {
@@ -20,7 +19,6 @@ public sealed class IngresarAnimalPotreroCommandHandler : IRequestHandler<Ingres
 
         var estancia = potrero.IngresarAnimal(request.AnimalId, request.FechaEntrada);
         _repo.AgregarEstancia(estancia);
-        await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(estancia.Id);
     }
 }

@@ -93,7 +93,7 @@ public sealed class AnimalRepository : IAnimalRepository
             query = query.Where(a => a.EstadoSanitario == estadoSanitario.Value);
 
         if (!string.IsNullOrWhiteSpace(raza))
-            query = query.Where(a => a.Raza.Contains(raza));
+            query = query.Where(a => a.Raza != null && a.Raza.Contains(raza));
 
         if (!string.IsNullOrWhiteSpace(busqueda))
         {

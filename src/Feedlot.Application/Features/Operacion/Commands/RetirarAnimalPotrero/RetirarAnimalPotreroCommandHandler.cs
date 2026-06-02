@@ -7,12 +7,10 @@ namespace Feedlot.Application.Features.Operacion.Commands.RetirarAnimalPotrero;
 public sealed class RetirarAnimalPotreroCommandHandler : IRequestHandler<RetirarAnimalPotreroCommand, Result>
 {
     private readonly IPotreroRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public RetirarAnimalPotreroCommandHandler(IPotreroRepository repo, IUnitOfWork uow)
+    public RetirarAnimalPotreroCommandHandler(IPotreroRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(RetirarAnimalPotreroCommand request, CancellationToken ct)
@@ -30,7 +28,6 @@ public sealed class RetirarAnimalPotreroCommandHandler : IRequestHandler<Retirar
             return Result.Failure(ex.Message);
         }
 
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

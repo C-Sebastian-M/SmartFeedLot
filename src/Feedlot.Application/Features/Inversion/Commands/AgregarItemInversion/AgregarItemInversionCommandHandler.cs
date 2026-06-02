@@ -10,14 +10,11 @@ public sealed class AgregarItemInversionCommandHandler
     : IRequestHandler<AgregarItemInversionCommand, Result<Guid>>
 {
     private readonly IEtapaInversionRepository _etapaRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public AgregarItemInversionCommandHandler(
-        IEtapaInversionRepository etapaRepo,
-        IUnitOfWork unitOfWork)
+        IEtapaInversionRepository etapaRepo)
     {
         _etapaRepo = etapaRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -35,7 +32,6 @@ public sealed class AgregarItemInversionCommandHandler
         var item = etapa.AgregarItem(request.Producto, costo, request.Observacion, estado, request.PorcentajeAvance);
 
         _etapaRepo.AgregarItem(item);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(item.Id);
     }

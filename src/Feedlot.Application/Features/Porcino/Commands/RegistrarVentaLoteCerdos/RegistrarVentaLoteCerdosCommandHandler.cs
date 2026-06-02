@@ -8,8 +8,7 @@ namespace Feedlot.Application.Features.Porcino.Commands.RegistrarVentaLoteCerdos
 public sealed class RegistrarVentaLoteCerdosCommandHandler : IRequestHandler<RegistrarVentaLoteCerdosCommand, Result>
 {
     private readonly ILoteCerdosRepository _repo;
-    private readonly IUnitOfWork _uow;
-    public RegistrarVentaLoteCerdosCommandHandler(ILoteCerdosRepository repo, IUnitOfWork uow) { _repo = repo; _uow = uow; }
+    public RegistrarVentaLoteCerdosCommandHandler(ILoteCerdosRepository repo) { _repo = repo; }
 
     public async Task<Result> Handle(RegistrarVentaLoteCerdosCommand request, CancellationToken ct)
     {
@@ -19,7 +18,6 @@ public sealed class RegistrarVentaLoteCerdosCommandHandler : IRequestHandler<Reg
 
         var precio = Dinero.Crear(request.PrecioVentaKg, request.Moneda);
         lote.RegistrarVenta(request.FechaVenta, precio);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

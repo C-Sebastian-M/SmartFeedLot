@@ -27,12 +27,10 @@ public sealed class ModificarEmpleadoCommandValidator : AbstractValidator<Modifi
 public sealed class ModificarEmpleadoCommandHandler : IRequestHandler<ModificarEmpleadoCommand, Result>
 {
     private readonly IEmpleadoRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public ModificarEmpleadoCommandHandler(IEmpleadoRepository repo, IUnitOfWork uow)
+    public ModificarEmpleadoCommandHandler(IEmpleadoRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(ModificarEmpleadoCommand request, CancellationToken ct)
@@ -44,7 +42,6 @@ public sealed class ModificarEmpleadoCommandHandler : IRequestHandler<ModificarE
         var pagoMensual = Dinero.Crear(request.PagoMensual, request.Moneda);
         empleado.Modificar(request.Nombre, pagoMensual);
         _repo.Actualizar(empleado);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

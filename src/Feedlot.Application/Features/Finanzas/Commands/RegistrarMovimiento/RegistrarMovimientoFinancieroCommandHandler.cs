@@ -13,18 +13,15 @@ public sealed class RegistrarMovimientoFinancieroCommandHandler
     private readonly IMovimientoFinancieroRepository _movimientoRepo;
     private readonly ICategoriaGastoRepository _categoriaRepo;
     private readonly ISocioRepository _socioRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public RegistrarMovimientoFinancieroCommandHandler(
         IMovimientoFinancieroRepository movimientoRepo,
         ICategoriaGastoRepository categoriaRepo,
-        ISocioRepository socioRepo,
-        IUnitOfWork unitOfWork)
+        ISocioRepository socioRepo)
     {
         _movimientoRepo = movimientoRepo;
         _categoriaRepo = categoriaRepo;
         _socioRepo = socioRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -61,7 +58,6 @@ public sealed class RegistrarMovimientoFinancieroCommandHandler
             request.RegistradoPorId);
 
         await _movimientoRepo.AgregarAsync(movimiento, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(movimiento.Id);
     }

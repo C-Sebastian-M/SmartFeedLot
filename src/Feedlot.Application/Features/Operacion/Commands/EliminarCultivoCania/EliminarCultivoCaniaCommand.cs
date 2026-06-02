@@ -9,12 +9,10 @@ public sealed record EliminarCultivoCaniaCommand(Guid CultivoCaniaId) : ICommand
 public sealed class EliminarCultivoCaniaCommandHandler : IRequestHandler<EliminarCultivoCaniaCommand, Result>
 {
     private readonly ICultivoCaniaRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarCultivoCaniaCommandHandler(ICultivoCaniaRepository repo, IUnitOfWork uow)
+    public EliminarCultivoCaniaCommandHandler(ICultivoCaniaRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarCultivoCaniaCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarCultivoCaniaCommandHandler : IRequestHandler<Elimina
             return Result.NotFound($"No se encontró el cultivo {request.CultivoCaniaId}.");
 
         _repo.Eliminar(cultivo);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

@@ -9,12 +9,10 @@ public sealed record EliminarLoteSiloCommand(Guid LoteSiloId) : ICommand;
 public sealed class EliminarLoteSiloCommandHandler : IRequestHandler<EliminarLoteSiloCommand, Result>
 {
     private readonly ILoteSiloRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarLoteSiloCommandHandler(ILoteSiloRepository repo, IUnitOfWork uow)
+    public EliminarLoteSiloCommandHandler(ILoteSiloRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarLoteSiloCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarLoteSiloCommandHandler : IRequestHandler<EliminarLot
             return Result.NotFound($"No se encontró el lote de silo {request.LoteSiloId}.");
 
         _repo.Eliminar(lote);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

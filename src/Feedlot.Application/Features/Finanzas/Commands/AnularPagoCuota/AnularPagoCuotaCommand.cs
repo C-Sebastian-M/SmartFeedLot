@@ -7,18 +7,16 @@ namespace Feedlot.Application.Features.Finanzas.Commands.AnularPagoCuota;
 public sealed record AnularPagoCuotaCommand(
     Guid PrestamoId,
     Guid CuotaId
-) : IRequest<Result>;
+) : ICommand;
 
 public sealed class AnularPagoCuotaCommandHandler
     : IRequestHandler<AnularPagoCuotaCommand, Result>
 {
     private readonly IPrestamoRepository _prestamoRepo;
-    private readonly IUnitOfWork _uow;
 
-    public AnularPagoCuotaCommandHandler(IPrestamoRepository prestamoRepo, IUnitOfWork uow)
+    public AnularPagoCuotaCommandHandler(IPrestamoRepository prestamoRepo)
     {
         _prestamoRepo = prestamoRepo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(AnularPagoCuotaCommand request, CancellationToken ct)
@@ -35,7 +33,6 @@ public sealed class AnularPagoCuotaCommandHandler
             return Result.Conflict("La cuota no está pagada, no hay nada que anular.");
 
         cuota.AnularPago();
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

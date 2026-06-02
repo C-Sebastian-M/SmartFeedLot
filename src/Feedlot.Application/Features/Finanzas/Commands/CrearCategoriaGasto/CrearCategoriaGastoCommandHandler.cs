@@ -10,14 +10,11 @@ public sealed class CrearCategoriaGastoCommandHandler
     : IRequestHandler<CrearCategoriaGastoCommand, Result<Guid>>
 {
     private readonly ICategoriaGastoRepository _categoriaRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CrearCategoriaGastoCommandHandler(
-        ICategoriaGastoRepository categoriaRepo,
-        IUnitOfWork unitOfWork)
+        ICategoriaGastoRepository categoriaRepo)
     {
         _categoriaRepo = categoriaRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -35,7 +32,6 @@ public sealed class CrearCategoriaGastoCommandHandler
         var categoria = CategoriaGasto.Crear(request.Nombre, tipo);
 
         await _categoriaRepo.AgregarAsync(categoria, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(categoria.Id);
     }

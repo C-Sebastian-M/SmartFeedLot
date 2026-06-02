@@ -9,14 +9,11 @@ public sealed class CrearEtapaInversionCommandHandler
     : IRequestHandler<CrearEtapaInversionCommand, Result<Guid>>
 {
     private readonly IEtapaInversionRepository _etapaRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CrearEtapaInversionCommandHandler(
-        IEtapaInversionRepository etapaRepo,
-        IUnitOfWork unitOfWork)
+        IEtapaInversionRepository etapaRepo)
     {
         _etapaRepo = etapaRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -26,7 +23,6 @@ public sealed class CrearEtapaInversionCommandHandler
         var etapa = EtapaInversion.Crear(request.Numero, request.Nombre);
 
         await _etapaRepo.AgregarAsync(etapa, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(etapa.Id);
     }

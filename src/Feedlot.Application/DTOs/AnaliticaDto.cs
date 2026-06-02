@@ -9,7 +9,7 @@ public sealed class IndicadorProductivoDto
     public Guid AnimalId { get; init; }
     public string CodigoAnimal { get; init; } = null!;
     public string? NombreAnimal { get; init; }
-    public string Raza { get; init; } = null!;
+    public string? Raza { get; init; }
     public decimal PesoInicialKg { get; init; }
     public decimal PesoActualKg { get; init; }
     public decimal PesoGanadoKg { get; init; }
@@ -60,7 +60,7 @@ public sealed class AnimalIneficienteDto
     public Guid AnimalId { get; init; }
     public string CodigoAnimal { get; init; } = null!;
     public string? NombreAnimal { get; init; }
-    public string Raza { get; init; } = null!;
+    public string? Raza { get; init; }
     public string LoteCodigo { get; init; } = null!;
     public decimal Gmd { get; init; }
     public decimal GmdMinimaEsperada { get; init; }

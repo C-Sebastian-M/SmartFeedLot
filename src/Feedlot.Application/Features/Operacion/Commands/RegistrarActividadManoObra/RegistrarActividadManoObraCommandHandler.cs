@@ -8,8 +8,7 @@ namespace Feedlot.Application.Features.Operacion.Commands.RegistrarActividadMano
 public sealed class RegistrarActividadManoObraCommandHandler : IRequestHandler<RegistrarActividadManoObraCommand, Result<Guid>>
 {
     private readonly IEmpleadoRepository _repo;
-    private readonly IUnitOfWork _uow;
-    public RegistrarActividadManoObraCommandHandler(IEmpleadoRepository repo, IUnitOfWork uow) { _repo = repo; _uow = uow; }
+    public RegistrarActividadManoObraCommandHandler(IEmpleadoRepository repo) { _repo = repo; }
 
     public async Task<Result<Guid>> Handle(RegistrarActividadManoObraCommand request, CancellationToken ct)
     {
@@ -21,7 +20,6 @@ public sealed class RegistrarActividadManoObraCommandHandler : IRequestHandler<R
         var costo = Dinero.Crear(request.Costo, request.Moneda);
         var actividad = empleado.RegistrarActividad(request.Tipo, request.Fecha, costo);
         _repo.AgregarActividad(actividad);
-        await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(actividad.Id);
     }
 }

@@ -9,12 +9,10 @@ public sealed record EliminarPotreroCommand(Guid PotreroId) : ICommand;
 public sealed class EliminarPotreroCommandHandler : IRequestHandler<EliminarPotreroCommand, Result>
 {
     private readonly IPotreroRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarPotreroCommandHandler(IPotreroRepository repo, IUnitOfWork uow)
+    public EliminarPotreroCommandHandler(IPotreroRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarPotreroCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarPotreroCommandHandler : IRequestHandler<EliminarPotr
             return Result.NotFound($"No se encontró el potrero {request.PotreroId}.");
 
         _repo.Eliminar(potrero);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

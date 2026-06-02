@@ -29,12 +29,10 @@ public sealed class ModificarActividadCommandValidator : AbstractValidator<Modif
 public sealed class ModificarActividadCommandHandler : IRequestHandler<ModificarActividadCommand, Result>
 {
     private readonly IEmpleadoRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public ModificarActividadCommandHandler(IEmpleadoRepository repo, IUnitOfWork uow)
+    public ModificarActividadCommandHandler(IEmpleadoRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(ModificarActividadCommand request, CancellationToken ct)
@@ -47,7 +45,6 @@ public sealed class ModificarActividadCommandHandler : IRequestHandler<Modificar
 
         var costo = Dinero.Crear(request.Costo, request.Moneda);
         actividad.Modificar(request.Tipo, request.Fecha, costo);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

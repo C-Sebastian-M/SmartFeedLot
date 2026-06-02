@@ -9,12 +9,10 @@ public sealed record EliminarCorteCaniaCommand(Guid CorteId) : ICommand;
 public sealed class EliminarCorteCaniaCommandHandler : IRequestHandler<EliminarCorteCaniaCommand, Result>
 {
     private readonly ICultivoCaniaRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarCorteCaniaCommandHandler(ICultivoCaniaRepository repo, IUnitOfWork uow)
+    public EliminarCorteCaniaCommandHandler(ICultivoCaniaRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarCorteCaniaCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarCorteCaniaCommandHandler : IRequestHandler<EliminarC
             return Result.NotFound($"No se encontró el corte {request.CorteId}.");
 
         _repo.EliminarCorte(corte);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

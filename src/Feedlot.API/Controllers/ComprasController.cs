@@ -40,6 +40,7 @@ public sealed class ComprasController : ApiControllerBase
     public async Task<IActionResult> Crear([FromBody] CrearCompraCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
-        return CreatedFromResult(result, null, null!);
+        if (!result.IsSuccess) return FromResult(result);
+        return Created($"/api/compras/{result.Value}", new { id = result.Value });
     }
 }

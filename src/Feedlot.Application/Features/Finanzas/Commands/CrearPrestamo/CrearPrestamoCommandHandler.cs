@@ -10,14 +10,11 @@ public sealed class CrearPrestamoCommandHandler
     : IRequestHandler<CrearPrestamoCommand, Result<Guid>>
 {
     private readonly IPrestamoRepository _prestamoRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CrearPrestamoCommandHandler(
-        IPrestamoRepository prestamoRepo,
-        IUnitOfWork unitOfWork)
+        IPrestamoRepository prestamoRepo)
     {
         _prestamoRepo = prestamoRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -34,7 +31,6 @@ public sealed class CrearPrestamoCommandHandler
             request.Descripcion);
 
         await _prestamoRepo.AgregarAsync(prestamo, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(prestamo.Id);
     }

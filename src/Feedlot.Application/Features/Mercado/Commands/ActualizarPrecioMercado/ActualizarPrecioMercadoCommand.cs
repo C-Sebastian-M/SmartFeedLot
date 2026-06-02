@@ -30,12 +30,10 @@ public sealed class ActualizarPrecioMercadoCommandValidator : AbstractValidator<
 public sealed class ActualizarPrecioMercadoCommandHandler : IRequestHandler<ActualizarPrecioMercadoCommand, Result>
 {
     private readonly IPrecioMercadoRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public ActualizarPrecioMercadoCommandHandler(IPrecioMercadoRepository repo, IUnitOfWork uow)
+    public ActualizarPrecioMercadoCommandHandler(IPrecioMercadoRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(ActualizarPrecioMercadoCommand request, CancellationToken ct)
@@ -46,7 +44,6 @@ public sealed class ActualizarPrecioMercadoCommandHandler : IRequestHandler<Actu
 
         precio.Modificar(request.Fecha, request.Especie, request.Tipo, request.PrecioPorKg, request.Fuente);
         _repo.Actualizar(precio);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

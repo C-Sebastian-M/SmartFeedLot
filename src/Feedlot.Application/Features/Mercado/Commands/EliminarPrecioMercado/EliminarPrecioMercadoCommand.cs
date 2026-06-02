@@ -9,12 +9,10 @@ public sealed record EliminarPrecioMercadoCommand(Guid Id) : ICommand;
 public sealed class EliminarPrecioMercadoCommandHandler : IRequestHandler<EliminarPrecioMercadoCommand, Result>
 {
     private readonly IPrecioMercadoRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarPrecioMercadoCommandHandler(IPrecioMercadoRepository repo, IUnitOfWork uow)
+    public EliminarPrecioMercadoCommandHandler(IPrecioMercadoRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarPrecioMercadoCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarPrecioMercadoCommandHandler : IRequestHandler<Elimin
             return Result.NotFound($"No se encontró el precio de mercado {request.Id}.");
 
         _repo.Eliminar(precio);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

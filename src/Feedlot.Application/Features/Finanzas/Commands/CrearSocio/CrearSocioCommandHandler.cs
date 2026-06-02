@@ -9,14 +9,11 @@ public sealed class CrearSocioCommandHandler
     : IRequestHandler<CrearSocioCommand, Result<Guid>>
 {
     private readonly ISocioRepository _socioRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CrearSocioCommandHandler(
-        ISocioRepository socioRepo,
-        IUnitOfWork unitOfWork)
+        ISocioRepository socioRepo)
     {
         _socioRepo = socioRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -26,7 +23,6 @@ public sealed class CrearSocioCommandHandler
         var socio = Socio.Crear(request.Nombre, request.Participacion);
 
         await _socioRepo.AgregarAsync(socio, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(socio.Id);
     }

@@ -8,18 +8,16 @@ public sealed record RegistrarPagoCuotaCommand(
     Guid PrestamoId,
     Guid CuotaId,
     DateOnly FechaPago
-) : IRequest<Result>;
+) : ICommand;
 
 public sealed class RegistrarPagoCuotaCommandHandler
     : IRequestHandler<RegistrarPagoCuotaCommand, Result>
 {
     private readonly IPrestamoRepository _prestamoRepo;
-    private readonly IUnitOfWork _uow;
 
-    public RegistrarPagoCuotaCommandHandler(IPrestamoRepository prestamoRepo, IUnitOfWork uow)
+    public RegistrarPagoCuotaCommandHandler(IPrestamoRepository prestamoRepo)
     {
         _prestamoRepo = prestamoRepo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(RegistrarPagoCuotaCommand request, CancellationToken ct)
@@ -36,7 +34,6 @@ public sealed class RegistrarPagoCuotaCommandHandler
             return Result.Conflict("La cuota ya está marcada como pagada.");
 
         cuota.RegistrarPago(request.FechaPago);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

@@ -10,14 +10,11 @@ public sealed class ActualizarItemInversionCommandHandler
     : IRequestHandler<ActualizarItemInversionCommand, Result>
 {
     private readonly IEtapaInversionRepository _etapaRepo;
-    private readonly IUnitOfWork _unitOfWork;
 
     public ActualizarItemInversionCommandHandler(
-        IEtapaInversionRepository etapaRepo,
-        IUnitOfWork unitOfWork)
+        IEtapaInversionRepository etapaRepo)
     {
         _etapaRepo = etapaRepo;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(
@@ -37,7 +34,6 @@ public sealed class ActualizarItemInversionCommandHandler
 
         item.Actualizar(request.Producto, costo, request.Observacion, estado, request.PorcentajeAvance);
 
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();
     }

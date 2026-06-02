@@ -9,12 +9,10 @@ public sealed record EliminarEmpleadoCommand(Guid EmpleadoId) : ICommand;
 public sealed class EliminarEmpleadoCommandHandler : IRequestHandler<EliminarEmpleadoCommand, Result>
 {
     private readonly IEmpleadoRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarEmpleadoCommandHandler(IEmpleadoRepository repo, IUnitOfWork uow)
+    public EliminarEmpleadoCommandHandler(IEmpleadoRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarEmpleadoCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarEmpleadoCommandHandler : IRequestHandler<EliminarEmp
             return Result.NotFound($"No se encontró el empleado {request.EmpleadoId}.");
 
         _repo.Eliminar(empleado);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

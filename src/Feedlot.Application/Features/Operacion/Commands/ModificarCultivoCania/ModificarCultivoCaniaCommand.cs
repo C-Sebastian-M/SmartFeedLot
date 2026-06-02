@@ -20,12 +20,10 @@ public sealed class ModificarCultivoCaniaCommandValidator : AbstractValidator<Mo
 public sealed class ModificarCultivoCaniaCommandHandler : IRequestHandler<ModificarCultivoCaniaCommand, Result>
 {
     private readonly ICultivoCaniaRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public ModificarCultivoCaniaCommandHandler(ICultivoCaniaRepository repo, IUnitOfWork uow)
+    public ModificarCultivoCaniaCommandHandler(ICultivoCaniaRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(ModificarCultivoCaniaCommand request, CancellationToken ct)
@@ -36,7 +34,6 @@ public sealed class ModificarCultivoCaniaCommandHandler : IRequestHandler<Modifi
 
         cultivo.Modificar(request.Nombre, request.CallesTotales);
         _repo.Actualizar(cultivo);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

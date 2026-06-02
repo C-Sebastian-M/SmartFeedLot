@@ -16,23 +16,20 @@ public sealed record GuardarPresupuestoCommand(
     decimal Monto,
     string Moneda,
     string? Descripcion
-) : IRequest<Result<Guid>>;
+) : ICommand<Guid>;
 
 public sealed class GuardarPresupuestoCommandHandler
     : IRequestHandler<GuardarPresupuestoCommand, Result<Guid>>
 {
     private readonly IPresupuestoRepository _presupuestoRepo;
     private readonly ICategoriaGastoRepository _categoriaRepo;
-    private readonly IUnitOfWork _uow;
 
     public GuardarPresupuestoCommandHandler(
         IPresupuestoRepository presupuestoRepo,
-        ICategoriaGastoRepository categoriaRepo,
-        IUnitOfWork uow)
+        ICategoriaGastoRepository categoriaRepo)
     {
         _presupuestoRepo = presupuestoRepo;
         _categoriaRepo = categoriaRepo;
-        _uow = uow;
     }
 
     public async Task<Result<Guid>> Handle(
@@ -51,7 +48,6 @@ public sealed class GuardarPresupuestoCommandHandler
         {
             existente.Modificar(dinero, request.Descripcion);
             _presupuestoRepo.Actualizar(existente);
-            await _uow.SaveChangesAsync(ct);
             return Result<Guid>.Success(existente.Id);
         }
 
@@ -63,7 +59,6 @@ public sealed class GuardarPresupuestoCommandHandler
             request.Descripcion);
 
         await _presupuestoRepo.AgregarAsync(nuevo, ct);
-        await _uow.SaveChangesAsync(ct);
         return Result<Guid>.Success(nuevo.Id);
     }
 }

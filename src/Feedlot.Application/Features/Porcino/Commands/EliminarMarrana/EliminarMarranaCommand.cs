@@ -4,17 +4,15 @@ using MediatR;
 
 namespace Feedlot.Application.Features.Porcino.Commands.EliminarMarrana;
 
-public sealed record EliminarMarranaCommand(Guid MarranaId) : IRequest<Result>;
+public sealed record EliminarMarranaCommand(Guid MarranaId) : ICommand;
 
 public sealed class EliminarMarranaCommandHandler : IRequestHandler<EliminarMarranaCommand, Result>
 {
     private readonly IMarranaRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public EliminarMarranaCommandHandler(IMarranaRepository repo, IUnitOfWork uow)
+    public EliminarMarranaCommandHandler(IMarranaRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(EliminarMarranaCommand request, CancellationToken ct)
@@ -24,7 +22,6 @@ public sealed class EliminarMarranaCommandHandler : IRequestHandler<EliminarMarr
             return Result.NotFound($"No se encontró la marrana {request.MarranaId}.");
 
         _repo.Eliminar(marrana);
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

@@ -11,18 +11,16 @@ public sealed record AvanzarEstadoCamadaCommand(
     Guid MarranaId,
     Guid CamadaId,
     string AccionEstado  // "AvanzarCeba" | "MarcarVendida"
-) : IRequest<Result>;
+) : ICommand;
 
 public sealed class AvanzarEstadoCamadaCommandHandler
     : IRequestHandler<AvanzarEstadoCamadaCommand, Result>
 {
     private readonly IMarranaRepository _repo;
-    private readonly IUnitOfWork _uow;
 
-    public AvanzarEstadoCamadaCommandHandler(IMarranaRepository repo, IUnitOfWork uow)
+    public AvanzarEstadoCamadaCommandHandler(IMarranaRepository repo)
     {
         _repo = repo;
-        _uow = uow;
     }
 
     public async Task<Result> Handle(AvanzarEstadoCamadaCommand request, CancellationToken ct)
@@ -47,7 +45,6 @@ public sealed class AvanzarEstadoCamadaCommandHandler
                 return Result.Failure($"Acción de estado inválida: {request.AccionEstado}. Use 'AvanzarCeba' o 'MarcarVendida'.");
         }
 
-        await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

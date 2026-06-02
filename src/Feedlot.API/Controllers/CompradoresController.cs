@@ -33,7 +33,8 @@ public sealed class CompradoresController : ApiControllerBase
     public async Task<IActionResult> Crear([FromBody] CrearCompradorCommand command, CancellationToken ct)
     {
         var result = await _sender.Send(command, ct);
-        return CreatedFromResult(result, null, null!);
+        if (!result.IsSuccess) return FromResult(result);
+        return Created($"/api/compradores/{result.Value}", new { id = result.Value });
     }
 
     [HttpPut("{id:guid}")]
