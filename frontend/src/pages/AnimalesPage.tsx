@@ -9,7 +9,7 @@ import {
   PageHeader, Button, Card, CardContent, Badge, Skeleton, EmptyState,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
   FormField, Input, Alert,
-  MoneyInput, CustomSelect,
+  CustomSelect,
 } from '@/components/ui'
 import { fmt, estadoProductivoColor, estadoSanitarioColor } from '@/utils'
 import type { AnimalResumen } from '@/types'

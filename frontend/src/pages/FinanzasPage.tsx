@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X, CheckCircle2, DollarSign, Tag, Users, ChevronDown, BarChart2, TrendingUp, Download, Target } from 'lucide-react'
+import { Plus, X, CheckCircle2, DollarSign, Tag, Users, BarChart2, TrendingUp, Download, Target } from 'lucide-react'
 import {
   useCategoriasGasto, useCrearCategoriaGasto,
   useSocios, useCrearSocio,

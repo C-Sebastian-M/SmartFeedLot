@@ -1,8 +1,8 @@
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
-  AlertTriangle, Beef, Package, ArrowRight,
-  TrendingUp, TrendingDown, Landmark, DollarSign,
+  Package, ArrowRight,
+  TrendingUp, TrendingDown, DollarSign,
   CheckCircle2, Clock, AlertCircle,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'

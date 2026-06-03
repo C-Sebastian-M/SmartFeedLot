@@ -1,5 +1,6 @@
 using Feedlot.Application.Features.Mercado.Commands.EliminarSubaganEvento;
 using Feedlot.Application.Features.Mercado.Commands.ImportarSubasta;
+using Feedlot.Application.Features.Mercado.Queries.ObtenerSubaganCalendario;
 using Feedlot.Application.Features.Mercado.Queries.ObtenerSubaganEventos;
 using Feedlot.Application.Features.Mercado.Queries.ObtenerSubaganLotes;
 using MediatR;
@@ -31,6 +32,20 @@ public sealed class SubaganController : ApiControllerBase
     public async Task<IActionResult> ObtenerLotes(Guid eventoId, CancellationToken ct)
     {
         var result = await _sender.Send(new ObtenerSubaganLotesQuery(eventoId), ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Lista los eventos del calendario de SUBAGAN para elegir cuál importar.
+    /// Filtros opcionales: ?sede=PLANETA RICA y ?soloPasadas=true
+    /// </summary>
+    [HttpGet("calendario")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ObtenerCalendario(
+        [FromQuery] string? sede, [FromQuery] bool soloPasadas, CancellationToken ct)
+    {
+        var result = await _sender.Send(new ObtenerSubaganCalendarioQuery(sede, soloPasadas), ct);
         return FromResult(result);
     }
 

@@ -362,15 +362,16 @@ export function PageHeader({ title, description: _desc, action }: PageHeaderProp
 interface SelectOption { value: string; label: string }
 
 interface CustomSelectProps {
-  value: string
+  value: string | undefined
   onChange: (value: string) => void
   options: SelectOption[]
   placeholder?: string
   className?: string
   disabled?: boolean
+  error?: boolean
 }
 
-export function CustomSelect({ value, onChange, options, placeholder = 'Seleccionar...', className, disabled }: CustomSelectProps) {
+export function CustomSelect({ value, onChange, options, placeholder = 'Seleccionar...', className, disabled, error }: CustomSelectProps) {
   const [open, setOpen] = useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
 
@@ -391,7 +392,8 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Seleccio
         disabled={disabled}
         onClick={() => setOpen(v => !v)}
         className={cn(
-          'flex h-9 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-1 text-sm text-foreground',
+          'flex h-9 w-full items-center justify-between rounded-md border bg-card px-3 py-1 text-sm text-foreground',
+          error ? 'border-destructive' : 'border-input',
           'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )}

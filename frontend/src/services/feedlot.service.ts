@@ -11,7 +11,8 @@ import type {
   Marrana, CreateMarranaPayload, RegistrarCamadaPayload,
   LoteCerdos, CreateLoteCerdosPayload, RegistrarVentaLoteCerdosPayload,
   PrecioMercado, CreatePrecioMercadoPayload, UpdatePrecioMercadoPayload,
-  SubaganEvento, SubaganLote, ImportarSubastaPayload, ImportarSubastaResult
+  SubaganEvento, SubaganLote, ImportarSubastaPayload, ImportarSubastaResult,
+  SubaganCalendarioEvento
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -34,13 +35,12 @@ export const animalsService = {
   },
 
   create: async (payload: {
-    codigoIdentificacion: string
-    numeroArete: string
+    nombre?: string
     sexo: string
-    raza: string
-    fechaNacimiento: string
+    raza?: string
+    fechaNacimiento?: string
     pesoIngresoKg: number
-    precioCompra: number
+    precioCompraPorKg: number
     moneda: string
     fechaIngreso: string
     loteInicialId?: string
@@ -666,5 +666,13 @@ export const subaganService = {
   },
   delete: async (eventoId: string): Promise<void> => {
     await api.delete(`/subagan/eventos/${eventoId}`)
+  },
+  getCalendario: async (sede?: string, soloPasadas?: boolean): Promise<SubaganCalendarioEvento[]> => {
+    const params = new URLSearchParams()
+    if (sede) params.set('sede', sede)
+    if (soloPasadas) params.set('soloPasadas', 'true')
+    const qs = params.toString()
+    const { data } = await api.get(`/subagan/calendario${qs ? `?${qs}` : ''}`)
+    return data.value ?? data
   },
 }

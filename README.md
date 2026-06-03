@@ -49,7 +49,7 @@ Esto crea un contenedor PostgreSQL 16 con:
 - Puerto: `5433` (mapeado desde `5432` interno)
 - Base de datos: `smartfeedlot`
 - Usuario: `feedlot_user`
-- Contraseña: `feedlot_pass`
+- Contraseña: `5ee6e778c879a7cfd0b242d594d51b29`
 
 > **Nota:** El puerto externo es `5433` para evitar conflictos con otras instalaciones de PostgreSQL en la máquina host.
 
@@ -101,7 +101,7 @@ Entrar a `http://localhost:5050` y registrar server con:
 - Port: `5433`
 - Database: `smartfeedlot`
 - User: `feedlot_user`
-- Password: `feedlot_pass`
+- Password: `5ee6e778c879a7cfd0b242d594d51b29`
 
 ---
 
@@ -392,7 +392,7 @@ Request → [LoggingBehavior] → [ValidationBehavior] → [UnitOfWorkBehavior] 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5433;Database=smartfeedlot;Username=feedlot_user;Password=feedlot_pass;Include Error Detail=true"
+    "DefaultConnection": "Host=localhost;Port=5433;Database=smartfeedlot;Username=feedlot_user;Password=5ee6e778c879a7cfd0b242d594d51b29;Include Error Detail=true"
   },
   "JwtSettings": {
     "SecretKey": "CAMBIAR-EN-PRODUCCION-MIN-32-CARACTERES-CLAVE-SECRETA",
@@ -413,7 +413,7 @@ services:
     environment:
       POSTGRES_DB: smartfeedlot
       POSTGRES_USER: feedlot_user
-      POSTGRES_PASSWORD: feedlot_pass
+      POSTGRES_PASSWORD: 5ee6e778c879a7cfd0b242d594d51b29
     ports:
       - "5433:5432"
     healthcheck:
@@ -428,7 +428,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5000
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=smartfeedlot;Username=feedlot_user;Password=feedlot_pass
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=smartfeedlot;Username=feedlot_user;Password=5ee6e778c879a7cfd0b242d594d51b29
     ports:
       - "5000:5000"
 ```

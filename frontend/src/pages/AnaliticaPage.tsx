@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
 import {
-  BarChart3, TrendingUp, Package, DollarSign,
-  AlertTriangle, Beef
+  BarChart3, TrendingUp, DollarSign,
+  AlertTriangle
 } from 'lucide-react'
 import { useLotes, useResumenLote } from '@/hooks/useFeedlot'
 import {
@@ -14,7 +14,7 @@ import type { LoteResumen, IndicadorProductivo } from '@/types'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, ScatterChart, Scatter,
-  ReferenceLine, Legend,
+  ReferenceLine,
 } from 'recharts'
 
 // ─── Selector de lote ─────────────────────────────────────────────────────────
@@ -50,19 +50,6 @@ const GmdTooltip = ({ active, payload }: any) => {
   )
 }
 
-const BarTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg text-xs">
-      <p className="font-mono font-medium mb-1">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: {p.name === 'GMD' ? fmt.kgDia(p.value) : fmt.decimal(p.value)}
-        </p>
-      ))}
-    </div>
-  )
-}
 
 // ─── Tabla de indicadores ─────────────────────────────────────────────────────
 function TablaIndicadores({ indicadores }: { indicadores: IndicadorProductivo[] }) {
@@ -148,11 +135,10 @@ export default function AnaliticaPage() {
     .sort((a, b) => b.gmd - a.gmd)
     .slice(0, 20)
     .map(ind => ({
+      ...ind,
       codigo: ind.codigoAnimal,
       GMD: ind.gmd,
       ICA: ind.ica,
-      esIneficiente: ind.esIneficiente,
-      ...ind,
     })) ?? []
 
   return (

@@ -8,9 +8,9 @@ import {
 } from 'lucide-react'
 import { usePrestamos, useCrearPrestamo, useRegistrarPagoCuota, useAnularPagoCuota } from '@/hooks/useFeedlot'
 import {
-  PageHeader, Card, CardContent, Skeleton, EmptyState, Button,
+  PageHeader, Card, Skeleton, EmptyState, Button,
   Dialog, DialogHeader, DialogTitle, DialogDescription,
-  FormField, Input, Alert, Badge,
+  FormField, Input, Alert,
   MoneyInput,
 } from '@/components/ui'
 import { fmt } from '@/utils'

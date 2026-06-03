@@ -36,7 +36,13 @@ function CrearLoteModal({ open, onClose }: { open: boolean; onClose: () => void 
   const onSubmit = async (data: CrearLoteForm) => {
     setErrorApi(undefined)
     try {
+      // Código autogenerado a partir del nombre (alfanumérico + guiones, único por timestamp).
+      const slug = data.nombre.trim().toUpperCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 12)
+      const codigo = `L-${slug || 'LOTE'}-${Date.now().toString().slice(-5)}`
       await createLote.mutateAsync({
+        codigo,
         nombre: data.nombre,
         capacidadMaxima: data.capacidadMaxima,
       })

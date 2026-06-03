@@ -127,6 +127,52 @@ public sealed class SubaganHttpService : ISubaganHttpService
         return todos;
     }
 
+    // ── Calendario de eventos ───────────────────────────────────────────────────
+
+    public async Task<List<SubaganEventoCalendarioData>> ObtenerEventosCalendarioAsync(CancellationToken ct = default)
+    {
+        EnsureAuthenticated();
+
+        var html = await _client!.GetStringAsync("/subagan/showCalendarEvents", ct);
+        var eventos = ParseEventosCalendario(html);
+
+        _logger.LogInformation("SUBAGAN — calendario: {N} eventos encontrados", eventos.Count);
+        return eventos;
+    }
+
+    /// <summary>
+    /// Extrae los eventos del array JS "eventColors" embebido en el HTML del calendario.
+    /// Cada objeto tiene la forma: { id: '1208', title: '...', start: '2026-05-27', ... }
+    /// </summary>
+    private static List<SubaganEventoCalendarioData> ParseEventosCalendario(string html)
+    {
+        var eventos = new List<SubaganEventoCalendarioData>();
+
+        // Captura cada bloque { id: '...', title: '...', start: '...' } tolerando
+        // espacios, saltos de línea y campos adicionales entre ellos.
+        var rx = new Regex(
+            @"\{\s*id:\s*'(?<id>\d+)'\s*,\s*title:\s*'(?<title>(?:[^'\\]|\\.)*)'\s*,\s*start:\s*'(?<start>\d{4}-\d{2}-\d{2})'",
+            RegexOptions.Singleline);
+
+        foreach (Match m in rx.Matches(html))
+        {
+            if (!int.TryParse(m.Groups["id"].Value, out var eventId)) continue;
+            if (!DateOnly.TryParse(m.Groups["start"].Value, out var fecha)) continue;
+
+            // Desescapar comillas/barras del título JS y normalizar espacios.
+            var titulo = m.Groups["title"].Value
+                .Replace("\\'", "'")
+                .Replace("\\\"", "\"")
+                .Replace("\\\\", "\\")
+                .Trim();
+            titulo = Regex.Replace(titulo, @"\s+", " ");
+
+            eventos.Add(new SubaganEventoCalendarioData(eventId, titulo, fecha));
+        }
+
+        return eventos;
+    }
+
     // ── Parsers ───────────────────────────────────────────────────────────────
 
     private static List<SubaganLoteData> ParseLotes(string html)

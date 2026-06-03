@@ -626,6 +626,14 @@ export interface SubaganLote {
   fecha: string
 }
 
+export interface SubaganCalendarioEvento {
+  eventId: number
+  titulo: string
+  fecha: string
+  esPasada: boolean
+  yaImportado: boolean
+}
+
 export interface ImportarSubastaPayload {
   eventId: number
   numeroSubasta?: number | null

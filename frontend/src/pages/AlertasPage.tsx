@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, subDays } from 'date-fns'
-import { AlertTriangle, TrendingDown, Beef, Syringe, Landmark } from 'lucide-react'
+import { TrendingDown, Syringe, Landmark } from 'lucide-react'
 import { useLotes, useAnimalesIneficientes, useVacunasProximas, useEtapasInversion } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton, EmptyState, CustomSelect,

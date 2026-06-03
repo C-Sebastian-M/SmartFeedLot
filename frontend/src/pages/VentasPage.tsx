@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X, ShoppingCart, CheckCircle2, ChevronDown, Beef, Trash2, DollarSign } from 'lucide-react'
+import { Plus, X, ShoppingCart, CheckCircle2, Beef, Trash2, DollarSign } from 'lucide-react'
 import { useVentas, useCrearVenta, useCompradores, useAnimals } from '@/hooks/useFeedlot'
 import {
   PageHeader, Card, CardContent,

@@ -816,7 +816,7 @@ export function useEliminarMarrana() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (marranaId: string) => porcinoService.eliminarMarrana(marranaId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.porcino }),
   })
 }
 
@@ -825,7 +825,7 @@ export function useAvanzarEstadoCamada() {
   return useMutation({
     mutationFn: ({ marranaId, camadaId, accionEstado }: { marranaId: string; camadaId: string; accionEstado: string }) =>
       porcinoService.avanzarEstadoCamada(marranaId, camadaId, accionEstado),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.marranas }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.porcino }),
   })
 }
 
@@ -898,5 +898,14 @@ export function useEliminarSubaganEvento() {
   return useMutation({
     mutationFn: subaganService.delete,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subaganEventos }),
+  })
+}
+
+export function useSubaganCalendario(sede?: string, soloPasadas?: boolean, enabled = true) {
+  return useQuery({
+    queryKey: ['subagan', 'calendario', sede ?? '', soloPasadas ?? false] as const,
+    queryFn: () => subaganService.getCalendario(sede, soloPasadas),
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 min: el calendario no cambia tan seguido
   })
 }

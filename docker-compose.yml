@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: smartfeedlot
       POSTGRES_USER: feedlot_user
-      POSTGRES_PASSWORD: feedlot_pass
+      POSTGRES_PASSWORD: 5ee6e778c879a7cfd0b242d594d51b29
     ports:
       - "5433:5432"
     volumes:
@@ -32,7 +32,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=smartfeedlot;Username=feedlot_user;Password=feedlot_pass
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=smartfeedlot;Username=feedlot_user;Password=5ee6e778c879a7cfd0b242d594d51b29
       - JwtSettings__SecretKey=${JWT_SECRET_KEY:-dev-secret-key-min-32-chars-feedlot-2024}
       - JwtSettings__Issuer=SmartFeedLot
       - JwtSettings__Audience=SmartFeedLot-Frontend

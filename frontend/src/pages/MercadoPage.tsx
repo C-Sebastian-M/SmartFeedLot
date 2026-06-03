@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Plus, X, TrendingUp, Pencil, Trash2, Download, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
+import { Plus, X, TrendingUp, Pencil, Trash2, Download, ChevronDown, ChevronUp, RefreshCw, Calendar, Check } from 'lucide-react'
 import {
   usePreciosMercado, useCrearPrecioMercado, useActualizarPrecioMercado, useEliminarPrecioMercado,
-  useSubaganEventos, useSubaganLotes, useImportarSubasta, useEliminarSubaganEvento,
+  useSubaganEventos, useSubaganLotes, useImportarSubasta, useEliminarSubaganEvento, useSubaganCalendario,
 } from '@/hooks/useFeedlot'
 import {
   PageHeader, Skeleton, EmptyState, Button, Card, CardContent,
@@ -11,7 +11,7 @@ import {
   FormField, MoneyInput, CustomSelect,
 } from '@/components/ui'
 import { fmt } from '@/utils'
-import type { PrecioMercado, SubaganEvento } from '@/types'
+import type { PrecioMercado, SubaganEvento, SubaganCalendarioEvento } from '@/types'
 
 const especies = ['Bovino', 'Porcino']
 const tipos = ['Novillo', 'Ternero', 'Vaca', 'Cerdo Preceba', 'Cerdo Ceba', 'Lechón']
@@ -146,11 +146,19 @@ export default function MercadoPage() {
   const [importNumero, setImportNumero] = useState('')
   const [importResult, setImportResult] = useState<string | null>(null)
 
+  // Calendario SUBAGAN
+  const [sede, setSede] = useState('PLANETA RICA')
+  const [importandoId, setImportandoId] = useState<number | null>(null)
+  const [mostrarManual, setMostrarManual] = useState(false)
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState<PrecioMercado | undefined>(undefined)
   const [confirmarEliminar, setConfirmarEliminar] = useState<PrecioMercado | undefined>(undefined)
 
   const [tab, setTab] = useState<'manuales' | 'subagan'>('subagan')
+
+  const { data: calendario, isLoading: loadingCalendario, isError: errorCalendario, refetch: refetchCalendario } =
+    useSubaganCalendario(sede || undefined, false, tab === 'subagan')
 
   const form = useForm<PrecioForm>({ defaultValues })
 
@@ -201,8 +209,25 @@ export default function MercadoPage() {
     }
   }
 
+  const handleImportarDelCalendario = async (ev: SubaganCalendarioEvento) => {
+    setImportandoId(ev.eventId)
+    setImportResult(null)
+    try {
+      const res = await importarSubasta.mutateAsync({ eventId: ev.eventId, numeroSubasta: null })
+      setImportResult(res.yaExistia
+        ? `✓ "${ev.titulo}" ya estaba importada (${res.totalLotes} lotes)`
+        : `✓ Importada "${ev.titulo}": ${res.totalLotes} lotes del ${fmt.fecha(res.fecha)}`)
+      refetchCalendario()
+    } catch (e: any) {
+      setImportResult(`✗ Error al importar "${ev.titulo}": ${e?.response?.data?.error ?? 'No se pudo importar'}`)
+    } finally {
+      setImportandoId(null)
+    }
+  }
+
   const isPending = crearPrecio.isPending || actualizarPrecio.isPending
   const eventos = subaganEventos ?? []
+  const sedes = ['PLANETA RICA', 'CAUCASIA', 'CERETÉ', 'VALLEDUPAR', 'AYAPEL', 'LORICA', 'PAZ DE ARIPORO', 'TODAS']
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -240,46 +265,109 @@ export default function MercadoPage() {
         {/* ── Tab SUBAGAN ── */}
         {tab === 'subagan' && (
           <>
-            {/* Panel de importación */}
+            {/* Panel: calendario de subastas SUBAGAN */}
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Download className="w-4 h-4 text-primary" />
-                  Importar subasta desde SUBAGAN
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Ingresa el <strong>eventId</strong> visible en la URL de SUBAGAN cuando abres una subasta:
-                  <code className="ml-1 px-1 bg-muted rounded text-xs">showLots?eventId=<strong>1208</strong></code>
-                </p>
-                <div className="flex gap-2 flex-wrap">
-                  <input
-                    type="number"
-                    placeholder="EventId (ej: 1208)"
-                    value={importEventId}
-                    onChange={e => setImportEventId(e.target.value)}
-                    className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm w-44"
-                  />
-                  <input
-                    type="number"
-                    placeholder="# Subasta (opcional)"
-                    value={importNumero}
-                    onChange={e => setImportNumero(e.target.value)}
-                    className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm w-44"
-                  />
-                  <Button
-                    onClick={handleImportar}
-                    loading={importando}
-                    disabled={!importEventId}
-                    size="sm"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Importar
-                  </Button>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    Subastas disponibles en SUBAGAN
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={sede}
+                      onChange={e => setSede(e.target.value === 'TODAS' ? '' : e.target.value)}
+                      className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      {sedes.map(s => (
+                        <option key={s} value={s}>{s === 'TODAS' ? 'Todas las sedes' : s}</option>
+                      ))}
+                    </select>
+                    <Button variant="outline" size="sm" onClick={() => refetchCalendario()} loading={loadingCalendario}>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
+
                 {importResult && (
-                  <p className={`mt-2 text-xs ${importResult.startsWith('✓') ? 'text-emerald-400' : 'text-destructive'}`}>
+                  <p className={`mb-2 text-xs ${importResult.startsWith('✓') ? 'text-emerald-400' : 'text-destructive'}`}>
                     {importResult}
                   </p>
+                )}
+
+                {loadingCalendario ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-9 rounded" />
+                    <Skeleton className="h-9 rounded" />
+                    <Skeleton className="h-9 rounded" />
+                  </div>
+                ) : errorCalendario ? (
+                  <p className="text-xs text-destructive">
+                    No se pudo cargar el calendario de SUBAGAN. Verifica las credenciales o usa la importación manual abajo.
+                  </p>
+                ) : !calendario?.length ? (
+                  <p className="text-xs text-muted-foreground">No hay subastas para la sede seleccionada.</p>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto border border-border/40 rounded-lg divide-y divide-border/30">
+                    {calendario.map(ev => (
+                      <div key={ev.eventId} className="flex items-center justify-between px-3 py-2 hover:bg-muted/10 transition-colors gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm truncate">{ev.titulo}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {fmt.fecha(ev.fecha)} · #{ev.eventId}
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          {ev.yaImportado ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400 px-2 py-1">
+                              <Check className="w-3.5 h-3.5" /> Importada
+                            </span>
+                          ) : !ev.esPasada ? (
+                            <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-muted/30">Próxima</span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleImportarDelCalendario(ev)}
+                              loading={importandoId === ev.eventId}
+                              disabled={importandoId !== null}
+                            >
+                              <Download className="w-3.5 h-3.5" />Importar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Importación manual por eventId (respaldo) */}
+                <button
+                  onClick={() => setMostrarManual(v => !v)}
+                  className="mt-3 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  {mostrarManual ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  Importar manualmente por eventId
+                </button>
+                {mostrarManual && (
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    <input
+                      type="number"
+                      placeholder="EventId (ej: 1208)"
+                      value={importEventId}
+                      onChange={e => setImportEventId(e.target.value)}
+                      className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm w-44"
+                    />
+                    <input
+                      type="number"
+                      placeholder="# Subasta (opcional)"
+                      value={importNumero}
+                      onChange={e => setImportNumero(e.target.value)}
+                      className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm w-44"
+                    />
+                    <Button onClick={handleImportar} loading={importando} disabled={!importEventId} size="sm">
+                      <RefreshCw className="w-3.5 h-3.5" />Importar
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
