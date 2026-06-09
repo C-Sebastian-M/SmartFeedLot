@@ -1,37 +1,31 @@
-## .NET
-bin/
-obj/
+# ─── .NET ────────────────────────────────────────────────────────────────────
 *.user
 *.suo
 .vs/
+bin/
+obj/
+*.log
+logs/
+
+# Secrets — NUNCA subir al repo
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+!appsettings.json
+
+# ─── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+.env.*
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
 *.swp
 
-## Logs
-logs/
-*.log
-*.err
-api.log
-api.err
-
-## Secrets
-# Los appsettings reales contienen credenciales y NO se versionan.
-# Solo se sube la plantilla appsettings.example.json (sin secretos).
-appsettings.json
-appsettings.*.json
-!appsettings.example.json
-secrets.json
-
-## Docker
-.dockerignore
-
-## OS
+# ─── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-## NuGet
-*.nupkg
-.nuget/
-
-## Test results
-TestResults/
-coverage/

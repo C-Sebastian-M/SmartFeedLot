@@ -7,10 +7,6 @@ namespace Feedlot.API.Extensions;
 
 public static class ApiServiceExtensions
 {
-    /// <summary>
-    /// Configura Swagger/OpenAPI con soporte para JWT Bearer authentication.
-    /// El botón "Authorize" en Swagger UI permite probar endpoints protegidos.
-    /// </summary>
     public static IServiceCollection AddSwaggerWithJwt(this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
@@ -20,16 +16,9 @@ public static class ApiServiceExtensions
             {
                 Title = "SmartFeedLot API",
                 Version = "v1",
-                Description = "Plataforma de gestión y analítica de feedlot bovino. " +
-                              "Monitoreo productivo, indicadores de eficiencia y rentabilidad.",
-                Contact = new OpenApiContact
-                {
-                    Name = "SmartFeedLot",
-                    Email = "dev@feedlot.com"
-                }
+                Description = "Plataforma de gestión y analítica de feedlot bovino.",
             });
 
-            // Definición del esquema JWT para Swagger UI.
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",
@@ -54,25 +43,30 @@ public static class ApiServiceExtensions
                     Array.Empty<string>()
                 }
             });
-
-            // Incluir comentarios XML de los controllers (si se habilita en el .csproj).
-            var xmlFile = $"{typeof(Program).Assembly.GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-                options.IncludeXmlComments(xmlPath);
         });
 
         return services;
     }
 
-    /// <summary>Configura JWT Bearer authentication leyendo JwtSettings de appsettings.</summary>
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"]
-            ?? throw new InvalidOperationException("JwtSettings:SecretKey no configurado.");
+        // Lee el secreto desde variable de entorno primero, luego appsettings.
+        var secretKey =
+            Environment.GetEnvironmentVariable("JwtSettings__SecretKey")
+            ?? configuration["JwtSettings:SecretKey"]
+            ?? throw new InvalidOperationException("JWT SecretKey no configurado.");
+
+        var issuer =
+            Environment.GetEnvironmentVariable("JwtSettings__Issuer")
+            ?? configuration["JwtSettings:Issuer"]
+            ?? "SmartFeedLot";
+
+        var audience =
+            Environment.GetEnvironmentVariable("JwtSettings__Audience")
+            ?? configuration["JwtSettings:Audience"]
+            ?? "SmartFeedLot-Frontend";
 
         services.AddAuthentication(options =>
             {
@@ -87,49 +81,41 @@ public static class ApiServiceExtensions
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(secretKey)),
                     ValidateIssuer = true,
-                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidIssuer = issuer,
                     ValidateAudience = true,
-                    ValidAudience = jwtSettings["Audience"],
+                    ValidAudience = audience,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1)
                 };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnAuthenticationFailed = ctx =>
-                    {
-                        if (ctx.Exception.GetType() == typeof(SecurityTokenExpiredException))
-                            ctx.Response.Headers.Append("Token-Expired", "true");
-                        return Task.CompletedTask;
-                    }
-                };
             });
 
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-            options.AddPolicy("SupervisorOrAdmin",
-                policy => policy.RequireRole("Admin", "Supervisor"));
-        });
-
+        services.AddAuthorization();
         return services;
     }
 
-    /// <summary>Configura CORS para el frontend React (localhost en desarrollo).</summary>
     public static IServiceCollection AddFeedlotCors(this IServiceCollection services)
     {
+        // El origen de producción se configura via variable de entorno ALLOWED_ORIGINS.
+        // Ejemplo: https://smartfeedlot.vercel.app,https://feedlot.app
+        var allowedOrigins =
+            Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")
+                ?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            ?? [];
+
         services.AddCors(options =>
         {
             options.AddPolicy("FeedlotFrontend", policy =>
             {
-                policy
+                var builder = policy
                     .WithOrigins(
-                        "http://localhost:5173",   // Vite dev server
-                        "http://localhost:3000",
-                        "https://feedlot.app")
+                        "http://localhost:5173",
+                        "http://localhost:3000")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
+
+                if (allowedOrigins.Length > 0)
+                    builder.WithOrigins(allowedOrigins);
             });
         });
 

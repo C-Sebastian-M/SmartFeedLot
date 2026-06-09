@@ -1,11 +1,17 @@
 import axios from 'axios'
 
+// En producción (Vercel), VITE_API_URL apunta al backend desplegado en Railway/Render.
+// En desarrollo, el proxy de Vite reescribe /api → http://localhost:5000/api.
+const baseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Request interceptor: agrega el token JWT a cada request.
+// Agrega el JWT Bearer token a cada request.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('feedlot_token')
   if (token) {
@@ -14,7 +20,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor: redirige al login si el token expiró.
+// Redirige al login si el token expiró.
 api.interceptors.response.use(
   (response) => response,
   (error) => {

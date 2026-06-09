@@ -1,18 +1,9 @@
 using Feedlot.Domain.Entities;
 using Feedlot.Domain.Interfaces;
-using Feedlot.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 
 namespace Feedlot.Infrastructure.Persistence;
 
-/// <summary>
-/// DbContext principal del sistema feedlot.
-/// 
-/// CORRECCIÓN: el interceptor NO se registra aquí en OnConfiguring.
-/// Se registra UNA SOLA VEZ desde DependencyInjection via AddInterceptors()
-/// en el DbContextOptions. Registrarlo en ambos lugares lo ejecutaba dos veces
-/// por cada SaveChanges.
-/// </summary>
 public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
 {
     public FeedlotDbContext(DbContextOptions<FeedlotDbContext> options)
@@ -20,42 +11,62 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     {
     }
 
-    // Aggregate Roots
+    // ── Core bovino ───────────────────────────────────────────────────────────
     public DbSet<Animal> Animals => Set<Animal>();
     public DbSet<Lote> Lotes => Set<Lote>();
-    public DbSet<ConsumoAlimenticio> Consumos => Set<ConsumoAlimenticio>();
-    public DbSet<Racion> Raciones => Set<Racion>();
-    public DbSet<Ingrediente> Ingredientes => Set<Ingrediente>();
-    public DbSet<MovimientoFinanciero> MovimientosFinancieros => Set<MovimientoFinanciero>();
-    public DbSet<CategoriaGasto> CategoriasGasto => Set<CategoriaGasto>();
-    public DbSet<Socio> Socios => Set<Socio>();
-    public DbSet<Prestamo> Prestamos => Set<Prestamo>();
-    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
-    public DbSet<Compra> Compras => Set<Compra>();
-    public DbSet<Comprador> Compradores => Set<Comprador>();
-    public DbSet<Venta> Ventas => Set<Venta>();
-    public DbSet<VentaItem> VentaItems => Set<VentaItem>();
-
-    // Entidades internas accesibles para queries directas
     public DbSet<Pesaje> Pesajes => Set<Pesaje>();
     public DbSet<AnimalLote> AnimalesLote => Set<AnimalLote>();
     public DbSet<EventoSanitario> EventosSanitarios => Set<EventoSanitario>();
+    public DbSet<ConsumoAlimenticio> Consumos => Set<ConsumoAlimenticio>();
+    public DbSet<CostoOperativo> CostosOperativos => Set<CostoOperativo>();
+
+    // ── Nutrición ─────────────────────────────────────────────────────────────
+    public DbSet<Racion> Raciones => Set<Racion>();
+    public DbSet<Ingrediente> Ingredientes => Set<Ingrediente>();
+    public DbSet<RacionIngrediente> RacionIngredientes => Set<RacionIngrediente>();
+
+    // ── Financiero ────────────────────────────────────────────────────────────
+    public DbSet<MovimientoFinanciero> MovimientosFinancieros => Set<MovimientoFinanciero>();
+    public DbSet<CategoriaGasto> CategoriasGasto => Set<CategoriaGasto>();
+    public DbSet<Prestamo> Prestamos => Set<Prestamo>();
     public DbSet<CuotaAmortizacion> CuotasAmortizacion => Set<CuotaAmortizacion>();
-    public DbSet<EtapaInversion> EtapasInversion => Set<EtapaInversion>();
-    public DbSet<ItemInversion> ItemsInversion => Set<ItemInversion>();
+
+    // ── Comercial ─────────────────────────────────────────────────────────────
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<Comprador> Compradores => Set<Comprador>();
+    public DbSet<Compra> Compras => Set<Compra>();
+    public DbSet<Venta> Ventas => Set<Venta>();
+    public DbSet<VentaItem> VentaItems => Set<VentaItem>();
+
+    // ── Operaciones ───────────────────────────────────────────────────────────
+    public DbSet<Socio> Socios => Set<Socio>();
     public DbSet<AporteSocio> AportesSocios => Set<AporteSocio>();
     public DbSet<Potrero> Potreros => Set<Potrero>();
     public DbSet<EstanciaAnimal> EstanciasAnimales => Set<EstanciaAnimal>();
     public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<ActividadManoObra> ActividadesManoObra => Set<ActividadManoObra>();
+
+    // ── Cultivos y silos ──────────────────────────────────────────────────────
     public DbSet<CultivoCania> CultivosCania => Set<CultivoCania>();
     public DbSet<CorteCania> CortesCania => Set<CorteCania>();
     public DbSet<LoteSilo> LotesSilo => Set<LoteSilo>();
+
+    // ── Inversión ─────────────────────────────────────────────────────────────
+    public DbSet<EtapaInversion> EtapasInversion => Set<EtapaInversion>();
+    public DbSet<ItemInversion> ItemsInversion => Set<ItemInversion>();
+
+    // ── Presupuesto ───────────────────────────────────────────────────────────
     public DbSet<Presupuesto> Presupuestos => Set<Presupuesto>();
+
+    // ── Porcinos ──────────────────────────────────────────────────────────────
     public DbSet<Marrana> Marranas => Set<Marrana>();
     public DbSet<Camada> Camadas => Set<Camada>();
     public DbSet<LoteCerdos> LotesCerdos => Set<LoteCerdos>();
+
+    // ── Mercado ───────────────────────────────────────────────────────────────
     public DbSet<PrecioMercado> PreciosMercado => Set<PrecioMercado>();
+
+    // ── Subagan ───────────────────────────────────────────────────────────────
     public DbSet<SubaganEvento> SubaganEventos => Set<SubaganEvento>();
     public DbSet<SubaganLote> SubaganLotes => Set<SubaganLote>();
 

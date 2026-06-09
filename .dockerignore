@@ -1,0 +1,11 @@
+**/.vs
+**/bin
+**/obj
+**/*.user
+**/logs
+**/.git
+**/.gitignore
+**/README.md
+**/*.md
+**/TestResults
+**/coverage
