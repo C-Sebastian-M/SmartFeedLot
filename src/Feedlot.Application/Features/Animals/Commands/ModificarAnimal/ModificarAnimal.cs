@@ -19,13 +19,15 @@ public sealed record ModificarAnimalCommand(
     decimal PesoIngresoKg,
     decimal PrecioCompra,
     string Moneda,
-    Guid? NuevoLoteId = null
+    Guid? NuevoLoteId = null,
+    string? TipoComercial = null
 ) : ICommand;
 public sealed class ModificarAnimalCommandValidator
     : AbstractValidator<ModificarAnimalCommand>
 {
     private static readonly string[] SexosValidos = ["Macho", "Hembra"];
     private static readonly string[] MonedasValidas = ["COP", "USD", "EUR"];
+    private static readonly string[] TiposComerciales = ["MC", "ML", "HV", "HL", "VE", "VC", "TO"];
 
     public ModificarAnimalCommandValidator()
     {
@@ -106,6 +108,9 @@ public sealed class ModificarAnimalCommandHandler
         var sexo = Enum.Parse<Sexo>(request.Sexo, ignoreCase: true);
         var pesoIngreso = Peso.Crear(request.PesoIngresoKg);
         var precioCompra = Dinero.Crear(request.PrecioCompra, request.Moneda);
+        TipoComercial? tipoComercial = string.IsNullOrWhiteSpace(request.TipoComercial)
+            ? null
+            : Enum.Parse<TipoComercial>(request.TipoComercial, ignoreCase: true);
 
         animal.Modificar(
             request.Nombre,
@@ -114,7 +119,8 @@ public sealed class ModificarAnimalCommandHandler
             request.FechaNacimiento,
             request.FechaIngreso,
             pesoIngreso,
-            precioCompra);
+            precioCompra,
+            tipoComercial);
 
         _animalRepository.Actualizar(animal);
 

@@ -1,7 +1,7 @@
 import api from './api'
 import type {
   Animal, AnimalResumen, PagedResult, VacunaProxima,
-  IndicadorProductivo, ResumenLote, AnimalIneficiente,
+  IndicadorProductivo, ResumenLote, AnimalIneficiente, ValorProyectadoLote,
   LoginResponse, Racion, Lote, LoteResumen,
   CosteoLote, Proveedor, Compra, Comprador, Venta,
   CategoriaGasto, Socio, MovimientoFinanciero, Prestamo,
@@ -44,6 +44,7 @@ export const animalsService = {
     moneda: string
     fechaIngreso: string
     loteInicialId?: string
+    tipoComercial?: string
   }): Promise<string> => {
     const { data } = await api.post('/animals', payload)
     return data
@@ -122,6 +123,16 @@ export const lotesService = {
   ): Promise<void> => {
     await api.post(`/lotes/${loteId}/mover-animal`, payload)
   },
+
+  /// Dado un array de animalIds, retorna un mapa animalId → { loteId, loteCodigo, loteNombre }.
+  /// Solo aparecen en el resultado los animales que tienen lote activo.
+  consultarLotesAnimales: async (
+    animalIds: string[]
+  ): Promise<Record<string, { loteId: string; loteCodigo: string; loteNombre: string }>> => {
+    if (animalIds.length === 0) return {}
+    const { data } = await api.post('/lotes/consultar-lotes-animales', { animalIds })
+    return data
+  },
 }
 
 // ─── Analítica ────────────────────────────────────────────────────────────────
@@ -158,6 +169,16 @@ export const analiticaService = {
     icaMaxima?: number
   }): Promise<AnimalIneficiente[]> => {
     const { data } = await api.get('/analitica/animales-ineficientes', { params })
+    return data
+  },
+
+  getValorProyectadoLote: async (
+    loteId: string,
+    subaganEventoId: string,
+  ): Promise<ValorProyectadoLote> => {
+    const { data } = await api.get(`/analitica/lotes/${loteId}/valor-proyectado`, {
+      params: { subaganEventoId },
+    })
     return data
   },
 

@@ -18,7 +18,8 @@ public sealed record RegistrarAnimalCommand(
     decimal PrecioCompraPorKg,
     string Moneda,
     DateOnly FechaIngreso,
-    Guid? LoteInicialId
+    Guid? LoteInicialId,
+    string? TipoComercial = null
 ) : ICommand<Guid>;
 /// <summary>
 /// Validador para RegistrarAnimalCommand.
@@ -30,6 +31,7 @@ public sealed class RegistrarAnimalCommandValidator
 {
     private static readonly string[] SexosValidos = ["Macho", "Hembra"];
     private static readonly string[] MonedasValidas = ["COP", "USD", "EUR"];
+    private static readonly string[] TiposComerciales = ["MC", "ML", "HV", "HL", "VE", "VC", "TO"];
 
     public RegistrarAnimalCommandValidator()
     {
@@ -65,6 +67,11 @@ public sealed class RegistrarAnimalCommandValidator
 
         RuleFor(x => x.FechaIngreso)
             .NotEmpty().WithMessage("La fecha de ingreso es requerida.");
+
+        RuleFor(x => x.TipoComercial)
+            .Must(t => TiposComerciales.Contains(t!.ToUpperInvariant()))
+            .WithMessage($"El tipo comercial debe ser uno de: {string.Join(", ", TiposComerciales)}.")
+            .When(x => !string.IsNullOrWhiteSpace(x.TipoComercial));
     }
 }
 /// <summary>
@@ -107,6 +114,9 @@ public sealed class RegistrarAnimalCommandHandler
         var precioCompra = Dinero.Crear(
             request.PrecioCompraPorKg * request.PesoIngresoKg, request.Moneda);
         var sexo = Enum.Parse<Sexo>(request.Sexo, ignoreCase: true);
+        TipoComercial? tipoComercial = string.IsNullOrWhiteSpace(request.TipoComercial)
+            ? null
+            : Enum.Parse<TipoComercial>(request.TipoComercial, ignoreCase: true);
 
         var animal = Animal.Registrar(
             codigo,
@@ -117,7 +127,8 @@ public sealed class RegistrarAnimalCommandHandler
             request.FechaNacimiento,
             pesoIngreso,
             precioCompra,
-            request.FechaIngreso);
+            request.FechaIngreso,
+            tipoComercial);
 
         await _animalRepository.AgregarAsync(animal, ct);
 

@@ -1,0 +1,41 @@
+name: Deploy Backend → Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/Feedlot.API/Feedlot.API.csproj
+
+      - name: Build
+        run: dotnet build src/Feedlot.API/Feedlot.API.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish src/Feedlot.API/Feedlot.API.csproj \
+          --configuration Release \
+          --output ./publish \
+          --no-build
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'smartfeedlot-api'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish

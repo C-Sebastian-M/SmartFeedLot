@@ -33,7 +33,8 @@ public sealed class Animal : AggregateRoot<Guid>
         DateOnly? fechaNacimiento,
         Peso pesoIngreso,
         Dinero precioCompra,
-        DateOnly fechaIngreso) : base(id)
+        DateOnly fechaIngreso,
+        TipoComercial? tipoComercial) : base(id)
     {
         CodigoIdentificacion = codigoIdentificacion;
         Nombre = nombre;
@@ -44,6 +45,7 @@ public sealed class Animal : AggregateRoot<Guid>
         PesoIngreso = pesoIngreso;
         PrecioCompra = precioCompra;
         FechaIngreso = fechaIngreso;
+        TipoComercial = tipoComercial;
         EstadoProductivo = EstadoProductivo.EnEngorde;
         EstadoSanitario = EstadoSanitario.Sano;
     }
@@ -58,6 +60,13 @@ public sealed class Animal : AggregateRoot<Guid>
     public Peso PesoIngreso { get; private set; } = null!;
     public Dinero PrecioCompra { get; private set; } = null!;
     public DateOnly FechaIngreso { get; private set; }
+
+    /// <summary>
+    /// Tipo comercial (MC, ML, HV...) para emparejar con precios de subasta.
+    /// Nullable: animales antiguos pueden no tenerlo asignado.
+    /// </summary>
+    public TipoComercial? TipoComercial { get; private set; }
+
     public EstadoProductivo EstadoProductivo { get; private set; }
     public EstadoSanitario EstadoSanitario { get; private set; }
 
@@ -79,7 +88,8 @@ public sealed class Animal : AggregateRoot<Guid>
         DateOnly? fechaNacimiento,
         Peso pesoIngreso,
         Dinero precioCompra,
-        DateOnly fechaIngreso)
+        DateOnly fechaIngreso,
+        TipoComercial? tipoComercial = null)
     {
         if (string.IsNullOrWhiteSpace(numeroArete))
             throw new DomainException("El número de arete no puede estar vacío.");
@@ -98,7 +108,8 @@ public sealed class Animal : AggregateRoot<Guid>
             fechaNacimiento,
             pesoIngreso,
             precioCompra,
-            fechaIngreso);
+            fechaIngreso,
+            tipoComercial);
 
         animal.RaiseDomainEvent(new AnimalRegistradoEvent(
             animal.Id,
@@ -120,7 +131,8 @@ public sealed class Animal : AggregateRoot<Guid>
         DateOnly? fechaNacimiento,
         DateOnly fechaIngreso,
         Peso pesoIngreso,
-        Dinero precioCompra)
+        Dinero precioCompra,
+        TipoComercial? tipoComercial = null)
     {
         if (string.IsNullOrWhiteSpace(numeroArete))
             throw new DomainException("El número de arete no puede estar vacío.");
@@ -135,6 +147,7 @@ public sealed class Animal : AggregateRoot<Guid>
         FechaIngreso = fechaIngreso;
         PesoIngreso = pesoIngreso;
         PrecioCompra = precioCompra;
+        TipoComercial = tipoComercial;
     }
 
     // --- Comportamiento de dominio ---

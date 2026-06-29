@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { ArrowLeft, Package, Users, ArrowRightLeft, X } from 'lucide-react'
-import { useLote, useLotes, useMoverAnimal } from '@/hooks/useFeedlot'
+import { ArrowLeft, Package, Users, ArrowRightLeft, X, TrendingUp } from 'lucide-react'
+import { useLote, useLotes, useMoverAnimal, useSubaganEventos, useValorProyectadoLote } from '@/hooks/useFeedlot'
 import {
   Button, Card, CardHeader, CardTitle, Badge,
   Skeleton, EmptyState,
@@ -34,6 +34,95 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const MOTIVOS = ['IngresoInicial', 'Reclasificacion', 'Sanitario', 'Capacidad', 'Venta', 'Muerte', 'Otro'] as const
+
+/// Panel: valor de venta proyectado del lote según precios de una subasta SUBAGAN.
+function ValorProyectadoCard({ loteId }: { loteId: string }) {
+  const { data: eventos } = useSubaganEventos()
+  const [eventoId, setEventoId] = useState<string>('')
+  const { data, isLoading, isError } = useValorProyectadoLote(loteId, eventoId || undefined)
+
+  const opciones = (eventos ?? []).map(e => ({
+    value: e.id,
+    label: `${e.numeroSubasta ? `Subasta #${e.numeroSubasta}` : `Evento ${e.subaganEventoId}`} · ${fmt.fecha(e.fecha)}`,
+  }))
+
+  return (
+    <Card className="p-5">
+      <CardHeader className="p-0 mb-3">
+        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+          <TrendingUp className="w-3.5 h-3.5" /> Valor de venta proyectado
+        </CardTitle>
+      </CardHeader>
+
+      {opciones.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Importa una subasta de SUBAGAN para calcular el valor del lote con precios reales.
+        </p>
+      ) : (
+        <>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            Elige la subasta cuyos precios se usarán como referencia:
+          </p>
+          <CustomSelect
+            placeholder="Seleccionar subasta..."
+            options={opciones}
+            value={eventoId}
+            onChange={setEventoId}
+          />
+
+          {eventoId && isLoading && (
+            <p className="text-xs text-muted-foreground mt-3">Calculando...</p>
+          )}
+          {eventoId && isError && (
+            <p className="text-xs text-destructive mt-3">No se pudo calcular el valor proyectado.</p>
+          )}
+          {data && (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
+                <div className="text-[10px] uppercase tracking-widest text-emerald-400/80">Valor total estimado</div>
+                <div className="text-lg font-semibold text-emerald-400 tabular-nums">
+                  ${data.valorTotal.toLocaleString('es-CO')}
+                </div>
+              </div>
+              <div className="flex gap-4 text-[11px] text-muted-foreground">
+                <span>{data.animalesIncluidos} animales incluidos</span>
+                {data.animalesOmitidos > 0 && (
+                  <span className="text-amber-400">{data.animalesOmitidos} omitidos (sin tipo o tipo no presente)</span>
+                )}
+              </div>
+              {data.detalle.length > 0 && (
+                <div className="border border-border/40 rounded-lg overflow-x-auto max-h-64 overflow-y-auto">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="border-b border-border/30 bg-muted/10 text-muted-foreground">
+                        {['Animal', 'Tipo', 'Peso', '$/kg', 'Valor'].map(h => (
+                          <th key={h} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.detalle.map(d => (
+                        <tr key={d.animalId} className={`border-b border-border/20 ${d.incluido ? '' : 'opacity-50'}`}>
+                          <td className="px-2 py-1.5">{d.nombre ?? d.codigo}</td>
+                          <td className="px-2 py-1.5">{d.tipoComercial ?? '—'}</td>
+                          <td className="px-2 py-1.5 tabular-nums">{d.pesoActualKg.toLocaleString('es-CO')} kg</td>
+                          <td className="px-2 py-1.5 tabular-nums">{d.precioPorKg ? `$${d.precioPorKg.toLocaleString('es-CO')}` : '—'}</td>
+                          <td className="px-2 py-1.5 tabular-nums font-medium">
+                            {d.valorProyectado ? `$${d.valorProyectado.toLocaleString('es-CO')}` : <span className="text-amber-400" title={d.motivoOmision ?? ''}>omitido</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </Card>
+  )
+}
 
 export default function LoteDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -159,6 +248,9 @@ export default function LoteDetallePage() {
             </div>
           </div>
         </Card>
+
+        {/* Valor de venta proyectado (precios de subasta SUBAGAN) */}
+        <ValorProyectadoCard loteId={lote.id} />
 
         {/* Información general */}
         <Card className="p-5">

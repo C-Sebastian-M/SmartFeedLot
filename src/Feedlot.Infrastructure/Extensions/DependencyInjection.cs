@@ -107,6 +107,12 @@ public static class DependencyInjection
         // ── Domain Services ───────────────────────────────────────────────────
         services.AddScoped<IndicadorProductivoService>();
 
+        // ── Servicios HTTP externos ───────────────────────────────────────────
+        // SubaganHttpService es Transient porque crea su propio HttpClient
+        // con CookieContainer por sesión — no es thread-safe para compartir.
+        services.AddTransient<Feedlot.Application.Services.ISubaganHttpService,
+            Feedlot.Infrastructure.Services.SubaganHttpService>();
+
         // ── Identity ──────────────────────────────────────────────────────────
         services.AddScoped<JwtTokenService>();
         services.AddScoped<AuthService>();

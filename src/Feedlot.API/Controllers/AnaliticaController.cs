@@ -1,6 +1,7 @@
 using Feedlot.Application.Features.Analitica.Queries.ObtenerAnimalesIneficientes;
 using Feedlot.Application.Features.Analitica.Queries.ObtenerIndicadoresAnimal;
 using Feedlot.Application.Features.Analitica.Queries.ObtenerResumenLote;
+using Feedlot.Application.Features.Analitica.Queries.ObtenerValorProyectadoLote;
 using Feedlot.Application.Features.Analitica.Queries.ObtenerVacunasProximas;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -61,6 +62,24 @@ public sealed class AnaliticaController : ApiControllerBase
         var query = new ObtenerResumenLoteQuery(
             loteId, desde, hasta, precioVentaEstimadoPorKg);
         var result = await _sender.Send(query, ct);
+        return FromResult(result);
+    }
+
+    /// <summary>
+    /// Calcula el valor de venta proyectado de un lote usando los precios reales
+    /// de una subasta de SUBAGAN, emparejando cada animal por su tipo comercial.
+    /// </summary>
+    [HttpGet("lotes/{loteId:guid}/valor-proyectado")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ObtenerValorProyectado(
+        Guid loteId,
+        [FromQuery] Guid subaganEventoId,
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(
+            new ObtenerValorProyectadoLoteQuery(loteId, subaganEventoId), ct);
         return FromResult(result);
     }
 

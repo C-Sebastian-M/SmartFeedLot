@@ -8,7 +8,7 @@ import {
   BarChart3, Beef, Home, AlertTriangle, Package,
   LogOut, Activity, DollarSign, Menu, X,
   Building2, ShoppingCart, HandCoins, UserPlus, Landmark, ClipboardList,
-  PiggyBank, TrendingUp, Trees, ChevronRight, Moon, Sun,
+  TrendingUp, Trees, ChevronRight, Moon, Sun,
 } from 'lucide-react'
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
@@ -36,7 +36,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: '/animales', icon: Beef, label: 'Animales' },
       { to: '/lotes', icon: Package, label: 'Lotes' },
-      { to: '/porcino', icon: PiggyBank, label: 'Porcino' },
       { to: '/operacion', icon: Trees, label: 'Campo' },
     ],
   },

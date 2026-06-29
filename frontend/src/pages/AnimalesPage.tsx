@@ -24,8 +24,20 @@ const schema = z.object({
   moneda: z.enum(['COP', 'USD', 'EUR']).default('COP'),
   fechaIngreso: z.string().min(1, 'Requerida'),
   loteInicialId: z.string().optional(),
+  tipoComercial: z.string().optional(),
 })
 type RegistrarAnimalForm = z.infer<typeof schema>
+
+// Tipos comerciales de SUBAGAN (para emparejar con precios de subasta)
+const tiposComerciales = [
+  { value: 'MC', label: 'MC — Macho Ceba' },
+  { value: 'ML', label: 'ML — Macho Levante' },
+  { value: 'HV', label: 'HV — Hembra Vientre' },
+  { value: 'HL', label: 'HL — Hembra Levante' },
+  { value: 'VE', label: 'VE — Vaca Escotera' },
+  { value: 'VC', label: 'VC — Vaca Cría' },
+  { value: 'TO', label: 'TO — Toro' },
+]
 
 
 
@@ -62,6 +74,7 @@ function RegistrarAnimalModal({ open, onClose }: { open: boolean; onClose: () =>
         moneda: data.moneda,
         fechaIngreso: data.fechaIngreso,
         loteInicialId: data.loteInicialId || undefined,
+        tipoComercial: data.tipoComercial || undefined,
       })
       setExito(true)
       setTimeout(handleClose, 1500)
@@ -114,6 +127,12 @@ function RegistrarAnimalModal({ open, onClose }: { open: boolean; onClose: () =>
                   </FormField>
                   <FormField label="Raza" hint="Opcional">
                     <Input {...register('raza')} placeholder="Brahman" />
+                  </FormField>
+                  <FormField label="Tipo comercial" hint="Para precios de subasta">
+                    <CustomSelect placeholder="Seleccionar..."
+                      options={tiposComerciales}
+                      value={watch('tipoComercial')}
+                      onChange={v => setValue('tipoComercial', v)} />
                   </FormField>
                   <FormField label="Fecha nacimiento" hint="Opcional">
                     <Input {...register('fechaNacimiento')} type="date" max={today} />
@@ -254,7 +273,7 @@ export default function AnimalesPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border">
-                    {['Código', 'Nombre', 'Arete', 'Raza', 'Sexo', 'Peso actual', 'Días', 'Estado prod.', 'Estado san.', ''].map(h => (
+                    {['Código', 'Nombre', 'Arete', 'Raza', 'Sexo', 'Tipo', 'Peso actual', 'Días', 'Estado prod.', 'Estado san.', ''].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-muted-foreground font-medium uppercase tracking-wide text-[10px] whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -269,6 +288,7 @@ export default function AnimalesPage() {
                       <td className="px-4 py-2.5 text-muted-foreground">{animal.numeroArete}</td>
                       <td className="px-4 py-3">{animal.raza}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{animal.sexo}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{animal.tipoComercial ?? '—'}</td>
                       <td className="px-4 py-3 tabular-nums font-medium">{fmt.kg(animal.pesoActualKg)}</td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">{animal.diasEnEngorde}d</td>
                       <td className="px-4 py-3">

@@ -117,7 +117,7 @@ export function useEliminarAnimal() {
 export function useActualizarAnimal() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: { id: string; nombre?: string; numeroArete: string; sexo: string; raza?: string; fechaNacimiento?: string; fechaIngreso: string; pesoIngresoKg: number; precioCompra: number; moneda: string; nuevoLoteId?: string }) =>
+    mutationFn: (input: { id: string; nombre?: string; numeroArete: string; sexo: string; raza?: string; fechaNacimiento?: string; fechaIngreso: string; pesoIngresoKg: number; precioCompra: number; moneda: string; nuevoLoteId?: string; tipoComercial?: string }) =>
       animalsService.actualizar(input.id, input),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.animals.detail(variables.id) })
@@ -890,6 +890,14 @@ export function useImportarSubasta() {
   return useMutation({
     mutationFn: subaganService.importar,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.subaganEventos }),
+  })
+}
+
+export function useValorProyectadoLote(loteId: string, subaganEventoId: string | undefined) {
+  return useQuery({
+    queryKey: ['analitica', 'valor-proyectado', loteId, subaganEventoId ?? ''] as const,
+    queryFn: () => analiticaService.getValorProyectadoLote(loteId, subaganEventoId!),
+    enabled: Boolean(loteId && subaganEventoId),
   })
 }
 

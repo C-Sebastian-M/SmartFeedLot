@@ -29,8 +29,10 @@ public sealed class SubaganHttpService : ISubaganHttpService
         _logger = logger;
         var s = configuration.GetSection("SubaganSettings");
         _baseUrl  = s["BaseUrl"]  ?? "https://www.subaganenvivo.co";
-        _usuario  = s["Usuario"]  ?? throw new InvalidOperationException("SubaganSettings:Usuario no configurado.");
-        _password = s["Password"] ?? throw new InvalidOperationException("SubaganSettings:Password no configurado.");
+        // No lanzar excepción en el constructor — el servicio es opcional.
+        // Si las credenciales no están configuradas, LoginAsync devolverá false.
+        _usuario  = s["Usuario"]  ?? string.Empty;
+        _password = s["Password"] ?? string.Empty;
     }
 
     // ── Autenticación ─────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ using Feedlot.Application.Features.Lotes.Commands.CrearLote;
 using Feedlot.Application.Features.Lotes.Commands.MoverAnimalALote;
 using Feedlot.Application.Features.Lotes.Queries.ObtenerLotePorId;
 using Feedlot.Application.Features.Lotes.Queries.ObtenerLotes;
+using Feedlot.Domain.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +15,12 @@ namespace Feedlot.API.Controllers;
 public sealed class LotesController : ApiControllerBase
 {
     private readonly ISender _sender;
+    private readonly ILoteRepository _loteRepository;
 
-    public LotesController(ISender sender)
+    public LotesController(ISender sender, ILoteRepository loteRepository)
     {
         _sender = sender;
+        _loteRepository = loteRepository;
     }
 
     /// <summary>Obtiene todos los lotes. Filtra por activos si se especifica.</summary>
@@ -41,6 +44,43 @@ public sealed class LotesController : ApiControllerBase
         return FromResult(result);
     }
 
+    /// <summary>
+    /// Dado un conjunto de IDs de animales, retorna el lote activo de cada uno.
+    /// Usado por el flujo de venta para detectar qué animales tienen lote antes de vender.
+    /// POST porque los IDs pueden ser muchos para enviarlos en query string.
+    /// Responde: { animalId → { loteId, loteCodigo } }
+    /// </summary>
+    [HttpPost("consultar-lotes-animales")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ConsultarLotesAnimales(
+        [FromBody] ConsultarLotesAnimalesRequest request,
+        CancellationToken ct = default)
+    {
+        // Cargar todos los lotes activos con sus AnimalesLote de una sola query.
+        var lotesActivos = await _loteRepository.ObtenerActivosAsync(ct);
+
+        // Construir el mapa animalId → { loteId, loteCodigo } en memoria.
+        var resultado = new Dictionary<string, object>();
+
+        foreach (var animalId in request.AnimalIds.Distinct())
+        {
+            var lote = lotesActivos.FirstOrDefault(l =>
+                l.AnimalesLote.Any(al => al.AnimalId == animalId && al.EsActivo));
+
+            if (lote is not null)
+            {
+                resultado[animalId.ToString()] = new
+                {
+                    loteId = lote.Id,
+                    loteCodigo = lote.Codigo,
+                    loteNombre = lote.Nombre,
+                };
+            }
+        }
+
+        return Ok(resultado);
+    }
+
     /// <summary>Crea un nuevo lote de engorde en estado EnPreparacion.</summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -54,10 +94,7 @@ public sealed class LotesController : ApiControllerBase
         return CreatedFromResult(result, "ObtenerLotePorId", new { id = result.Value });
     }
 
-    /// <summary>
-    /// Activa un lote que está en estado EnPreparacion.
-    /// Una vez activo puede recibir animales.
-    /// </summary>
+    /// <summary>Activa un lote en estado EnPreparacion.</summary>
     [HttpPut("{id:guid}/activar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -68,9 +105,7 @@ public sealed class LotesController : ApiControllerBase
         return FromResult(result);
     }
 
-    /// <summary>
-    /// Cierra un lote activo. Solo es posible si no tiene animales activos.
-    /// </summary>
+    /// <summary>Cierra un lote activo sin animales.</summary>
     [HttpPut("{id:guid}/cerrar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -102,3 +137,5 @@ public sealed record MoverAnimalRequest(
     Guid AnimalId,
     DateOnly FechaMovimiento,
     string Motivo);
+
+public sealed record ConsultarLotesAnimalesRequest(List<Guid> AnimalIds);

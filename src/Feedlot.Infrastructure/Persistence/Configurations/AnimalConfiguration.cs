@@ -101,6 +101,14 @@ public sealed class AnimalConfiguration : IEntityTypeConfiguration<Animal>
             .HasColumnName("fecha_ingreso")
             .IsRequired();
 
+        // Tipo comercial (MC, ML, HV...) nullable. Se guarda como string.
+        builder.Property(a => a.TipoComercial)
+            .HasColumnName("tipo_comercial")
+            .HasMaxLength(5)
+            .HasConversion(
+                t => t.HasValue ? t.Value.ToString() : null,
+                s => string.IsNullOrEmpty(s) ? (TipoComercial?)null : Enum.Parse<TipoComercial>(s));
+
         builder.Property(a => a.EstadoProductivo)
             .HasColumnName("estado_productivo")
             .HasMaxLength(20)

@@ -28,6 +28,8 @@ public sealed class AnimalMappingProfile : Profile
                 o => o.MapFrom(s => s.EstadoProductivo.ToString()))
             .ForMember(d => d.EstadoSanitario,
                 o => o.MapFrom(s => s.EstadoSanitario.ToString()))
+            .ForMember(d => d.TipoComercial,
+                o => o.MapFrom(s => s.TipoComercial.HasValue ? s.TipoComercial.Value.ToString() : null))
             .ForMember(d => d.PesoActualKg,
                 o => o.MapFrom(s => s.PesoActual.Kilogramos))
             .ForMember(d => d.DiasEnEngorde,
@@ -51,7 +53,9 @@ public sealed class AnimalMappingProfile : Profile
             .ForMember(d => d.EstadoProductivo,
                 o => o.MapFrom(s => s.EstadoProductivo.ToString()))
             .ForMember(d => d.EstadoSanitario,
-                o => o.MapFrom(s => s.EstadoSanitario.ToString()));
+                o => o.MapFrom(s => s.EstadoSanitario.ToString()))
+            .ForMember(d => d.TipoComercial,
+                o => o.MapFrom(s => s.TipoComercial.HasValue ? s.TipoComercial.Value.ToString() : null));
 
         CreateMap<Pesaje, PesajeDto>()
             .ForMember(d => d.PesoKg,

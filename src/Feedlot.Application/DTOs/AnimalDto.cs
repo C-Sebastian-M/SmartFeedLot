@@ -17,6 +17,7 @@ public sealed class AnimalDto
     public decimal PrecioCompra { get; init; }
     public string Moneda { get; init; } = null!;
     public DateOnly FechaIngreso { get; init; }
+    public string? TipoComercial { get; init; }
     public string EstadoProductivo { get; init; } = null!;
     public string EstadoSanitario { get; init; } = null!;
     public decimal PesoActualKg { get; init; }
@@ -39,4 +40,5 @@ public sealed class AnimalResumenDto
     public int DiasEnEngorde { get; init; }
     public string EstadoProductivo { get; init; } = null!;
     public string EstadoSanitario { get; init; } = null!;
+    public string? TipoComercial { get; init; }
 }

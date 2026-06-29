@@ -277,8 +277,19 @@ const modificarSchema = z.object({
   precioCompra: z.number({ invalid_type_error: 'Número requerido' }).min(0, 'No negativo'),
   moneda: z.enum(['COP', 'USD', 'EUR']).default('COP'),
   nuevoLoteId: z.string().optional(),
+  tipoComercial: z.string().optional(),
 })
 type ModificarForm = z.infer<typeof modificarSchema>
+
+const tiposComerciales = [
+  { value: 'MC', label: 'MC — Macho Ceba' },
+  { value: 'ML', label: 'ML — Macho Levante' },
+  { value: 'HV', label: 'HV — Hembra Vientre' },
+  { value: 'HL', label: 'HL — Hembra Levante' },
+  { value: 'VE', label: 'VE — Vaca Escotera' },
+  { value: 'VC', label: 'VC — Vaca Cría' },
+  { value: 'TO', label: 'TO — Toro' },
+]
 
 // ─── Modal modificar animal ────────────────────────────────────────────────────
 function formatPrecio(value: number) {
@@ -310,6 +321,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
         precioCompra: animal.precioCompra,
         moneda: animal.moneda as 'COP' | 'USD' | 'EUR',
         nuevoLoteId: '',
+        tipoComercial: animal.tipoComercial ?? '',
       },
     })
 
@@ -330,6 +342,7 @@ function ModificarAnimalModal({ animal, open, onClose }: {
         precioCompra: data.precioCompra,
         moneda: data.moneda,
         nuevoLoteId: data.nuevoLoteId || undefined,
+        tipoComercial: data.tipoComercial || undefined,
       })
       setExito(true)
       setTimeout(handleClose, 1500)
@@ -380,6 +393,14 @@ function ModificarAnimalModal({ animal, open, onClose }: {
                 <FormField label="Raza" error={errors.raza?.message}>
                   <Input {...register('raza')} placeholder="Brahman"
                     className={errors.raza ? 'border-destructive' : ''} />
+                </FormField>
+                <FormField label="Tipo comercial" hint="Para precios de subasta">
+                  <CustomSelect
+                    value={watch('tipoComercial') ?? ''}
+                    onChange={v => setValue('tipoComercial', v)}
+                    options={tiposComerciales}
+                    placeholder="Seleccionar..."
+                  />
                 </FormField>
                 <div className="col-span-2">
                   <FormField label="Cambiar de lote" hint="Opcional — dejar vacío para mantener el actual">
@@ -629,6 +650,7 @@ export default function AnimalDetallePage() {
                   { label: 'Arete', value: animal.numeroArete },
                   { label: 'Raza', value: animal.raza },
                   { label: 'Sexo', value: animal.sexo },
+                  { label: 'Tipo comercial', value: animal.tipoComercial ?? '—' },
                   { label: 'Nacimiento', value: animal.fechaNacimiento ? fmt.fecha(animal.fechaNacimiento) : 'No registrada' },
                   { label: 'Ingreso', value: fmt.fecha(animal.fechaIngreso) },
                   { label: 'Peso ingreso', value: fmt.kg(animal.pesoIngresoKg) },

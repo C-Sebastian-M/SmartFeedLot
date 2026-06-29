@@ -14,7 +14,6 @@ import FinanzasPage from '@/pages/FinanzasPage'
 import PrestamosPage from '@/pages/PrestamosPage'
 import InversionPage from '@/pages/InversionPage'
 import OperacionPage from '@/pages/OperacionPage'
-import PorcinoPage from '@/pages/PorcinoPage'
 import MercadoPage from '@/pages/MercadoPage'
 import ProveedoresPage from '@/pages/ProveedoresPage'
 import ComprasPage from '@/pages/ComprasPage'
@@ -53,7 +52,6 @@ const router = createBrowserRouter(
         { path: 'prestamos', element: <PrestamosPage /> },
         { path: 'inversion', element: <InversionPage /> },
         { path: 'operacion', element: <OperacionPage /> },
-        { path: 'porcino', element: <PorcinoPage /> },
         { path: 'precios-mercado', element: <MercadoPage /> },
         { path: 'proveedores', element: <ProveedoresPage /> },
         { path: 'compras', element: <ComprasPage /> },

@@ -34,4 +34,22 @@ public sealed class SubaganEventoRepository : ISubaganEventoRepository
 
     public void Eliminar(SubaganEvento evento)
         => _context.Set<SubaganEvento>().Remove(evento);
+
+    public async Task<IReadOnlyDictionary<string, decimal>> ObtenerPreciosPorTipoAsync(
+        Guid eventoId, CancellationToken ct = default)
+    {
+        // Traemos los lotes del evento y calculamos en memoria el promedio
+        // ponderado por cantidad de animales para cada código de tipo.
+        var lotes = await _context.Set<SubaganLote>()
+            .Where(l => l.SubaganEventoId == eventoId && l.PrecioPorKg > 0 && l.Cantidad > 0)
+            .Select(l => new { l.CodigoTipo, l.PrecioPorKg, l.Cantidad })
+            .ToListAsync(ct);
+
+        return lotes
+            .GroupBy(l => l.CodigoTipo.Trim().ToUpperInvariant())
+            .ToDictionary(
+                g => g.Key,
+                g => Math.Round(
+                    g.Sum(x => x.PrecioPorKg * x.Cantidad) / g.Sum(x => x.Cantidad), 2));
+    }
 }

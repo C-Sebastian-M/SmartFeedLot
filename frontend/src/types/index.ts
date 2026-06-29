@@ -22,6 +22,7 @@ export interface Animal {
   precioCompra: number
   moneda: string
   fechaIngreso: string
+  tipoComercial?: string | null
   estadoProductivo: EstadoProductivo
   estadoSanitario: EstadoSanitario
   pesoActualKg: number
@@ -38,6 +39,7 @@ export interface AnimalResumen {
   numeroArete: string
   raza?: string
   sexo: Sexo
+  tipoComercial?: string | null
   pesoActualKg: number
   diasEnEngorde: number
   estadoProductivo: EstadoProductivo
@@ -624,6 +626,28 @@ export interface SubaganLote {
   procedencia: string
   observaciones: string | null
   fecha: string
+}
+
+export interface ValorAnimalProyectado {
+  animalId: string
+  codigo: string
+  nombre: string | null
+  tipoComercial: string | null
+  pesoActualKg: number
+  precioPorKg: number | null
+  valorProyectado: number | null
+  incluido: boolean
+  motivoOmision: string | null
+}
+
+export interface ValorProyectadoLote {
+  loteId: string
+  subaganEventoId: string
+  valorTotal: number
+  moneda: string
+  animalesIncluidos: number
+  animalesOmitidos: number
+  detalle: ValorAnimalProyectado[]
 }
 
 export interface SubaganCalendarioEvento {
