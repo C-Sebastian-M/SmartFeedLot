@@ -92,4 +92,65 @@ public sealed class AuthService
         var token = _jwtService.GenerarToken(user);
         return AuthResult.Ok(token, user);
     }
+
+    // ── Gestión de usuarios (Admin) ─────────────────────────────────────────────
+
+    public sealed record UsuarioInfo(
+        Guid Id,
+        string Email,
+        string NombreCompleto,
+        bool Activo,
+        DateTime CreadoEn,
+        DateTime? UltimoAcceso,
+        IReadOnlyList<string> Roles);
+
+    /// <summary>Lista todos los usuarios con sus roles.</summary>
+    public async Task<IReadOnlyList<UsuarioInfo>> ListarUsuariosAsync(CancellationToken ct = default)
+    {
+        var users = await _context.Users
+            .Include(u => u.Roles).ThenInclude(ur => ur.Role)
+            .OrderBy(u => u.Email)
+            .ToListAsync(ct);
+
+        return users.Select(u => new UsuarioInfo(
+            u.Id, u.Email, u.NombreCompleto, u.Activo, u.CreadoEn, u.UltimoAcceso,
+            u.Roles.Select(r => r.Role.Nombre).ToList())).ToList();
+    }
+
+    /// <summary>Activa o desactiva un usuario.</summary>
+    public async Task<bool> CambiarEstadoUsuarioAsync(Guid userId, bool activo, CancellationToken ct = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null) return false;
+
+        if (activo) user.Activar();
+        else user.Desactivar();
+
+        await _context.SaveChangesAsync(ct);
+        return true;
+    }
+
+    /// <summary>Reemplaza el rol del usuario por el indicado.</summary>
+    public async Task<bool> CambiarRolUsuarioAsync(Guid userId, string rolNombre, CancellationToken ct = default)
+    {
+        var user = await _context.Users
+            .Include(u => u.Roles)
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null) return false;
+
+        var rol = await _context.Roles.FirstOrDefaultAsync(r => r.Nombre == rolNombre, ct);
+        if (rol is null) return false;
+
+        user.Roles.Clear();
+        user.Roles.Add(new ApplicationUserRole
+        {
+            UserId = user.Id,
+            RoleId = rol.Id,
+            Role = rol,
+            User = user
+        });
+
+        await _context.SaveChangesAsync(ct);
+        return true;
+    }
 }

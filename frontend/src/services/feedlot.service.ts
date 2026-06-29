@@ -12,7 +12,7 @@ import type {
   LoteCerdos, CreateLoteCerdosPayload, RegistrarVentaLoteCerdosPayload,
   PrecioMercado, CreatePrecioMercadoPayload, UpdatePrecioMercadoPayload,
   SubaganEvento, SubaganLote, ImportarSubastaPayload, ImportarSubastaResult,
-  SubaganCalendarioEvento
+  SubaganCalendarioEvento, ModuloSistema, Usuario
 } from '@/types'
 
 // ─── Animals ──────────────────────────────────────────────────────────────────
@@ -695,5 +695,33 @@ export const subaganService = {
     const qs = params.toString()
     const { data } = await api.get(`/subagan/calendario${qs ? `?${qs}` : ''}`)
     return data.value ?? data
+  },
+}
+
+// ─── Configuración / módulos ────────────────────────────────────────────────────
+export const configuracionService = {
+  getModulos: async (): Promise<ModuloSistema[]> => {
+    const { data } = await api.get('/configuracion/modulos')
+    return data.value ?? data
+  },
+  cambiarEstadoModulo: async (clave: string, activo: boolean): Promise<void> => {
+    await api.put(`/configuracion/modulos/${clave}`, { activo })
+  },
+}
+
+// ─── Usuarios (Admin) ────────────────────────────────────────────────────────────
+export const usuariosService = {
+  listar: async (): Promise<Usuario[]> => {
+    const { data } = await api.get('/usuarios')
+    return data.value ?? data
+  },
+  crear: async (payload: { email: string; nombreCompleto: string; password: string; rol: string }): Promise<void> => {
+    await api.post('/usuarios', payload)
+  },
+  cambiarEstado: async (id: string, activo: boolean): Promise<void> => {
+    await api.put(`/usuarios/${id}/estado`, { activo })
+  },
+  cambiarRol: async (id: string, rol: string): Promise<void> => {
+    await api.put(`/usuarios/${id}/rol`, { rol })
   },
 }

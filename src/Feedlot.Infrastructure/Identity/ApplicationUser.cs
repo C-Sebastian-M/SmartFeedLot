@@ -39,6 +39,7 @@ public sealed class ApplicationUser
 
     public void RegistrarAcceso() => UltimoAcceso = DateTime.UtcNow;
     public void Desactivar() => Activo = false;
+    public void Activar() => Activo = true;
 }
 
 public sealed class ApplicationRole

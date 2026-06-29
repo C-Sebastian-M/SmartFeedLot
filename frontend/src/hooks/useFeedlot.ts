@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService, porcinoService, mercadoService, subaganService } from '@/services/feedlot.service'
+import { animalsService, lotesService, analiticaService, costosService, proveedoresService, comprasService, ventasService, finanzasService, prestamosService, inversionService, potrerosService, empleadosService, caniaService, porcinoService, mercadoService, subaganService, configuracionService, usuariosService } from '@/services/feedlot.service'
 import type { RegistrarCamadaPayload, RegistrarVentaLoteCerdosPayload } from '@/types'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -915,5 +915,57 @@ export function useSubaganCalendario(sede?: string, soloPasadas?: boolean, enabl
     queryFn: () => subaganService.getCalendario(sede, soloPasadas),
     enabled,
     staleTime: 5 * 60 * 1000, // 5 min: el calendario no cambia tan seguido
+  })
+}
+
+// ─── Configuración / módulos ────────────────────────────────────────────────────
+export function useModulos() {
+  return useQuery({
+    queryKey: ['configuracion', 'modulos'] as const,
+    queryFn: () => configuracionService.getModulos(),
+    staleTime: 60 * 1000,
+  })
+}
+
+export function useCambiarEstadoModulo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ clave, activo }: { clave: string; activo: boolean }) =>
+      configuracionService.cambiarEstadoModulo(clave, activo),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['configuracion', 'modulos'] }),
+  })
+}
+
+// ─── Usuarios (Admin) ────────────────────────────────────────────────────────────
+export function useUsuarios() {
+  return useQuery({
+    queryKey: ['usuarios'] as const,
+    queryFn: () => usuariosService.listar(),
+  })
+}
+
+export function useCrearUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: usuariosService.crear,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['usuarios'] }),
+  })
+}
+
+export function useCambiarEstadoUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, activo }: { id: string; activo: boolean }) =>
+      usuariosService.cambiarEstado(id, activo),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['usuarios'] }),
+  })
+}
+
+export function useCambiarRolUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, rol }: { id: string; rol: string }) =>
+      usuariosService.cambiarRol(id, rol),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['usuarios'] }),
   })
 }

@@ -104,6 +104,9 @@ public static class DependencyInjection
         // Subagan
         services.AddScoped<ISubaganEventoRepository, SubaganEventoRepository>();
 
+        // Configuración / administración
+        services.AddScoped<IModuloSistemaRepository, ModuloSistemaRepository>();
+
         // ── Domain Services ───────────────────────────────────────────────────
         services.AddScoped<IndicadorProductivoService>();
 

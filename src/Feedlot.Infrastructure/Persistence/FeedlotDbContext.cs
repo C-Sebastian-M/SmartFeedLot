@@ -70,6 +70,9 @@ public sealed partial class FeedlotDbContext : DbContext, IUnitOfWork
     public DbSet<SubaganEvento> SubaganEventos => Set<SubaganEvento>();
     public DbSet<SubaganLote> SubaganLotes => Set<SubaganLote>();
 
+    // Configuración / administración
+    public DbSet<ModuloSistema> ModulosSistema => Set<ModuloSistema>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FeedlotDbContext).Assembly);

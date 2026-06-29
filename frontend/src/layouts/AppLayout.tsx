@@ -3,12 +3,13 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
 import { useThemeStore } from '@/stores/theme.store'
 import { useAlertCounts } from '@/hooks/useAlertCounts'
+import { useModulos } from '@/hooks/useFeedlot'
 import { cn } from '@/utils'
 import {
   BarChart3, Beef, Home, AlertTriangle, Package,
   LogOut, Activity, DollarSign, Menu, X,
   Building2, ShoppingCart, HandCoins, UserPlus, Landmark, ClipboardList,
-  TrendingUp, Trees, ChevronRight, Moon, Sun,
+  TrendingUp, Trees, ChevronRight, Moon, Sun, PiggyBank, Settings, Users,
 } from 'lucide-react'
 
 // ─── Nav structure ────────────────────────────────────────────────────────────
@@ -18,6 +19,8 @@ interface NavItem {
   icon: typeof Home
   label: string
   end?: boolean
+  /** Clave del módulo en la BD. Si falta, el item es siempre visible (ej. Dashboard). */
+  mod?: string
 }
 
 interface NavGroup {
@@ -34,35 +37,36 @@ const navGroups: NavGroup[] = [
   {
     label: 'Producción',
     items: [
-      { to: '/animales', icon: Beef, label: 'Animales' },
-      { to: '/lotes', icon: Package, label: 'Lotes' },
-      { to: '/operacion', icon: Trees, label: 'Campo' },
+      { to: '/animales', icon: Beef, label: 'Animales', mod: 'animales' },
+      { to: '/lotes', icon: Package, label: 'Lotes', mod: 'lotes' },
+      { to: '/operacion', icon: Trees, label: 'Campo', mod: 'operacion' },
+      { to: '/porcino', icon: PiggyBank, label: 'Porcino', mod: 'porcino' },
     ],
   },
   {
     label: 'Finanzas',
     items: [
-      { to: '/finanzas', icon: DollarSign, label: 'Movimientos' },
-      { to: '/prestamos', icon: Landmark, label: 'Préstamos' },
-      { to: '/inversion', icon: ClipboardList, label: 'Inversión' },
-      { to: '/costos', icon: Activity, label: 'Costeo' },
+      { to: '/finanzas', icon: DollarSign, label: 'Movimientos', mod: 'finanzas' },
+      { to: '/prestamos', icon: Landmark, label: 'Préstamos', mod: 'prestamos' },
+      { to: '/inversion', icon: ClipboardList, label: 'Inversión', mod: 'inversion' },
+      { to: '/costos', icon: Activity, label: 'Costeo', mod: 'costos' },
     ],
   },
   {
     label: 'Comercial',
     items: [
-      { to: '/ventas', icon: HandCoins, label: 'Ventas' },
-      { to: '/compras', icon: ShoppingCart, label: 'Compras' },
-      { to: '/proveedores', icon: Building2, label: 'Proveedores' },
-      { to: '/compradores', icon: UserPlus, label: 'Compradores' },
+      { to: '/ventas', icon: HandCoins, label: 'Ventas', mod: 'ventas' },
+      { to: '/compras', icon: ShoppingCart, label: 'Compras', mod: 'compras' },
+      { to: '/proveedores', icon: Building2, label: 'Proveedores', mod: 'proveedores' },
+      { to: '/compradores', icon: UserPlus, label: 'Compradores', mod: 'compradores' },
     ],
   },
   {
     label: 'Análisis',
     items: [
-      { to: '/precios-mercado', icon: TrendingUp, label: 'Precios Mercado' },
-      { to: '/analitica', icon: BarChart3, label: 'Analítica' },
-      { to: '/alertas', icon: AlertTriangle, label: 'Alertas' },
+      { to: '/precios-mercado', icon: TrendingUp, label: 'Precios Mercado', mod: 'precios-mercado' },
+      { to: '/analitica', icon: BarChart3, label: 'Analítica', mod: 'analitica' },
+      { to: '/alertas', icon: AlertTriangle, label: 'Alertas', mod: 'alertas' },
     ],
   },
 ]
@@ -94,6 +98,24 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const navigate = useNavigate()
   const { theme, toggle: toggleTheme } = useThemeStore()
   const counts = useAlertCounts()
+  const { data: modulos } = useModulos()
+
+  const esAdmin = user?.roles?.includes('Admin') ?? false
+
+  // Set de claves de módulos activos. Mientras carga (undefined), mostramos todo
+  // para no parpadear el menú en cada navegación.
+  const modulosActivos = modulos
+    ? new Set(modulos.filter(m => m.activo).map(m => m.clave))
+    : null
+
+  // Filtra los grupos: oculta items de módulos desactivados y grupos que queden vacíos.
+  const gruposVisibles = navGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(it =>
+        !it.mod || modulosActivos === null || modulosActivos.has(it.mod)),
+    }))
+    .filter(group => group.items.length > 0)
 
   // Map de ruta → configuración de badge
   const badges: Record<string, { count: number; variant: 'red' | 'amber' }> = {
@@ -118,7 +140,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-4">
-        {navGroups.map((group, gi) => (
+        {gruposVisibles.map((group, gi) => (
           <div key={gi}>
             {group.label && (
               <p className="px-2.5 mb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">
@@ -169,6 +191,44 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             </div>
           </div>
         ))}
+
+        {/* Administración — solo Admin */}
+        {esAdmin && (
+          <div>
+            <p className="px-2.5 mb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">
+              Administración
+            </p>
+            <div className="space-y-0.5">
+              {[
+                { to: '/configuracion', icon: Settings, label: 'Configuración' },
+                { to: '/usuarios', icon: Users, label: 'Usuarios' },
+              ].map(({ to, icon: Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={onNavClick}
+                  className={({ isActive }) =>
+                    cn(
+                      'group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-foreground font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 font-normal'
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon className={cn('w-3.5 h-3.5 flex-shrink-0 transition-colors',
+                        isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground')} />
+                      <span className="truncate">{label}</span>
+                      {isActive && <ChevronRight className="w-3 h-3 ml-auto text-primary/50 flex-shrink-0" />}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* User */}

@@ -19,10 +19,19 @@ import ProveedoresPage from '@/pages/ProveedoresPage'
 import ComprasPage from '@/pages/ComprasPage'
 import VentasPage from '@/pages/VentasPage'
 import CompradoresPage from '@/pages/CompradoresPage'
+import PorcinoPage from '@/pages/PorcinoPage'
+import ConfiguracionPage from '@/pages/ConfiguracionPage'
+import UsuariosPage from '@/pages/UsuariosPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  if (!user?.roles?.includes('Admin')) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -57,6 +66,9 @@ const router = createBrowserRouter(
         { path: 'compras', element: <ComprasPage /> },
         { path: 'ventas', element: <VentasPage /> },
         { path: 'compradores', element: <CompradoresPage /> },
+        { path: 'porcino', element: <PorcinoPage /> },
+        { path: 'configuracion', element: <RequireAdmin><ConfiguracionPage /></RequireAdmin> },
+        { path: 'usuarios', element: <RequireAdmin><UsuariosPage /></RequireAdmin> },
       ],
     },
   ] as any,

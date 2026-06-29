@@ -650,6 +650,24 @@ export interface ValorProyectadoLote {
   detalle: ValorAnimalProyectado[]
 }
 
+export interface ModuloSistema {
+  id: string
+  clave: string
+  nombre: string
+  activo: boolean
+  orden: number
+}
+
+export interface Usuario {
+  id: string
+  email: string
+  nombreCompleto: string
+  activo: boolean
+  creadoEn: string
+  ultimoAcceso: string | null
+  roles: string[]
+}
+
 export interface SubaganCalendarioEvento {
   eventId: number
   titulo: string

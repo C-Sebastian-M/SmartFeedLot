@@ -1,6 +1,5 @@
-using Feedlot.Infrastructure.Identity;
 using Feedlot.Domain.Entities;
-using Feedlot.Domain.Enums;
+using Feedlot.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,9 @@ namespace Feedlot.Infrastructure.Persistence;
 /// Datos sembrados:
 /// - Roles del sistema: Admin, Supervisor, Operador.
 /// - Usuario administrador por defecto (credenciales en appsettings de Development).
+///
+/// NO se siembran datos de negocio (animales, lotes, categorías, socios, etc.):
+/// la base arranca vacía y el usuario carga su propia información.
 ///
 /// Es idempotente — puede ejecutarse múltiples veces sin duplicar datos.
 /// </summary>
@@ -30,14 +32,11 @@ public static class DatabaseInitializer
             logger.LogInformation("Feedlot — Aplicando migraciones pendientes...");
             await context.Database.MigrateAsync();
 
+            // Solo se siembran usuarios (roles + admin). El resto de datos
+            // (catálogos y negocio) los crea el usuario desde la aplicación.
             await SembrarRolesAsync(context);
             await SembrarUsuarioAdminAsync(context, scope.ServiceProvider);
-            await SembrarCategoriasYSociosAsync(context);
-
-            // Datos de demostración basados en el Excel (solo Development, o
-            // forzado con SEED_DEMO_DATA=true). Idempotente. Se ejecuta al final
-            // porque referencia las categorías sembradas arriba.
-            await SeedDataDemo.SeedAsync(context, logger);
+            await SembrarModulosAsync(context);
 
             logger.LogInformation("Feedlot — Base de datos inicializada correctamente.");
         }
@@ -48,39 +47,46 @@ public static class DatabaseInitializer
         }
     }
 
-    private static async Task SembrarCategoriasYSociosAsync(FeedlotDbContext context)
+    /// <summary>
+    /// Siembra el catálogo de módulos del sistema. Idempotente: solo agrega los
+    /// que falten, sin tocar el estado (Activo) de los que ya existen.
+    /// </summary>
+    private static async Task SembrarModulosAsync(FeedlotDbContext context)
     {
-        // 1. Categorías de Gasto
-        if (!await context.Set<CategoriaGasto>().AnyAsync())
+        // (clave, nombre, activoPorDefecto, orden)
+        var catalogo = new (string Clave, string Nombre, bool Activo, int Orden)[]
         {
-            var categorias = new List<CategoriaGasto>
-            {
-                CategoriaGasto.Crear("Mano de Obra", TipoCategoriaGasto.Operativo),
-                CategoriaGasto.Crear("Gasolina y Combustibles", TipoCategoriaGasto.Indirecto),
-                CategoriaGasto.Crear("Alquiler de Potrero", TipoCategoriaGasto.Indirecto),
-                CategoriaGasto.Crear("Grama Fin (Matamaleza)", TipoCategoriaGasto.Indirecto),
-                CategoriaGasto.Crear("Urea y Cal Agrícola", TipoCategoriaGasto.Indirecto),
-                CategoriaGasto.Crear("Medicinas y Vacunas", TipoCategoriaGasto.Directo),
-                CategoriaGasto.Crear("Alimento y Melaza", TipoCategoriaGasto.Directo),
-                CategoriaGasto.Crear("Compra de Animales", TipoCategoriaGasto.Directo),
-                CategoriaGasto.Crear("Inversión Infraestructura", TipoCategoriaGasto.Inversion),
-                CategoriaGasto.Crear("Otros Gastos Generales", TipoCategoriaGasto.Indirecto)
-            };
-            await context.Set<CategoriaGasto>().AddRangeAsync(categorias);
-        }
+            ("animales",        "Animales",          true,  1),
+            ("lotes",           "Lotes",             true,  2),
+            ("operacion",       "Campo (Operación)", true,  3),
+            ("porcino",         "Porcino",           false, 4),
+            ("finanzas",        "Movimientos",       true,  5),
+            ("prestamos",       "Préstamos",         true,  6),
+            ("inversion",       "Inversión",         true,  7),
+            ("costos",          "Costeo",            true,  8),
+            ("ventas",          "Ventas",            true,  9),
+            ("compras",         "Compras",           true, 10),
+            ("proveedores",     "Proveedores",       true, 11),
+            ("compradores",     "Compradores",       true, 12),
+            ("precios-mercado", "Precios de Mercado",true, 13),
+            ("analitica",       "Analítica",         true, 14),
+            ("alertas",         "Alertas",           true, 15),
+        };
 
-        // 2. Socios
-        if (!await context.Set<Socio>().AnyAsync())
+        var clavesExistentes = await context.Set<ModuloSistema>()
+            .Select(m => m.Clave)
+            .ToListAsync();
+
+        var faltantes = catalogo
+            .Where(c => !clavesExistentes.Contains(c.Clave))
+            .Select(c => ModuloSistema.Crear(c.Clave, c.Nombre, c.Activo, c.Orden))
+            .ToList();
+
+        if (faltantes.Count > 0)
         {
-            var socios = new List<Socio>
-            {
-                Socio.Crear("Estefania", 50.00m),
-                Socio.Crear("Levir", 50.00m)
-            };
-            await context.Set<Socio>().AddRangeAsync(socios);
+            await context.Set<ModuloSistema>().AddRangeAsync(faltantes);
+            await context.SaveChangesAsync();
         }
-
-        await context.SaveChangesAsync();
     }
 
     private static async Task SembrarRolesAsync(FeedlotDbContext context)
